@@ -9,13 +9,13 @@ use App\Models\User;
 use App\Models\Event;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\GuestController;
+use App\Http\Controllers\DecklistController;
 
 
 // Route pubbliche
 Route::get('/', [EventController::class, 'index'])->name('home');
 Route::get('/events', [EventController::class, 'index'])->name('events.index');
 
-// AGGIUNGI QUESTA RIGA QUI - PRIMA di events/{event}
 Route::get('/events/past', [EventController::class, 'pastEvents'])
     ->name('events.past')
     ->middleware('auth'); // Middleware auth qui
@@ -67,6 +67,16 @@ Route::middleware(['auth'])->group(function () {
     // Gestione ospiti
     Route::post('/events/{event}/add-guest', [GuestController::class, 'addGuest'])->name('events.add-guest');
     Route::post('/events/{event}/remove-guest', [GuestController::class, 'removeGuest'])->name('events.remove-guest');
+    // Decklist routes
+    Route::post('/events/{event}/decklist', [DecklistController::class, 'store'])
+        ->name('decklist.store')
+        ->middleware('approved');
+
+    Route::get('/decklist/{decklist}', [DecklistController::class, 'show'])
+        ->name('decklist.show');
+
+    Route::delete('/decklist/{decklist}', [DecklistController::class, 'destroy'])
+        ->name('decklist.destroy');
 });
 
 // Route amministrative

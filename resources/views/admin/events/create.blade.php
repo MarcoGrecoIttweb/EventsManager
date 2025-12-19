@@ -156,7 +156,7 @@
 
 @section('scripts')
     <!-- TinyMCE -->
-    <script src="https://cdn.tiny.cloud/1/bklljwbpvidz9oqemanmswdq49st98dpznthjvl77p3rfaf1/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+    <script src="https://cdn.tiny.cloud/1/apnxko6keluuolqvwrh4y8husr0yw428oeg9ylfo7v3nnw4k/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Inizializza TinyMCE per la descrizione

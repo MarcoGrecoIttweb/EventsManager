@@ -8,7 +8,32 @@
             <div class="col-md-8">
                 <div class="card">
                     <div class="card-header">
-                        <h2 class="mb-0">{{ $event->title }}</h2>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h2 class="mb-0">{{ $event->title }}</h2>
+
+                            {{-- Pulsanti azione per organizzatore/admin --}}
+                            @auth
+                                @if(auth()->user()->isAdmin() || auth()->id() === $event->user_id)
+                                    <div class="btn-group">
+                                        <a href="{{ route('admin.events.edit', $event) }}" class="btn btn-warning btn-sm">
+                                            <i class="fas fa-edit"></i> Modifica Evento
+                                        </a>
+
+                                        {{-- Solo admin può eliminare --}}
+                                        @if(auth()->user()->isAdmin())
+                                            <form action="{{ route('admin.events.destroy', $event) }}" method="POST" class="d-inline">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-danger btn-sm ms-1"
+                                                        onclick="return confirm('Sei sicuro di voler eliminare questo Evento?')">
+                                                    <i class="fas fa-trash"></i> Elimina
+                                                </button>
+                                            </form>
+                                        @endif
+                                    </div>
+                                @endif
+                            @endauth
+                        </div>
                     </div>
                     {{-- Cover Image --}}
                     @if($event->cover_image)
@@ -361,7 +386,7 @@
                             </div>
                         @endif
 
-                        {{-- Lista partecipanti --}}
+                        {{-- Lista partecipanti compatta --}}
                         @if($event->participants->count() > 0)
                             <div class="list-group">
                                 @foreach($event->participants as $participant)
@@ -369,44 +394,78 @@
                                         $currentUserIsParticipant = auth()->check() && auth()->id() === $participant->id;
                                         $canAddMoreGuests = $currentUserIsParticipant && $event->canAddMoreGuests($participant);
                                         $hasGuests = $participant->pivot->guests_count > 0;
+                                        $hasDecklist = $event->userHasDecklist($participant);
+                                        $userDecklist = $participant->getDecklistForEvent($event);
                                     @endphp
 
-                                    <div class="list-group-item d-flex justify-content-between align-items-center"
-                                         id="participant-{{ $participant->id }}">
+                                    <div class="list-group-item d-flex justify-content-between align-items-center">
                                         <div>
+                                            {{-- Nome e indicatori inline --}}
                                             <a href="{{ route('profile.show', $participant) }}" class="text-decoration-none">
-                                                <i class="fas fa-user"></i> {{ $participant->nickname }}
+                                                {{ $participant->nickname }}
                                             </a>
-                                            @if($hasGuests)
-                                                <span class="badge bg-success ms-2">+{{ $participant->pivot->guests_count }}</span>
-                                            @endif
-                                            @if($currentUserIsParticipant)
-                                                <span class="badge bg-primary ms-1">Tu</span>
-                                            @endif
+
+                                            <span class="small text-muted ms-2">
+                        @if($currentUserIsParticipant)
+                                                    <span class="badge bg-primary">Tu</span>
+                                                @endif
+
+                                                @if($hasGuests)
+                                                    <span class="badge bg-success">+{{ $participant->pivot->guests_count }}</span>
+                                                @endif
+
+                                                @if($hasDecklist)
+                                                    @auth
+                                                        @if(auth()->user()->isAdmin() || auth()->id() === $participant->id)
+                                                            <a href="{{ route('decklist.show', $userDecklist) }}"
+                                                               class="badge bg-info text-decoration-none"
+                                                               title="Visualizza decklist"
+                                                               target="_blank">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </a>
+                                                        @else
+                                                            <span class="badge bg-info" title="Decklist caricata">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </span>
+                                                        @endif
+                                                    @endauth
+                                                @endif
+                    </span>
                                         </div>
 
-                                        @auth
+                                        {{-- Pulsanti azione --}}
+                                        <div class="btn-group">
                                             @if($currentUserIsParticipant && $event->allow_guests)
-                                                <div class="btn-group btn-group-sm">
-                                                    <form action="{{ route('events.add-guest', $event) }}" method="POST" class="d-inline">
-                                                        @csrf
-                                                        <button type="submit" class="btn btn-outline-success btn-sm"
-                                                                title="Porta un amico"
-                                                            {{ !$canAddMoreGuests || $event->isFull() ? 'disabled' : '' }}>
-                                                            <i class="fas fa-user-plus"></i>
-                                                        </button>
-                                                    </form>
-                                                    <form action="{{ route('events.remove-guest', $event) }}" method="POST" class="d-inline">
-                                                        @csrf
-                                                        <button type="submit" class="btn btn-outline-warning btn-sm"
-                                                                title="Togli un amico"
-                                                            {{ !$hasGuests ? 'disabled' : '' }}>
-                                                            <i class="fas fa-user-minus"></i>
-                                                        </button>
-                                                    </form>
-                                                </div>
+                                                <form action="{{ route('events.add-guest', $event) }}" method="POST" class="d-inline">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-sm btn-outline-success"
+                                                            title="Aggiungi ospite"
+                                                        {{ !$canAddMoreGuests || $event->isFull() ? 'disabled' : '' }}>
+                                                        <i class="fas fa-user-plus"></i>
+                                                    </button>
+                                                </form>
+                                                <form action="{{ route('events.remove-guest', $event) }}" method="POST" class="d-inline">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-sm btn-outline-warning"
+                                                            title="Rimuovi ospite"
+                                                        {{ !$hasGuests ? 'disabled' : '' }}>
+                                                        <i class="fas fa-user-minus"></i>
+                                                    </button>
+                                                </form>
                                             @endif
-                                        @endauth
+
+                                            {{-- Icona decklist per admin --}}
+                                            @auth
+                                                @if(auth()->user()->isAdmin() && $hasDecklist)
+                                                    <a href="{{ route('decklist.show', $userDecklist) }}"
+                                                       class="btn btn-sm btn-outline-info"
+                                                       title="Visualizza decklist di {{ $participant->nickname }}"
+                                                       target="_blank">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                @endif
+                                            @endauth
+                                        </div>
                                     </div>
                                 @endforeach
                             </div>
@@ -431,6 +490,74 @@
                             </div>
                         @endif
                     </div>
+                    @auth
+                            {{-- Sezione Decklist --}}
+                            @if(auth()->user()->isApproved() && $userParticipating)
+                                <div class="card mt-4">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">
+                                            <i class="fas fa-file-pdf"></i> La tua Decklist
+                                        </h5>
+                                    </div>
+                                    <div class="card-body">
+                                        @php
+                                            $userDecklist = auth()->user()->getDecklistForEvent($event);
+                                        @endphp
+
+                                        @if($userDecklist)
+                                            <div class="alert alert-success">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <i class="fas fa-check-circle"></i>
+                                                        <strong>Decklist caricata</strong>
+                                                        <br>
+                                                        <small class="text-muted">
+                                                            File: {{ $userDecklist->original_name }}
+                                                            ({{ $userDecklist->formatted_size }})
+                                                            <br>
+                                                            Caricata il: {{ $userDecklist->upload_date }}
+                                                        </small>
+                                                    </div>
+                                                    <div class="btn-group">
+                                                        <a href="{{ route('decklist.show', $userDecklist) }}"
+                                                           class="btn btn-outline-primary btn-sm" target="_blank">
+                                                            <i class="fas fa-eye"></i> Visualizza
+                                                        </a>
+                                                        <form action="{{ route('decklist.destroy', $userDecklist) }}" method="POST">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="submit" class="btn btn-outline-danger btn-sm"
+                                                                    onclick="return confirm('Sei sicuro di voler eliminare la tua decklist?')">
+                                                                <i class="fas fa-trash"></i> Elimina
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endif
+
+                                        <form action="{{ route('decklist.store', $event) }}" method="POST" enctype="multipart/form-data">
+                                            @csrf
+                                            <div class="mb-3">
+                                                <label for="decklist" class="form-label">
+                                                    {{ $userDecklist ? 'Sostituisci Decklist' : 'Carica Decklist' }}
+                                                </label>
+                                                <input type="file" class="form-control" id="decklist" name="decklist"
+                                                       accept=".pdf" required>
+                                                <div class="form-text">
+                                                    Formato consentito: PDF (max 10MB)
+                                                </div>
+                                            </div>
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="fas fa-upload"></i>
+                                                {{ $userDecklist ? 'Sostituisci Decklist' : 'Carica Decklist' }}
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            @endif
+
+                    @endauth
                 </div>
 
                 <!-- Informazioni Organizzatore -->
@@ -447,13 +574,14 @@
                         </p>
                     </div>
                 </div>
+
             </div>
         </div>
     </div>
 @endsection
 @section('scripts')
     @parent
-    <script src="https://cdn.tiny.cloud/1/bklljwbpvidz9oqemanmswdq49st98dpznthjvl77p3rfaf1/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+    <script src="https://cdn.tiny.cloud/1/apnxko6keluuolqvwrh4y8husr0yw428oeg9ylfo7v3nnw4k/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {

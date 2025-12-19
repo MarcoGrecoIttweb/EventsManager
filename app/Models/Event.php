@@ -221,4 +221,18 @@ class Event extends Model
     {
         return $this->images()->count();
     }
+    public function decklists()
+    {
+        return $this->hasMany(Decklist::class);
+    }
+
+    public function getDecklistsCountAttribute(): int
+    {
+        return $this->decklists()->count();
+    }
+
+    public function userHasDecklist(User $user): bool
+    {
+        return $this->decklists()->where('user_id', $user->id)->exists();
+    }
 }

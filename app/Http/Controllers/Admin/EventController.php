@@ -121,10 +121,18 @@ class EventController extends Controller
             'address' => 'required|string|max:500',
             'max_participants' => 'nullable|integer|min:1',
             'allow_guests' => 'sometimes|boolean',
-            'max_guests_per_user' => 'required_if:allow_guests,true|integer|min:1|max:10',
+            'max_guests_per_user' => 'nullable|integer|min:1|max:10', // Cambia da required_if a nullable
         ]);
 
-        // Validazione separata per i file
+
+        // Gestisci il campo allow_guests
+        $validated['allow_guests'] = $request->has('allow_guests');
+
+        if (!$validated['allow_guests']) {
+            $validated['max_guests_per_user'] = 0; // Imposta a 0 se non permette ospiti
+        }
+
+        // Validazione separata per i file (rimane uguale)
         if ($request->hasFile('cover_image')) {
             $request->validate([
                 'cover_image' => 'file|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
@@ -136,14 +144,6 @@ class EventController extends Controller
                 'gallery_images.*' => 'file|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
             ]);
         }
-
-        // Gestisci il campo allow_guests
-        $validated['allow_guests'] = $request->has('allow_guests');
-
-        if (!$validated['allow_guests']) {
-            $validated['max_guests_per_user'] = 0;
-        }
-
 
         // Gestisci rimozione cover image
         if ($request->has('remove_cover') && $event->cover_image) {

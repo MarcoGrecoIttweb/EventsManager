@@ -12,9 +12,14 @@
                             <h4 class="mb-0">
                                 <i class="fas fa-edit"></i> Modifica Evento: {{ $event->title }}
                             </h4>
-                            <a href="{{ route('admin.events.index') }}" class="btn btn-light btn-sm">
-                                <i class="fas fa-arrow-left"></i> Torna alla Lista
-                            </a>
+                            <div class="btn-group">
+                                <a href="{{ route('events.show', $event) }}" class="btn btn-light btn-sm me-2">
+                                    <i class="fas fa-eye"></i> Torna all'Evento
+                                </a>
+                                <a href="{{ route('admin.events.index') }}" class="btn btn-light btn-sm">
+                                    <i class="fas fa-list"></i> Lista Eventi
+                                </a>
+                            </div>
                         </div>
                     </div>
                     <div class="card-body">
@@ -225,24 +230,23 @@
             </div>
         </div>
     </div>
-
-@section('scripts')
-    <!-- TinyMCE -->
-    <script src="https://cdn.tiny.cloud/1/bklljwbpvidz9oqemanmswdq49st98dpznthjvl77p3rfaf1/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Inizializza TinyMCE per la descrizione
-            tinymce.init({
-                selector: '#description',
-                plugins: 'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table help wordcount',
-                toolbar: 'undo redo | blocks | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image media | code help',
-                menubar: 'edit view insert format tools table help',
-                height: 400,
-                branding: false,
-                statusbar: true,
-                promotion: false,
-                placeholder: 'Descrivi il tuo evento in dettaglio...',
-                content_style: `
+    @section('scripts')
+        <!-- TinyMCE -->
+        <script src="https://cdn.tiny.cloud/1/apnxko6keluuolqvwrh4y8husr0yw428oeg9ylfo7v3nnw4k/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                // Inizializza TinyMCE per la descrizione
+                tinymce.init({
+                    selector: '#description',
+                    plugins: 'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table help wordcount',
+                    toolbar: 'undo redo | blocks | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image media | code help',
+                    menubar: 'edit view insert format tools table help',
+                    height: 400,
+                    branding: false,
+                    statusbar: true,
+                    promotion: false,
+                    placeholder: 'Descrivi il tuo evento in dettaglio...',
+                    content_style: `
             body {
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
                 font-size: 14px;
@@ -252,47 +256,69 @@
             p { margin-bottom: 0.8rem; }
             ul, ol { margin-left: 1.5rem; margin-bottom: 0.8rem; }
         `,
-                setup: function (editor) {
-                    editor.on('change', function () {
-                        editor.save();
-                    });
+                    setup: function (editor) {
+                        editor.on('change', function () {
+                            editor.save();
+                        });
 
-                    // Carica il contenuto esistente nell'editor
-                    editor.on('init', function() {
-                        editor.setContent(document.getElementById('description').value);
-                    });
+                        // Carica il contenuto esistente nell'editor
+                        editor.on('init', function() {
+                            editor.setContent(document.getElementById('description').value);
+                        });
+                    }
+                });
+
+                // Toggle per gli ospiti con gestione required
+                const allowGuestsCheckbox = document.getElementById('allow_guests');
+                const maxGuestsContainer = document.getElementById('max_guests_container');
+                const maxGuestsInput = document.getElementById('max_guests_per_user');
+
+                function toggleMaxGuests() {
+                    const isChecked = allowGuestsCheckbox.checked;
+                    maxGuestsContainer.style.display = isChecked ? 'block' : 'none';
+
+                    // Gestisci l'attributo required
+                    if (isChecked) {
+                        maxGuestsInput.setAttribute('required', 'required');
+                    } else {
+                        maxGuestsInput.removeAttribute('required');
+                        maxGuestsInput.value = ''; // Pulisci il valore quando nascosto
+                    }
                 }
-            });
 
-            // Toggle per gli ospiti
-            const allowGuestsCheckbox = document.getElementById('allow_guests');
-            const maxGuestsContainer = document.getElementById('max_guests_container');
+                allowGuestsCheckbox.addEventListener('change', toggleMaxGuests);
 
-            function toggleMaxGuests() {
-                maxGuestsContainer.style.display = allowGuestsCheckbox.checked ? 'block' : 'none';
-            }
+                // Inizializza allo stato corrente
+                toggleMaxGuests();
 
-            allowGuestsCheckbox.addEventListener('change', toggleMaxGuests);
+                // Gestisci l'invio del form
+                const form = document.querySelector('form');
+                form.addEventListener('submit', function(e) {
+                    // Se allow_guests non è checked, assicurati che max_guests_per_user non sia required
+                    if (!allowGuestsCheckbox.checked) {
+                        maxGuestsInput.removeAttribute('required');
+                    }
+                });
 
-            // Anteprima nuove immagini
-            const imageInput = document.getElementById('gallery_images');
-            const previewContainer = document.getElementById('imagePreviews');
+                // Anteprima nuove immagini
+                const imageInput = document.getElementById('gallery_images');
+                const previewContainer = document.getElementById('imagePreviews');
 
-            if (imageInput) {
-                imageInput.addEventListener('change', function() {
-                    previewContainer.innerHTML = '';
-                    previewContainer.style.display = 'none';
+                if (imageInput) {
+                    imageInput.addEventListener('change', function() {
+                        previewContainer.innerHTML = '';
+                        previewContainer.style.display = 'none';
 
-                    if (this.files.length > 0) {
-                        previewContainer.style.display = 'flex';
+                        if (this.files.length > 0) {
+                            previewContainer.style.display = 'flex';
 
-                        Array.from(this.files).forEach((file) => {
-                            if (file.type.startsWith('image/')) {
-                                const reader = new FileReader();
-                                reader.onload = function(e) {
-                                    const col = document.createElement('div');
-                                    col.className = 'col-md-3 mb-3';
-                                    col.innerHTML = `
+                            Array.from(this.files).forEach((file) => {
+                                if (file.type.startsWith('image/')) {
+                                    const reader = new FileReader();
+                                    reader.onload = function(e) {
+                                        const col = document.createElement('div');
+                                        col.className = 'col-md-3 mb-3';
+                                        col.innerHTML = `
                                 <div class="card">
                                     <img src="${e.target.result}" class="card-img-top" style="height: 150px; object-fit: cover;">
                                     <div class="card-body">
@@ -300,15 +326,15 @@
                                     </div>
                                 </div>
                             `;
-                                    previewContainer.appendChild(col);
-                                };
-                                reader.readAsDataURL(file);
-                            }
-                        });
-                    }
-                });
-            }
-        });
-    </script>
-@endsection
+                                        previewContainer.appendChild(col);
+                                    };
+                                    reader.readAsDataURL(file);
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+        </script>
+    @endsection
 @endsection

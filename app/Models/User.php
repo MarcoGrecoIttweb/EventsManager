@@ -87,4 +87,18 @@ class User extends Authenticatable
             ->withPivot('guests_count')
             ->withTimestamps();
     }
+    public function decklists()
+    {
+        return $this->hasMany(Decklist::class);
+    }
+
+    public function hasDecklistForEvent(Event $event): bool
+    {
+        return $this->decklists()->where('event_id', $event->id)->exists();
+    }
+
+    public function getDecklistForEvent(Event $event): ?Decklist
+    {
+        return $this->decklists()->where('event_id', $event->id)->first();
+    }
 }
