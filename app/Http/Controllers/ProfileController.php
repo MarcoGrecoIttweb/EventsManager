@@ -34,8 +34,8 @@ class ProfileController extends Controller
             ->where('date', '<=', now())
             ->orderBy('date', 'desc')
             ->get();
-
-        return view('profile.show', compact('user', 'upcomingEvents', 'pastEvents'));
+        $heroTitle = 'Profilo di '.$user->nickname;
+        return view('profile.show', compact('user', 'heroTitle','upcomingEvents', 'pastEvents'));
     }
 
     /**

@@ -1,7 +1,12 @@
 @extends('layouts.app')
 
-@section('title', 'Eventi Passati - EventSite')
+@section('title', $heroTitle . ' - EventSite')
 
+{{-- Passa le variabili al layout --}}
+@php
+    $heroImage = asset('storage/hero/homepage_hero.jpg');
+    $showHero = true;
+@endphp
 @section('content')
     <div class="container">
         <div class="row mb-4">

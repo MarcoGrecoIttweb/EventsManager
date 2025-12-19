@@ -1,6 +1,11 @@
 @extends('layouts.app')
 
-@section('title', $event->title . ' - EventSite')
+@section('title', $heroTitle . ' - EventSite')
+
+@php
+    $heroImage = asset('storage/hero/homepage_hero.jpg');
+    $showHero = true;
+@endphp
 
 @section('content')
     <div class="container">

@@ -11,6 +11,7 @@ class EventController extends Controller
     /**
      * Display a listing of the events.
      */
+// Nel metodo index() (eventi futuri)
     public function index()
     {
         $events = Event::with(['user', 'participants'])
@@ -19,25 +20,29 @@ class EventController extends Controller
             ->orderBy('date')
             ->paginate(12);
 
-        return view('events.index', compact('events'));
+        // Titolo per l'hero
+        $heroTitle = 'Prossimi Eventi';
+        $heroSubtitle = 'Scopri i tornei in programma';
+
+        return view('events.index', compact('events', 'heroTitle', 'heroSubtitle'));
     }
 
+// Nel metodo pastEvents()
     public function pastEvents()
     {
-
         $events = Event::with(['user', 'participants'])
             ->where('is_active', true)
             ->where('date', '<=', now())
             ->orderBy('date', 'desc')
             ->paginate(12);
 
+        $heroTitle = 'Eventi Passati';
+        $heroSubtitle = 'Rivedi i tornei conclusi';
 
-        return view('events.past', compact('events'));
+        return view('events.past', compact('events', 'heroTitle', 'heroSubtitle'));
     }
 
-    /**
-     * Display the specified event.
-     */
+// Nel metodo show()
     public function show(Event $event)
     {
         if (!$event->is_active) {
@@ -45,7 +50,7 @@ class EventController extends Controller
         }
 
         $userParticipating = false;
-        $comments = collect(); // Inizializza come Collection vuota
+        $comments = collect();
 
         if (Auth::check() && Auth::user()->isApproved()) {
             $userParticipating = Auth::user()->events()
@@ -55,11 +60,18 @@ class EventController extends Controller
             $comments = $event->comments()
                 ->with('user')
                 ->latest()
-                ->get(); // Questo restituisce una Collection
+                ->get();
         }
 
-        return view('events.show', compact('event', 'userParticipating', 'comments'));
+        // Titolo per l'hero specifico dell'evento
+        $heroTitle = $event->title;
+        $heroSubtitle = $event->date->format('d/m/Y H:i') . ' • ' . $event->city;
+
+        return view('events.show',
+            compact('event', 'userParticipating', 'comments', 'heroTitle', 'heroSubtitle')
+        );
     }
+
 
     /**
      * Participate in an event.
