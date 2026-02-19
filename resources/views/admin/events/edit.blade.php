@@ -46,7 +46,7 @@
                             </div>
 
                             <div class="row">
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <div class="mb-3">
                                         <label for="city" class="form-label">Città *</label>
                                         <input type="text" class="form-control @error('city') is-invalid @enderror"
@@ -56,14 +56,60 @@
                                         @enderror
                                     </div>
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <div class="mb-3">
-                                        <label for="address" class="form-label">Indirizzo Completo *</label>
+                                        <label for="venue" class="form-label">Nome Locale/Luogo</label>
+                                        <input type="text" class="form-control @error('venue') is-invalid @enderror"
+                                               id="venue" name="venue" value="{{ old('venue', $event->dove) }}" placeholder="es. Ristorante Da Mario">
+                                        @error('venue')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="address" class="form-label">Indirizzo *</label>
                                         <input type="text" class="form-control @error('address') is-invalid @enderror"
                                                id="address" name="address" value="{{ old('address', $event->address) }}" required>
                                         @error('address')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="cost" class="form-label">Costo (€)</label>
+                                        <input type="number" step="0.01" min="0" class="form-control @error('cost') is-invalid @enderror"
+                                               id="cost" name="cost" value="{{ old('cost', $event->costo) }}" placeholder="0.00">
+                                        <small class="form-text text-muted">Lascia vuoto se gratuito</small>
+                                        @error('cost')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="deadline" class="form-label">Scadenza Iscrizioni</label>
+                                        <input type="datetime-local" class="form-control @error('deadline') is-invalid @enderror"
+                                               id="deadline" name="deadline" value="{{ old('deadline', $event->deadline ? $event->deadline->format('Y-m-d\TH:i') : '') }}">
+                                        <small class="form-text text-muted">Lascia vuoto per nessuna scadenza</small>
+                                        @error('deadline')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3 pt-4">
+                                        <div class="form-check form-switch">
+                                            <input type="checkbox" class="form-check-input" id="elenco_visibile" name="elenco_visibile" value="1"
+                                                {{ old('elenco_visibile', $event->elenco_visibile) ? 'checked' : '' }}>
+                                            <label class="form-check-label" for="elenco_visibile">
+                                                Elenco partecipanti visibile
+                                            </label>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -131,9 +177,9 @@
                             <div class="mb-3">
                                 <label for="cover_image" class="form-label">Immagine Copertina</label>
 
-                                @if($event->cover_image)
+                                @if($event->cover_image_url)
                                     <div class="mb-2">
-                                        <img src="{{ Storage::disk('public')->url($event->cover_image) }}" alt="Cover" class="img-thumbnail" style="max-height: 200px;">
+                                        <img src="{{ $event->cover_image_url }}" alt="Cover" class="img-thumbnail" style="max-height: 200px;">
                                         <div class="form-check mt-2">
                                             <input type="checkbox" class="form-check-input" id="remove_cover" name="remove_cover" value="1">
                                             <label class="form-check-label text-danger" for="remove_cover">
@@ -188,24 +234,12 @@
                                 </small>
                             </div>
 
-                                {{-- Nuove immagini --}}
-                                <input type="file" class="form-control @error('gallery_images') is-invalid @enderror"
-                                       id="gallery_images" name="gallery_images[]" multiple accept="image/*">
-                                @error('gallery_images')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                                <small class="form-text text-muted">
-                                    Seleziona nuove immagini da aggiungere alla gallery
-                                </small>
-                            </div>
-
                             <div id="imagePreviews" class="row mb-3" style="display: none;"></div>
 
                             <div class="alert alert-info">
                                 <i class="fas fa-info-circle"></i>
                                 <strong>Informazioni evento:</strong><br>
                                 Creato da: <strong>{{ $event->user->name }}</strong> ({{ $event->user->nickname }})<br>
-                                Creato il: {{ $event->created_at->format('d/m/Y H:i') }}<br>
                                 Partecipanti attuali: <strong>{{ $event->participants_count }}</strong><br>
                                 Commenti: <strong>{{ $event->comments->count() }}</strong><br>
                                 Immagini: <strong>{{ $event->images_count }}</strong>
@@ -228,7 +262,7 @@
 
 @section('scripts')
     <!-- TinyMCE -->
-    <script src="https://cdn.tiny.cloud/1/bklljwbpvidz9oqemanmswdq49st98dpznthjvl77p3rfaf1/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+    <script src="https://cdn.tiny.cloud/1/{{ config('services.tinymce.api_key') }}/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Inizializza TinyMCE per la descrizione

@@ -77,13 +77,13 @@
                                     <strong>{{ $event->city }}</strong>
                                 </p>
                                 <div class="card-text text-muted small event-preview">
-                                    {!! $event->getHomepagePreview() !!}
+                                    {{ $event->getHomepagePreview() }}
                                 </div>
 
                                 {{-- Indicatore partecipazione --}}
                                 @auth
                                     @php
-                                        $userParticipating = $event->participants->contains(auth()->id());
+                                        $userParticipating = $event->participants->contains('userID', auth()->id());
                                     @endphp
                                     @if($userParticipating)
                                         <div class="alert alert-success alert-sm mb-0 py-2 mt-2">

@@ -14,38 +14,179 @@ class Event extends Model
 {
     use HasFactory;
 
+    // Legacy table mapping
+    protected $table = 'evento';
+    protected $primaryKey = 'IDevento';
+
+    // No timestamps in legacy
+    public $timestamps = false;
+
     protected $fillable = [
-        'title', 'description', 'date', 'city', 'address',
-        'max_participants', 'user_id', 'is_active', 'allow_guests',
-        'max_guests_per_user', 'cover_image'
+        'nome', 'thumbnail', 'immagine', 'descrizione', 'incipit',
+        'costo', 'dove', 'via', 'civico', 'citta', 'dataevento',
+        'datascadenza', 'numeromax', 'id_organizzatore', 'sondaggio',
+        'url_galleria', 'elenco_visibile', 'pubblicato',
+        'allow_guests', 'max_guests_per_user',
     ];
 
     protected $casts = [
-        'date' => 'datetime',
-        'is_active' => 'boolean',
+        'dataevento' => 'datetime',
+        'datascadenza' => 'datetime',
+        'costo' => 'float',
+        'pubblicato' => 'integer',
+        'elenco_visibile' => 'boolean',
         'allow_guests' => 'boolean',
     ];
 
+    // ─── Accessors (legacy → Laravel names used by views) ─────────
+
+    public function getIdAttribute()
+    {
+        return $this->IDevento;
+    }
+
+    public function getTitleAttribute()
+    {
+        return $this->nome;
+    }
+
+    public function setTitleAttribute($value)
+    {
+        $this->attributes['nome'] = $value;
+    }
+
+    public function getDescriptionAttribute()
+    {
+        return $this->descrizione;
+    }
+
+    public function setDescriptionAttribute($value)
+    {
+        $this->attributes['descrizione'] = $value;
+    }
+
+    public function getDateAttribute()
+    {
+        return $this->dataevento;
+    }
+
+    public function setDateAttribute($value)
+    {
+        $this->attributes['dataevento'] = $value;
+    }
+
+    public function getCityAttribute()
+    {
+        return $this->citta;
+    }
+
+    public function setCityAttribute($value)
+    {
+        $this->attributes['citta'] = $value;
+    }
+
+    public function getAddressAttribute()
+    {
+        return trim(($this->via ?? '') . ' ' . ($this->civico ?? ''));
+    }
+
+    public function setAddressAttribute($value)
+    {
+        $this->attributes['via'] = $value;
+        $this->attributes['civico'] = '';
+    }
+
+    public function getMaxParticipantsAttribute()
+    {
+        return $this->numeromax;
+    }
+
+    public function setMaxParticipantsAttribute($value)
+    {
+        $this->attributes['numeromax'] = $value;
+    }
+
+    public function getUserIdAttribute()
+    {
+        return $this->id_organizzatore;
+    }
+
+    public function getIsActiveAttribute()
+    {
+        return (bool) $this->pubblicato;
+    }
+
+    public function setIsActiveAttribute($value)
+    {
+        $this->attributes['pubblicato'] = $value ? 1 : 0;
+    }
+
+    public function getCoverImageAttribute()
+    {
+        return $this->immagine;
+    }
+
+    public function setCoverImageAttribute($value)
+    {
+        $this->attributes['immagine'] = $value;
+    }
+
+    public function getVenueAttribute()
+    {
+        return $this->dove;
+    }
+
+    public function setVenueAttribute($value)
+    {
+        $this->attributes['dove'] = $value;
+    }
+
+    public function getCostAttribute()
+    {
+        return $this->costo;
+    }
+
+    public function setCostAttribute($value)
+    {
+        $this->attributes['costo'] = $value;
+    }
+
+    public function getFormattedCostAttribute(): ?string
+    {
+        if ($this->costo === null || $this->costo == 0) {
+            return null;
+        }
+        return number_format($this->costo, 2, ',', '.') . ' €';
+    }
+
+    // ─── Relationships ────────────────────────────────────────────
+
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'id_organizzatore', 'userID');
     }
 
     public function participants(): BelongsToMany
     {
-        return $this->belongsToMany(User::class)
-            ->withPivot('guests_count')
-            ->withTimestamps();
+        return $this->belongsToMany(User::class, 'partecipa', 'id_evento', 'id_utente', 'IDevento', 'userID')
+            ->withPivot('amici', 'data_iscrizione');
     }
 
     public function comments(): HasMany
     {
-        return $this->hasMany(Comment::class);
+        return $this->hasMany(Comment::class, 'id_evento', 'IDevento');
     }
+
+    public function images(): HasMany
+    {
+        return $this->hasMany(EventImage::class, 'event_id', 'IDevento')->orderBy('order');
+    }
+
+    // ─── Computed attributes ──────────────────────────────────────
 
     public function getParticipantsCountAttribute(): int
     {
-        return $this->participants()->sum('guests_count') + $this->participants()->count();
+        return $this->participants()->sum('partecipa.amici') + $this->participants()->count();
     }
 
     public function getRealParticipantsCountAttribute(): int
@@ -55,9 +196,24 @@ class Event extends Model
 
     public function isFull(): bool
     {
-        if (!$this->max_participants) return false;
+        if (!$this->numeromax) return false;
+        return $this->participants_count >= $this->numeromax;
+    }
 
-        return $this->participants_count >= $this->max_participants;
+    public function isRegistrationOpen(): bool
+    {
+        if ($this->datascadenza && $this->datascadenza->year > 1 && $this->datascadenza->isPast()) {
+            return false;
+        }
+        return true;
+    }
+
+    public function getDeadlineAttribute()
+    {
+        if (!$this->datascadenza || $this->datascadenza->year <= 1) {
+            return null;
+        }
+        return $this->datascadenza;
     }
 
     public function canAddMoreGuests(User $user): bool
@@ -66,14 +222,15 @@ class Event extends Model
             return false;
         }
 
-        $participation = $this->participants()->where('user_id', $user->id)->first();
+        $participation = $this->participants()->where('utente.userID', $user->getKey())->first();
 
         if (!$participation) {
             return false;
         }
 
-        $currentGuests = $participation->pivot->guests_count;
-        $canAddMore = $currentGuests < $this->max_guests_per_user;
+        $currentGuests = $participation->pivot->amici ?? 0;
+        $maxGuests = $this->max_guests_per_user ?? 10;
+        $canAddMore = $currentGuests < $maxGuests;
         $eventNotFull = !$this->isFull();
 
         return $canAddMore && $eventNotFull;
@@ -81,37 +238,26 @@ class Event extends Model
 
     public function getUserGuestsCount(User $user): int
     {
-        $participation = $this->participants()->where('user_id', $user->id)->first();
-        return $participation ? $participation->pivot->guests_count : 0;
+        $participation = $this->participants()->where('utente.userID', $user->getKey())->first();
+        return $participation ? ($participation->pivot->amici ?? 0) : 0;
     }
 
-    /**
-     * Get the percentage of occupied seats.
-     */
     public function getOccupancyPercentageAttribute(): float
     {
-        if (!$this->max_participants) {
+        if (!$this->numeromax) {
             return 0;
         }
-
-        return min(($this->participants_count / $this->max_participants) * 100, 100);
+        return min(($this->participants_count / $this->numeromax) * 100, 100);
     }
 
-    /**
-     * Check if event is almost full (80% or more).
-     */
     public function isAlmostFull(): bool
     {
-        if (!$this->max_participants) {
+        if (!$this->numeromax) {
             return false;
         }
-
         return $this->occupancy_percentage >= 80 && !$this->isFull();
     }
 
-    /**
-     * Get occupancy status for display.
-     */
     public function getOccupancyStatusAttribute(): string
     {
         if ($this->isFull()) {
@@ -123,102 +269,111 @@ class Event extends Model
         }
     }
 
-    /**
-     * Get safe HTML content for event description.
-     */
     public function getSafeDescriptionAttribute(): string
     {
-        if (empty($this->description)) {
+        if (empty($this->descrizione)) {
             return '';
         }
 
-        // Tag HTML permessi per la descrizione
         $allowedTags = '<p><br><strong><b><em><i><u><a><ul><ol><li><code><pre><span><div><h1><h2><h3><h4><h5><h6><blockquote><table><thead><tbody><tr><th><td>';
+        $cleanContent = strip_tags($this->descrizione, $allowedTags);
 
-        // Rimuovi tutti i tag non permessi
-        $cleanContent = strip_tags($this->description, $allowedTags);
-
-        // Per sicurezza, sanitizza gli attributi href
         $cleanContent = preg_replace_callback('/<a\s+([^>]*)>/i', function($matches) {
             $attributes = $matches[1];
-
-            // Estrai l'href se presente
             $href = '';
             if (preg_match('/href=(["\'])(.*?)\1/i', $attributes, $hrefMatches)) {
                 $url = $hrefMatches[2];
-                // Permetti solo http, https e mailto
                 if (preg_match('/^(https?:\/\/|mailto:)/i', $url)) {
                     $href = ' href="' . e($url) . '"';
                 }
             }
-
             return '<a' . $href . '>';
         }, $cleanContent);
 
         return $cleanContent;
     }
 
-    /**
-     * Get formatted preview for homepage (simplified version).
-     */
-    public function getHomepagePreview($length = 2000): string
+    public function getShortPreviewAttribute(): string
     {
-        if (empty($this->description)) {
+        return $this->getHomepagePreview(150);
+    }
+
+    public function getHomepagePreview($length = 200): string
+    {
+        if (empty($this->descrizione)) {
             return '';
         }
 
-        // Tag HTML permessi
-        $allowedTags = '<strong><b><em><i><u><br><span>';
-        $cleanContent = strip_tags($this->description, $allowedTags);
+        // Strip ALL HTML to avoid unclosed tags breaking the page layout
+        $plainText = strip_tags($this->descrizione);
+        $plainText = html_entity_decode($plainText, ENT_QUOTES, 'UTF-8');
+        $plainText = preg_replace('/\s+/', ' ', $plainText);
+        $plainText = trim($plainText);
 
-        // Rimuovi tag complessi
-        $cleanContent = preg_replace('/<h[1-6][^>]*>.*?<\/h[1-6]>/i', '', $cleanContent);
-        $cleanContent = preg_replace('/<div[^>]*>.*?<\/div>/is', '', $cleanContent);
-
-        // Converti paragrafi in line breaks
-        $cleanContent = str_replace('</p>', '<br>', $cleanContent);
-        $cleanContent = preg_replace('/<p[^>]*>/i', '', $cleanContent);
-
-        // Usa la funzione Str::limit di Laravel che gestisce già l'HTML di base
-        return Str::limit($cleanContent, $length);
+        return Str::limit($plainText, $length);
     }
 
-    public function images(): HasMany
-    {
-        return $this->hasMany(EventImage::class)->orderBy('order');
-    }
-
-    /**
-     * Get cover image URL
-     */
     public function getCoverImageUrlAttribute(): ?string
     {
-        if (!$this->cover_image) {
+        if (!$this->immagine) {
             return null;
         }
 
-        // Se cover_image è già un percorso completo
-        if (str_contains($this->cover_image, '/')) {
-            return Storage::disk('public')->url($this->cover_image);
+        // Legacy images are stored in public/upload_immagini/
+        if (file_exists(public_path("upload_immagini/{$this->immagine}"))) {
+            return asset("upload_immagini/{$this->immagine}");
         }
 
-        // Se cover_image è solo il nome file, costruisci il percorso
-        return Storage::disk('public')->url("events/{$this->id}/{$this->cover_image}");
+        // New Laravel-uploaded images
+        if (str_contains($this->immagine, '/')) {
+            return Storage::disk('public')->url($this->immagine);
+        }
+
+        return Storage::disk('public')->url("events/{$this->getKey()}/{$this->immagine}");
     }
 
-    /**
-     * Check if event has images
-     */
+    public function getThumbnailUrlAttribute(): ?string
+    {
+        if (!$this->thumbnail) {
+            return null;
+        }
+
+        if (file_exists(public_path("upload_immagini/{$this->thumbnail}"))) {
+            return asset("upload_immagini/{$this->thumbnail}");
+        }
+
+        return $this->cover_image_url;
+    }
+
     public function getHasImagesAttribute(): bool
     {
         return $this->images()->count() > 0;
     }
 
-    /**
-     * Get images count
-     */
     public function getImagesCountAttribute(): int
     {
         return $this->images()->count();
+    }
+
+    // ─── Scopes ───────────────────────────────────────────────────
+
+    public function scopeActive($query)
+    {
+        return $query->where('pubblicato', 1);
+    }
+
+    public function scopeUpcoming($query)
+    {
+        return $query->where('dataevento', '>', now());
+    }
+
+    public function scopePast($query)
+    {
+        return $query->where('dataevento', '<=', now());
+    }
+
+    public function scopeOrdered($query, $direction = 'asc')
+    {
+        return $query->orderBy('dataevento', $direction);
     }
 }

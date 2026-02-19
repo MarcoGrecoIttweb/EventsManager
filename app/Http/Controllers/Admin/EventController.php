@@ -17,69 +17,78 @@ class EventController extends Controller
     {
         $this->imageService = $imageService;
     }
+
     public function index()
     {
         $events = Event::with(['user', 'participants'])
-            ->where('is_active', true)
-            ->where('date', '>', now())
-            ->orderBy('date')
-            ->paginate(12); // Aggiungi paginate invece di get()
+            ->active()
+            ->upcoming()
+            ->ordered()
+            ->paginate(12);
 
         return view('events.index', compact('events'));
     }
 
-    /**
-     * Show the form for creating a new event.
-     */
     public function create()
     {
         return view('admin.events.create');
     }
 
-    /**
-     * Store a newly created event.
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'title' => 'required|string|max:255',
+            'title' => 'required|string|max:120',
             'description' => 'required|string|min:10',
             'date' => 'required|date|after:now',
-            'city' => 'required|string|max:255',
-            'address' => 'required|string|max:500',
+            'city' => 'required|string|max:15',
+            'venue' => 'nullable|string|max:50',
+            'address' => 'required|string|max:50',
+            'cost' => 'nullable|numeric|min:0',
+            'deadline' => 'nullable|date',
+            'elenco_visibile' => 'sometimes|boolean',
             'max_participants' => 'nullable|integer|min:1',
             'allow_guests' => 'sometimes|boolean',
-            'max_guests_per_user' => 'required_if:allow_guests,true|integer|min:1|max:10',
+            'max_guests_per_user' => 'nullable|integer|min:1|max:10',
             'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'gallery_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
         ]);
 
-        // Gestisci il campo allow_guests
-        $validated['allow_guests'] = $request->has('allow_guests');
+        $allowGuests = $request->has('allow_guests');
 
-        if (!$validated['allow_guests']) {
-            $validated['max_guests_per_user'] = 0;
-        }
+        // Create event with legacy column names
+        $event = Event::create([
+            'nome' => $validated['title'],
+            'descrizione' => $validated['description'],
+            'dataevento' => $validated['date'],
+            'citta' => $validated['city'],
+            'dove' => $validated['venue'] ?? '',
+            'via' => $validated['address'],
+            'civico' => '',
+            'costo' => $validated['cost'] ?? null,
+            'numeromax' => $validated['max_participants'] ?? null,
+            'id_organizzatore' => Auth::id(),
+            'pubblicato' => 1,
+            'elenco_visibile' => $request->has('elenco_visibile') ? 1 : 0,
+            'sondaggio' => '',
+            'url_galleria' => '',
+            'datascadenza' => $validated['deadline'] ?? $validated['date'],
+            'allow_guests' => $allowGuests,
+            'max_guests_per_user' => $allowGuests ? ($validated['max_guests_per_user'] ?? 3) : 0,
+        ]);
 
-        // Crea l'evento
-        $event = Event::create(array_merge($validated, [
-            'user_id' => Auth::id(),
-            'is_active' => true
-        ]));
-
-        // Gestisci cover image
+        // Handle cover image
         if ($request->hasFile('cover_image')) {
             $coverResult = $this->imageService->uploadImage(
                 $request->file('cover_image'),
-                "events/{$event->id}"
+                "events/{$event->getKey()}"
             );
 
             if ($coverResult['success']) {
-                $event->update(['cover_image' => $coverResult['path']]); // Salva il path completo
+                $event->update(['immagine' => $coverResult['path']]);
             }
         }
 
-        // Gestisci gallery images
+        // Handle gallery images
         if ($request->hasFile('gallery_images')) {
             $this->processGalleryImages($request->file('gallery_images'), $event);
         }
@@ -88,9 +97,6 @@ class EventController extends Controller
             ->with('success', 'Evento creato con successo!');
     }
 
-    /**
-     * Display the specified event.
-     */
     public function show(Event $event)
     {
         $event->load(['user', 'participants', 'comments.user', 'images']);
@@ -98,33 +104,29 @@ class EventController extends Controller
         return view('admin.events.show', compact('event'));
     }
 
-    /**
-     * Show the form for editing the specified event.
-     */
     public function edit(Event $event)
     {
         $event->load('images');
         return view('admin.events.edit', compact('event'));
     }
 
-    /**
-     * Update the specified event.
-     */
     public function update(Request $request, Event $event)
     {
-        // Validazione per i campi non-file
         $validated = $request->validate([
-            'title' => 'required|string|max:255',
+            'title' => 'required|string|max:120',
             'description' => 'required|string|min:10',
-            'date' => 'required|date|after:now',
-            'city' => 'required|string|max:255',
-            'address' => 'required|string|max:500',
+            'date' => 'required|date',
+            'city' => 'required|string|max:15',
+            'venue' => 'nullable|string|max:50',
+            'address' => 'required|string|max:50',
+            'cost' => 'nullable|numeric|min:0',
+            'deadline' => 'nullable|date',
+            'elenco_visibile' => 'sometimes|boolean',
             'max_participants' => 'nullable|integer|min:1',
             'allow_guests' => 'sometimes|boolean',
-            'max_guests_per_user' => 'required_if:allow_guests,true|integer|min:1|max:10',
+            'max_guests_per_user' => 'nullable|integer|min:1|max:10',
         ]);
 
-        // Validazione separata per i file
         if ($request->hasFile('cover_image')) {
             $request->validate([
                 'cover_image' => 'file|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
@@ -137,93 +139,92 @@ class EventController extends Controller
             ]);
         }
 
-        // Gestisci il campo allow_guests
-        $validated['allow_guests'] = $request->has('allow_guests');
+        $allowGuests = $request->has('allow_guests');
+        $isActive = $request->has('is_active');
 
-        if (!$validated['allow_guests']) {
-            $validated['max_guests_per_user'] = 0;
+        // Map to legacy columns
+        $updateData = [
+            'nome' => $validated['title'],
+            'descrizione' => $validated['description'],
+            'dataevento' => $validated['date'],
+            'citta' => $validated['city'],
+            'dove' => $validated['venue'] ?? '',
+            'via' => $validated['address'],
+            'costo' => $validated['cost'] ?? null,
+            'datascadenza' => $validated['deadline'] ?? $validated['date'],
+            'elenco_visibile' => $request->has('elenco_visibile') ? 1 : 0,
+            'numeromax' => $validated['max_participants'] ?? null,
+            'pubblicato' => $isActive ? 1 : 0,
+            'allow_guests' => $allowGuests,
+            'max_guests_per_user' => $allowGuests ? ($validated['max_guests_per_user'] ?? 3) : 0,
+        ];
+
+        // Handle cover image removal
+        if ($request->has('remove_cover') && $event->immagine) {
+            $this->imageService->deleteImage("events/{$event->getKey()}/{$event->immagine}");
+            $updateData['immagine'] = null;
         }
 
-
-        // Gestisci rimozione cover image
-        if ($request->has('remove_cover') && $event->cover_image) {
-            $this->imageService->deleteImage("events/{$event->id}/{$event->cover_image}");
-            $validated['cover_image'] = null;
-        }
-
-        // Gestisci nuova cover image
+        // Handle new cover image
         if ($request->hasFile('cover_image')) {
-            // Elimina la vecchia cover se esiste
-            if ($event->cover_image) {
-                $this->imageService->deleteImage("events/{$event->id}/{$event->cover_image}");
+            if ($event->immagine) {
+                $this->imageService->deleteImage("events/{$event->getKey()}/{$event->immagine}");
             }
 
             $coverResult = $this->imageService->uploadImage(
                 $request->file('cover_image'),
-                "events/{$event->id}"
+                "events/{$event->getKey()}"
             );
 
             if ($coverResult['success']) {
-                $validated['cover_image'] = $coverResult['path']; // Salva il path completo
+                $updateData['immagine'] = $coverResult['path'];
             }
         }
 
-        // Elimina immagini selezionate
+        // Delete selected gallery images
         if ($request->has('delete_images')) {
             $this->deleteGalleryImages($request->delete_images);
         }
 
-        // Aggiungi nuove immagini alla gallery
+        // Add new gallery images
         if ($request->hasFile('gallery_images')) {
             $this->processGalleryImages($request->file('gallery_images'), $event);
         }
 
-        $event->update($validated);
+        $event->update($updateData);
 
         return redirect()->route('admin.events.index')
             ->with('success', 'Evento aggiornato con successo!');
     }
 
-    /**
-     * Remove the specified event.
-     */
     public function destroy(Event $event)
     {
-        // Elimina tutte le immagini dell'evento
-        $this->imageService->deleteEventFolder($event->id);
-
-        // Elimina l'evento
+        $this->imageService->deleteEventFolder($event->getKey());
         $event->delete();
 
         return redirect()->route('admin.events.index')
             ->with('success', 'Evento eliminato con successo!');
     }
 
-    /**
-     * Toggle event status (active/inactive)
-     */
     public function toggleStatus(Event $event)
     {
         $event->update([
-            'is_active' => !$event->is_active
+            'pubblicato' => $event->pubblicato ? 0 : 1
         ]);
 
-        $status = $event->is_active ? 'attivato' : 'disattivato';
+        $status = $event->pubblicato ? 'attivato' : 'disattivato';
 
         return back()->with('success', "Evento {$status} con successo!");
     }
 
-    /**
-     * Process gallery images upload
-     */
     private function processGalleryImages(array $images, Event $event): void
     {
-        $uploadResults = $this->imageService->uploadEventImages($images, $event->id);
+        $uploadResults = $this->imageService->uploadEventImages($images, $event->getKey());
 
         foreach ($uploadResults as $result) {
             if ($result['success']) {
                 EventImage::create([
-                    'event_id' => $event->id,
+                    'event_id' => $event->getKey(),
                     'filename' => $result['filename'],
                     'path' => $result['path'],
                     'original_name' => $result['original_name'],
@@ -235,9 +236,6 @@ class EventController extends Controller
         }
     }
 
-    /**
-     * Delete gallery images
-     */
     private function deleteGalleryImages(array $imageIds): void
     {
         $images = EventImage::whereIn('id', $imageIds)->get();

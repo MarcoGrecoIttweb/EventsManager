@@ -19,10 +19,10 @@
                     <form method="POST" action="{{ route('login.post') }}">
                         @csrf
                         <div class="mb-3">
-                            <label for="email" class="form-label">Email</label>
-                            <input type="email" class="form-control @error('email') is-invalid @enderror"
-                                   id="email" name="email" value="{{ old('email') }}" required>
-                            @error('email')
+                            <label for="username" class="form-label">Nickname</label>
+                            <input type="text" class="form-control @error('username') is-invalid @enderror"
+                                   id="username" name="username" value="{{ old('username') }}" required>
+                            @error('username')
                             <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
@@ -39,6 +39,9 @@
 
                     <div class="text-center mt-3">
                         <a href="{{ route('register') }}">Non hai un account? Registrati</a>
+                    </div>
+                    <div class="text-center mt-2">
+                        <a href="{{ route('password.request') }}">Password dimenticata?</a>
                     </div>
                 </div>
             </div>

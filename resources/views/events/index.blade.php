@@ -84,7 +84,7 @@
                                     <strong>{{ $event->city }}</strong>
                                 </p>
                                 <div class="card-text text-muted small event-preview">
-                                    {!! $event->getHomepagePreview() !!}
+                                    {{ $event->getHomepagePreview() }}
                                 </div>
 
                                 @if($event->isFull())

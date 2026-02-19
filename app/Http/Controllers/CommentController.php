@@ -9,9 +9,6 @@ use Illuminate\Support\Facades\Auth;
 
 class CommentController extends Controller
 {
-    /**
-     * Store a newly created comment.
-     */
     public function store(Request $request, Event $event)
     {
         if (!Auth::check()) {
@@ -32,9 +29,9 @@ class CommentController extends Controller
             $cleanContent = $this->sanitizeHtml($request->content);
 
             $comment = Comment::create([
-                'content' => $cleanContent,
-                'event_id' => $event->id,
-                'user_id' => Auth::id(),
+                'testo' => $cleanContent,
+                'id_evento' => $event->getKey(),
+                'id_utente' => Auth::id(),
             ]);
 
             return redirect()->route('events.show', $event)
@@ -47,34 +44,26 @@ class CommentController extends Controller
         }
     }
 
-    /**
-     * Show the form for editing the specified comment.
-     */
     public function edit(Comment $comment)
     {
         if (!Auth::check()) {
             return redirect()->route('login');
         }
 
-        // Solo il proprietario del commento può modificarlo
-        if (Auth::id() !== $comment->user_id) {
+        if (Auth::id() !== $comment->id_utente) {
             return back()->with('error', 'Non autorizzato a modificare questo commento.');
         }
 
         return view('comments.edit', compact('comment'));
     }
 
-    /**
-     * Update the specified comment.
-     */
     public function update(Request $request, Comment $comment)
     {
         if (!Auth::check()) {
             return redirect()->route('login');
         }
 
-        // Solo il proprietario del commento può modificarlo
-        if (Auth::id() !== $comment->user_id) {
+        if (Auth::id() !== $comment->id_utente) {
             return back()->with('error', 'Non autorizzato a modificare questo commento.');
         }
 
@@ -86,8 +75,8 @@ class CommentController extends Controller
             $cleanContent = strip_tags($request->content, '<p><br><strong><em><u><a><ul><ol><li><code>');
 
             $comment->update([
-                'content' => $cleanContent,
-                'edited_at' => now(), // Imposta la data di modifica
+                'testo' => $cleanContent,
+                'edited_at' => now(),
             ]);
 
             return redirect()->route('events.show', $comment->event)
@@ -100,16 +89,13 @@ class CommentController extends Controller
         }
     }
 
-    /**
-     * Remove the specified comment.
-     */
     public function destroy(Comment $comment)
     {
         if (!Auth::check()) {
             return redirect()->route('login');
         }
 
-        if (Auth::id() !== $comment->user_id && !Auth::user()->isAdmin()) {
+        if (Auth::id() !== $comment->id_utente && !Auth::user()->isAdmin()) {
             return back()->with('error', 'Non autorizzato a eliminare questo commento.');
         }
 
@@ -123,21 +109,13 @@ class CommentController extends Controller
             return back()->with('error', 'Errore durante l\'eliminazione del commento.');
         }
     }
-    // Aggiungi questo metodo privato nella classe
+
     private function sanitizeHtml($content)
     {
-        // Tag permessi
         $allowedTags = '<p><br><strong><b><em><i><u><a><ul><ol><li><code><pre><span><div>';
-
-        // Rimuovi tag non permessi
         $cleanContent = strip_tags($content, $allowedTags);
-
-        // Rimuovi attributi pericolosi
         $cleanContent = preg_replace('/<([a-z][a-z0-9]*)[^>]*?(\/?)>/i', '<$1$2>', $cleanContent);
-
-        // Sicurezza extra per i link
         $cleanContent = preg_replace_callback('/<a(.*?)>/i', function($matches) {
-            // Estrai solo l'href se presente
             if (preg_match('/href=["\']([^"\'<>]*)["\']/i', $matches[1], $hrefMatch)) {
                 $href = e($hrefMatch[1]);
                 return '<a href="' . $href . '">';

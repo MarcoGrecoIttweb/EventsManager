@@ -10,28 +10,21 @@ use App\Mail\NewsletterMail;
 
 class NewsletterController extends Controller
 {
-    /**
-     * Show the newsletter form.
-     */
     public function create()
     {
-        $usersCount = User::where('is_admin', false)->where('status', 'approved')->count();
-        $participantsCount = User::where('is_admin', false)
-            ->where('status', 'approved')
+        $usersCount = User::nonAdmin()->where('abilitato', 1)->count();
+        $participantsCount = User::nonAdmin()
+            ->where('abilitato', 1)
             ->has('events')
             ->count();
 
-        // Ottieni tutti gli utenti per la selezione individuale
-        $users = User::where('is_admin', false)
-            ->orderBy('name')
+        $users = User::nonAdmin()
+            ->orderBy('nome')
             ->get();
 
         return view('admin.newsletter.create', compact('usersCount', 'participantsCount', 'users'));
     }
 
-    /**
-     * Send the newsletter.
-     */
     public function send(Request $request)
     {
         $request->validate([
@@ -39,29 +32,27 @@ class NewsletterController extends Controller
             'message' => 'required|string|min:10',
             'target' => 'required|in:all,approved,participants,pending,selected',
             'selected_users' => 'nullable|array',
-            'selected_users.*' => 'exists:users,id'
+            'selected_users.*' => 'exists:utente,userID'
         ]);
 
-        // Seleziona gli utenti in base al target
-        $usersQuery = User::where('is_admin', false);
+        $usersQuery = User::nonAdmin();
 
         switch ($request->target) {
             case 'approved':
-                $usersQuery->where('status', 'approved');
+                $usersQuery->where('abilitato', 1);
                 break;
             case 'participants':
-                $usersQuery->where('status', 'approved')->has('events');
+                $usersQuery->where('abilitato', 1)->has('events');
                 break;
             case 'pending':
-                $usersQuery->where('status', 'pending');
+                $usersQuery->where('abilitato', 0);
                 break;
             case 'selected':
                 if (empty($request->selected_users)) {
                     return back()->withErrors(['selected_users' => 'Seleziona almeno un utente.']);
                 }
-                $usersQuery->whereIn('id', $request->selected_users);
+                $usersQuery->whereIn('userID', $request->selected_users);
                 break;
-            // 'all' include tutti gli utenti non admin
         }
 
         $users = $usersQuery->get();
@@ -73,7 +64,6 @@ class NewsletterController extends Controller
         $sentCount = 0;
         $failedEmails = [];
 
-        // Invia l'email a ogni utente
         foreach ($users as $user) {
             try {
                 Mail::to($user->email)->send(new NewsletterMail(
@@ -99,38 +89,43 @@ class NewsletterController extends Controller
             ->with('failed_emails', $failedEmails);
     }
 
-    /**
-     * Get users for selection (AJAX).
-     */
     public function getUsers(Request $request)
     {
         $search = $request->input('search');
 
-        $users = User::where('is_admin', false)
+        $users = User::nonAdmin()
             ->when($search, function($query, $search) {
                 return $query->where(function($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")
+                    $q->where('nome', 'like', "%{$search}%")
                         ->orWhere('email', 'like', "%{$search}%")
-                        ->orWhere('nickname', 'like', "%{$search}%");
+                        ->orWhere('username', 'like', "%{$search}%");
                 });
             })
-            ->orderBy('name')
+            ->orderBy('nome')
             ->limit(50)
-            ->get(['id', 'name', 'email', 'nickname', 'status']);
+            ->get(['userID', 'nome', 'email', 'username', 'abilitato']);
 
-        return response()->json($users);
+        // Map to expected field names for the frontend
+        $mapped = $users->map(function ($user) {
+            return [
+                'id' => $user->userID,
+                'name' => $user->nome,
+                'email' => $user->email,
+                'nickname' => $user->username,
+                'status' => $user->status,
+            ];
+        });
+
+        return response()->json($mapped);
     }
 
-    /**
-     * Get newsletter statistics.
-     */
     public function stats()
     {
-        $totalUsers = User::where('is_admin', false)->count();
-        $approvedUsers = User::where('is_admin', false)->where('status', 'approved')->count();
-        $pendingUsers = User::where('is_admin', false)->where('status', 'pending')->count();
-        $participants = User::where('is_admin', false)
-            ->where('status', 'approved')
+        $totalUsers = User::nonAdmin()->count();
+        $approvedUsers = User::nonAdmin()->where('abilitato', 1)->count();
+        $pendingUsers = User::nonAdmin()->where('abilitato', 0)->count();
+        $participants = User::nonAdmin()
+            ->where('abilitato', 1)
             ->has('events')
             ->count();
 

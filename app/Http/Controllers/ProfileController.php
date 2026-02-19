@@ -10,74 +10,71 @@ use Illuminate\Support\Facades\Storage;
 
 class ProfileController extends Controller
 {
-    /**
-     * Display the specified user profile.
-     */
-    /**
-     * Display the specified user profile.
-     */
     public function show(User $user)
     {
-        // Autorizzazione tramite policy
         $this->authorize('view', $user);
 
-        // Carica gli eventi a cui l'utente partecipa (PROSSIMI EVENTI)
         $upcomingEvents = $user->events()
-            ->where('is_active', true)
-            ->where('date', '>', now())
-            ->orderBy('date')
+            ->where('pubblicato', 1)
+            ->where('dataevento', '>', now())
+            ->orderBy('dataevento')
             ->get();
 
-        // Carica gli eventi passati a cui l'utente ha partecipato
         $pastEvents = $user->events()
-            ->where('is_active', true)
-            ->where('date', '<=', now())
-            ->orderBy('date', 'desc')
+            ->where('pubblicato', 1)
+            ->where('dataevento', '<=', now())
+            ->orderBy('dataevento', 'desc')
             ->get();
 
         return view('profile.show', compact('user', 'upcomingEvents', 'pastEvents'));
     }
 
-    /**
-     * Show the form for editing the user profile.
-     */
     public function edit(User $user)
     {
-        // Autorizzazione tramite policy
         $this->authorize('update', $user);
 
         return view('profile.edit', compact('user'));
     }
 
-    /**
-     * Update the user profile.
-     */
     public function update(Request $request, User $user)
     {
-        // Autorizzazione tramite policy
         $this->authorize('update', $user);
 
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'nickname' => 'required|string|max:255|unique:users,nickname,' . $user->id,
-            'email' => 'required|email|max:255|unique:users,email,' . $user->id,
-            'bio' => 'nullable|string|max:1000',
+            'name' => 'required|string|max:20',
+            'cognome' => 'required|string|max:20',
+            'nickname' => 'required|string|max:20|unique:utente,username,' . $user->getKey() . ',userID',
+            'email' => 'required|email|max:60|unique:utente,email,' . $user->getKey() . ',userID',
+            'telefono' => 'nullable|string|max:20',
+            'datanascita' => 'nullable|date|before:today',
+            'residenza' => 'nullable|string|max:30',
+            'sesso' => 'required|in:m,f',
+            'mail_visibile' => 'sometimes|boolean',
+            'description' => 'nullable|string|max:1000',
             'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
         ]);
 
-        // Gestisci l'upload della foto
-        if ($request->hasFile('photo')) {
-            // Elimina la vecchia foto se esiste
-            if ($user->photo) {
-                Storage::disk('public')->delete($user->photo);
-            }
+        $updateData = [
+            'nome' => $validated['name'],
+            'cognome' => $validated['cognome'],
+            'username' => $validated['nickname'],
+            'email' => $validated['email'],
+            'telefono' => $validated['telefono'] ?? null,
+            'datanascita' => $validated['datanascita'] ?? null,
+            'residenza' => $validated['residenza'] ?? null,
+            'sesso' => $validated['sesso'],
+            'mail_visibile' => $request->has('mail_visibile') ? 1 : 0,
+            'descr' => $validated['description'] ?? null,
+        ];
 
-            // Salva la nuova foto
-            $path = $request->file('photo')->store('profiles', 'public');
-            $validated['photo'] = $path;
+        if ($request->hasFile('photo')) {
+            $file = $request->file('photo');
+            $filename = uniqid() . '_' . $file->getClientOriginalName();
+            $file->move(public_path('upload_avatar'), $filename);
+            $updateData['avatar'] = $filename;
         }
 
-        $user->update($validated);
+        $user->update($updateData);
 
         return redirect()->route('profile.show', $user)
             ->with('success', 'Profilo aggiornato con successo!');

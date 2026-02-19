@@ -30,6 +30,28 @@
                             <i class="fas fa-history"></i> Eventi Passati
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('friends.index') }}">
+                            <i class="fas fa-user-friends"></i> Amici
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('users.search') }}">
+                            <i class="fas fa-search"></i> Cerca Utenti
+                        </a>
+                    </li>
+                    @if(auth()->user()->canManageEvents())
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="manageDropdown" role="button"
+                               data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-calendar-plus"></i> I Miei Eventi
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="manageDropdown">
+                                <li><a class="dropdown-item" href="{{ route('manage.events.index') }}">I Miei Eventi</a></li>
+                                <li><a class="dropdown-item" href="{{ route('manage.events.create') }}">Crea Evento</a></li>
+                            </ul>
+                        </li>
+                    @endif
                     @if(auth()->user()->isAdmin())
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
@@ -40,6 +62,7 @@
                                 <li><a class="dropdown-item" href="{{ route('admin.dashboard') }}">Dashboard</a></li>
                                 <li><a class="dropdown-item" href="{{ route('admin.events.index') }}">Gestione Eventi</a></li>
                                 <li><a class="dropdown-item" href="{{ route('admin.users.index') }}">Gestione Utenti</a></li>
+                                <li><a class="dropdown-item" href="{{ route('admin.groups.index') }}">Gestione Gruppi</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="{{ route('admin.newsletter.create') }}">Newsletter</a></li>
                                 <li><a class="dropdown-item" href="{{ route('admin.newsletter.stats') }}">Statistiche Newsletter</a></li>

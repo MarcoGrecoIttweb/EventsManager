@@ -13,36 +13,64 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $credentials = $request->validate([
-            'email' => 'required|email',
+            'username' => 'required|string',
             'password' => 'required'
         ]);
 
-        if (Auth::attempt($credentials)) {
-            $request->session()->regenerate();
+        $user = User::where('username', $credentials['username'])->first();
 
-            // Controlla se l'utente è approvato
-            if (!auth()->user()->isApproved()) {
-                Auth::logout();
-                return back()->withErrors([
-                    'email' => 'Il tuo account è in attesa di approvazione.'
-                ]);
-            }
-
-            return redirect()->intended(route('home'));
+        if (!$user) {
+            return back()->withErrors([
+                'username' => 'Credenziali non valide.'
+            ]);
         }
 
-        return back()->withErrors([
-            'email' => 'Credenziali non valide.'
-        ]);
+        // Dual-hash: try bcrypt first, then MD5 with gradual migration
+        $authenticated = false;
+
+        if (Hash::check($credentials['password'], $user->password)) {
+            // Password is already bcrypt
+            $authenticated = true;
+        } elseif (md5($credentials['password']) === $user->password) {
+            // Password is still MD5 - re-hash to bcrypt for gradual migration
+            $user->password = Hash::make($credentials['password']);
+            $user->save();
+            $authenticated = true;
+        }
+
+        if (!$authenticated) {
+            return back()->withErrors([
+                'username' => 'Credenziali non valide.'
+            ]);
+        }
+
+        // Check if user is approved
+        if (!$user->isApproved()) {
+            return back()->withErrors([
+                'username' => 'Il tuo account è in attesa di approvazione.'
+            ]);
+        }
+
+        Auth::login($user);
+        $request->session()->regenerate();
+
+        // Update last access
+        $user->ultimo_accesso = now();
+        $user->save();
+
+        return redirect()->intended(route('home'));
     }
 
     public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'nickname' => 'required|string|max:255|unique:users',
-            'email' => 'required|email|unique:users',
-            'password' => 'required|min:8|confirmed'
+            'name' => 'required|string|max:20',
+            'cognome' => 'required|string|max:20',
+            'nickname' => 'required|string|max:20|unique:utente,username',
+            'email' => 'required|email|unique:utente,email',
+            'password' => 'required|min:8|confirmed',
+            'sesso' => 'required|in:m,f',
+            'residenza' => 'nullable|string|max:30',
         ]);
 
         if ($validator->fails()) {
@@ -52,11 +80,15 @@ class AuthController extends Controller
         }
 
         $user = User::create([
-            'name' => $request->name,
-            'nickname' => $request->nickname,
+            'nome' => $request->name,
+            'cognome' => $request->cognome,
+            'username' => $request->nickname,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'status' => 'pending' // In attesa di approvazione
+            'sesso' => $request->sesso,
+            'residenza' => $request->residenza ?? '',
+            'abilitato' => 0,  // pending
+            'ruolo' => 2,      // regular user
         ]);
 
         return redirect()->route('login')

@@ -11,9 +11,9 @@
                         <h2 class="mb-0">{{ $event->title }}</h2>
                     </div>
                     {{-- Cover Image --}}
-                    @if($event->cover_image)
+                    @if($event->cover_image_url)
                         <div class="mb-4">
-                            <img src="{{ Storage::disk('public')->url($event->cover_image) }}" alt="{{ $event->title }}"
+                            <img src="{{ $event->cover_image_url }}" alt="{{ $event->title }}"
                                  class="img-fluid rounded shadow" style="max-height: 400px; width: 100%; object-fit: cover;">
                         </div>
                     @endif
@@ -71,8 +71,29 @@
                             </span>
                             </div>
 
+                            @if($event->formatted_cost)
+                                <div class="mb-3">
+                                    <span class="badge bg-success fs-6">
+                                        <i class="fas fa-euro-sign"></i> {{ $event->formatted_cost }}
+                                    </span>
+                                </div>
+                            @endif
+
+                            @if($event->deadline)
+                                <div class="mb-3">
+                                    <span class="badge bg-{{ $event->isRegistrationOpen() ? 'info' : 'danger' }} fs-6">
+                                        <i class="fas fa-clock"></i>
+                                        Iscrizioni {{ $event->isRegistrationOpen() ? 'entro il' : 'chiuse il' }}
+                                        {{ $event->deadline->format('d/m/Y H:i') }}
+                                    </span>
+                                </div>
+                            @endif
+
                             <div class="mb-3">
                                 <h5><i class="fas fa-map-marker-alt"></i> Località</h5>
+                                @if($event->dove)
+                                    <p class="mb-1"><strong>Luogo:</strong> {{ $event->dove }}</p>
+                                @endif
                                 <p class="mb-1"><strong>Città:</strong> {{ $event->city }}</p>
                                 @auth
                                     <p class="mb-0"><strong>Indirizzo:</strong> {{ $event->address }}</p>
@@ -100,9 +121,9 @@
                                                 @php
                                                     // Calcola il numero di ospiti dell'utente corrente
                                                     $currentUserGuestsCount = 0;
-                                                    $currentUserParticipation = $event->participants()->where('user_id', auth()->id())->first();
+                                                    $currentUserParticipation = $event->participants()->where('utente.userID', auth()->id())->first();
                                                     if ($currentUserParticipation) {
-                                                        $currentUserGuestsCount = $currentUserParticipation->pivot->guests_count;
+                                                        $currentUserGuestsCount = $currentUserParticipation->pivot->amici ?? 0;
                                                     }
                                                 @endphp
 
@@ -124,12 +145,17 @@
                                                     </div>
                                                 </div>
                                             @else
+                                                @php
+                                                    $cannotJoin = $event->isFull() || !$event->isRegistrationOpen();
+                                                    $joinLabel = !$event->isRegistrationOpen() ? 'Iscrizioni chiuse' : ($event->isFull() ? 'Evento al completo' : 'Partecipa all\'evento');
+                                                    $joinIcon = $cannotJoin ? 'lock' : 'check';
+                                                @endphp
                                                 <form action="{{ route('events.participate', $event) }}" method="POST">
                                                     @csrf
-                                                    <button type="submit" class="btn btn-{{ $event->isFull() ? 'secondary' : 'success' }} btn-lg"
-                                                        {{ $event->isFull() ? 'disabled' : '' }}>
-                                                        <i class="fas fa-{{ $event->isFull() ? 'lock' : 'check' }}"></i>
-                                                        {{ $event->isFull() ? 'Evento al completo' : 'Partecipa all\'evento' }}
+                                                    <button type="submit" class="btn btn-{{ $cannotJoin ? 'secondary' : 'success' }} btn-lg"
+                                                        {{ $cannotJoin ? 'disabled' : '' }}>
+                                                        <i class="fas fa-{{ $joinIcon }}"></i>
+                                                        {{ $joinLabel }}
                                                     </button>
                                                 </form>
 
@@ -227,9 +253,9 @@
                                     <div class="d-flex justify-content-between align-items-start mb-2">
                                         <div class="d-flex align-items-center">
                                             {{-- Avatar utente --}}
-                                            @if($comment->user->photo)
-                                                <img src="{{ Storage::disk('public')->url($comment->user->photo) }}"
-                                                     alt="{{ $comment->user->name }}"
+                                            @if($comment->user && $comment->user->photo_url)
+                                                <img src="{{ $comment->user->photo_url }}"
+                                                     alt="{{ $comment->user->name ?? 'Utente' }}"
                                                      class="rounded-circle me-2"
                                                      style="width: 40px; height: 40px; object-fit: cover;">
                                             @else
@@ -240,9 +266,13 @@
                                             @endif
                                             <div>
                                                 <strong>
-                                                    <a href="{{ route('profile.show', $comment->user) }}" class="text-decoration-none">
-                                                        {{ $comment->user->nickname }}
-                                                    </a>
+                                                    @if($comment->user)
+                                                        <a href="{{ route('profile.show', $comment->user) }}" class="text-decoration-none">
+                                                            {{ $comment->user->nickname }}
+                                                        </a>
+                                                    @else
+                                                        <span class="text-muted">Utente cancellato</span>
+                                                    @endif
                                                 </strong>
                                                 <br>
                                                 <small class="text-muted">
@@ -260,7 +290,7 @@
                                         @auth
                                             <div class="btn-group" role="group">
                                                 {{-- Pulsante modifica (solo proprietario) --}}
-                                                @if(auth()->id() === $comment->user_id)
+                                                @if(auth()->id() === $comment->id_utente)
                                                     <a href="{{ route('comments.edit', $comment) }}"
                                                        class="btn btn-sm btn-outline-primary"
                                                        title="Modifica commento">
@@ -269,7 +299,7 @@
                                                 @endif
 
                                                 {{-- Pulsante eliminazione (proprietario o admin) --}}
-                                                @if(auth()->id() === $comment->user_id || auth()->user()->isAdmin())
+                                                @if(auth()->id() === $comment->id_utente || auth()->user()->isAdmin())
                                                     <form action="{{ route('comments.destroy', $comment) }}" method="POST" class="d-inline">
                                                         @csrf
                                                         @method('DELETE')
@@ -304,6 +334,13 @@
                         <div class="d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">
                                 <i class="fas fa-users"></i> Partecipanti
+                                @auth
+                                    @if(auth()->user()->canManageEvents())
+                                        <a href="{{ route('events.print', $event) }}" class="btn btn-sm btn-outline-light ms-2" target="_blank" title="Stampa lista">
+                                            <i class="fas fa-print"></i>
+                                        </a>
+                                    @endif
+                                @endauth
                             </h5>
                             <div>
                 <span class="badge bg-{{ $event->isFull() ? 'warning' : 'light text-dark' }}">
@@ -362,23 +399,29 @@
                         @endif
 
                         {{-- Lista partecipanti --}}
-                        @if($event->participants->count() > 0)
+                        @php
+                            $canSeeList = $event->elenco_visibile ||
+                                (auth()->check() && (auth()->user()->isAdmin() || auth()->user()->getKey() === $event->id_organizzatore));
+                        @endphp
+                        @if(!$canSeeList)
+                            <p class="text-muted"><i class="fas fa-eye-slash"></i> L'elenco dei partecipanti non è visibile per questo evento.</p>
+                        @elseif($event->participants->count() > 0)
                             <div class="list-group">
                                 @foreach($event->participants as $participant)
                                     @php
-                                        $currentUserIsParticipant = auth()->check() && auth()->id() === $participant->id;
+                                        $currentUserIsParticipant = auth()->check() && auth()->id() === $participant->getKey();
                                         $canAddMoreGuests = $currentUserIsParticipant && $event->canAddMoreGuests($participant);
-                                        $hasGuests = $participant->pivot->guests_count > 0;
+                                        $hasGuests = $participant->pivot->amici > 0;
                                     @endphp
 
                                     <div class="list-group-item d-flex justify-content-between align-items-center"
-                                         id="participant-{{ $participant->id }}">
+                                         id="participant-{{ $participant->getKey() }}">
                                         <div>
                                             <a href="{{ route('profile.show', $participant) }}" class="text-decoration-none">
                                                 <i class="fas fa-user"></i> {{ $participant->nickname }}
                                             </a>
                                             @if($hasGuests)
-                                                <span class="badge bg-success ms-2">+{{ $participant->pivot->guests_count }}</span>
+                                                <span class="badge bg-success ms-2">+{{ $participant->pivot->amici }}</span>
                                             @endif
                                             @if($currentUserIsParticipant)
                                                 <span class="badge bg-primary ms-1">Tu</span>
@@ -413,6 +456,28 @@
                         @else
                             <p class="text-muted">Nessun partecipante ancora.</p>
                         @endif
+
+                        {{-- Invita un amico --}}
+                        @auth
+                            @if($userParticipating && auth()->user()->friends()->count() > 0)
+                                <div class="mt-3 p-3 bg-light rounded">
+                                    <h6><i class="fas fa-envelope"></i> Invita un amico</h6>
+                                    <form action="{{ route('events.invite', $event) }}" method="POST" class="d-flex gap-2">
+                                        @csrf
+                                        <select name="friend_id" class="form-select form-select-sm">
+                                            @foreach(auth()->user()->friends()->orderBy('nome')->get() as $friend)
+                                                @if(!$event->participants->contains('userID', $friend->userID))
+                                                    <option value="{{ $friend->getKey() }}">{{ $friend->nome }} {{ $friend->cognome }}</option>
+                                                @endif
+                                            @endforeach
+                                        </select>
+                                        <button type="submit" class="btn btn-sm btn-primary">
+                                            <i class="fas fa-paper-plane"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            @endif
+                        @endauth
 
                         {{-- Informazioni ospiti --}}
                         @if($event->allow_guests)
@@ -453,7 +518,7 @@
 @endsection
 @section('scripts')
     @parent
-    <script src="https://cdn.tiny.cloud/1/bklljwbpvidz9oqemanmswdq49st98dpznthjvl77p3rfaf1/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+    <script src="https://cdn.tiny.cloud/1/{{ config('services.tinymce.api_key') }}/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
