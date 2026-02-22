@@ -10,22 +10,39 @@ class Comment extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['content', 'event_id', 'user_id', 'edited_at'];
+    protected $table = 'post';
+
+    // La tabella legacy usa 'data' invece di created_at/updated_at
+    public $timestamps = false;
+    const CREATED_AT = 'data';
+
+    protected $fillable = ['testo', 'id_evento', 'id_utente', 'edited_at'];
 
     protected $casts = [
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
+        'data' => 'datetime',
         'edited_at' => 'datetime',
     ];
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'id_utente', 'userID');
     }
 
     public function event(): BelongsTo
     {
-        return $this->belongsTo(Event::class);
+        return $this->belongsTo(Event::class, 'id_evento', 'IDevento');
+    }
+
+    // Alias per compatibilità con le view (la colonna reale è 'testo')
+    public function getContentAttribute(): string
+    {
+        return $this->testo ?? '';
+    }
+
+    // Alias per compatibilità con le view (la colonna reale è 'data')
+    public function getCreatedAtAttribute()
+    {
+        return $this->data;
     }
 
     /**
