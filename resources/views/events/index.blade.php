@@ -1,13 +1,37 @@
 @extends('layouts.app')
 
-@section('title', 'Eventi - EventSite')
+@section('title', 'Excursio - Community di amici a Milano')
 
 @section('content')
+    {{-- Hero --}}
+    <div class="hero-section mb-4">
+        <img src="{{ asset('upload_immagini/hero.jpg') }}" alt="Excursio" class="hero-img">
+    </div>
+
+    {{-- Intro testuale (stile vecchio sito) --}}
+    @guest
+    <div class="intro-box mb-4">
+        <p class="intro-text">
+            Excursio è una community di amici, che propone iniziative con l'obiettivo di offrire opportunità per conoscere persone e fare nuove amicizie, per evadere dalla solita routine quotidiana. Le iniziative proposte si svolgono a Milano e sono di costi modesti, alla portata di tutti, e in alcune occasioni anche gratuite, senza alcun fine di lucro. <strong>La registrazione è gratuita.</strong>
+        </p>
+        <p class="intro-text">
+            Dopo esserti registrato dovrai loggarti per poter visualizzare gli eventi proposti e potrai aggregarti senza alcun obbligo — la tua adesione è libera.
+        </p>
+        <div class="intro-actions">
+            <a href="{{ route('register') }}" class="btn btn-primary">
+                <i class="fas fa-user-plus"></i> Registrati
+            </a>
+            <a href="mailto:info@excursio.org" class="btn btn-outline-secondary ms-2">
+                <i class="fas fa-envelope"></i> Scrivici
+            </a>
+        </div>
+    </div>
+    @endguest
+
     <div class="container">
         <div class="row mb-4">
             <div class="col-md-8">
-                <h1 class="display-4">Prossimi Eventi</h1>
-                <p class="lead">Scopri gli eventi in programma nella tua città</p>
+                <h2>Prossimi Eventi</h2>
             </div>
             <div class="col-md-4 text-end">
                 @auth
@@ -97,10 +121,16 @@
                                 @endif
                             </div>
                             <div class="card-footer bg-transparent">
-                                <a href="{{ route('events.show', $event) }}" class="btn btn-{{ $event->isFull() ? 'outline-secondary' : 'primary' }} w-100">
-                                    <i class="fas fa-eye"></i>
-                                    {{ $event->isFull() ? 'Visualizza (Completo)' : 'Dettagli Evento' }}
-                                </a>
+                                @auth
+                                    <a href="{{ route('events.show', $event) }}" class="btn btn-{{ $event->isFull() ? 'outline-secondary' : 'primary' }} w-100">
+                                        <i class="fas fa-eye"></i>
+                                        {{ $event->isFull() ? 'Visualizza (Completo)' : 'Dettagli Evento' }}
+                                    </a>
+                                @else
+                                    <a href="{{ route('login') }}" class="btn btn-outline-secondary w-100">
+                                        <i class="fas fa-lock"></i> Accedi per vedere i dettagli
+                                    </a>
+                                @endauth
                             </div>
                         </div>
                     </div>
@@ -127,9 +157,57 @@
                 @endauth
             </div>
         @endif
-    </div>
+    </div>{{-- /container --}}
 
     <style>
+        .hero-section {
+            position: relative;
+            width: 70%;
+            margin: 0 auto;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .hero-img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        .hero-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.6));
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: #fff;
+        }
+        .hero-title {
+            font-size: 3rem;
+            font-weight: 700;
+            text-shadow: 2px 2px 6px rgba(0,0,0,0.7);
+            margin-bottom: 0.25rem;
+        }
+        .hero-subtitle {
+            font-size: 1.2rem;
+            text-shadow: 1px 1px 4px rgba(0,0,0,0.7);
+        }
+        .intro-box {
+            background: #f8f9fa;
+            border-left: 4px solid #0d6efd;
+            border-radius: 6px;
+            padding: 1.25rem 1.5rem;
+        }
+        .intro-text {
+            font-size: 1rem;
+            color: #333;
+            margin-bottom: 0.75rem;
+            line-height: 1.7;
+        }
+        .intro-actions {
+            margin-top: 1rem;
+        }
         .event-preview {
             line-height: 1.4;
             display: -webkit-box;

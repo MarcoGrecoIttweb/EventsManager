@@ -45,7 +45,7 @@
 </head>
 <body>
 <div class="header">
-    <h1>EventSite Newsletter</h1>
+    <h1>Excursio Newsletter</h1>
 </div>
 
 <div class="content">
@@ -59,16 +59,16 @@
 
     <p>
         <strong>Non rispondere a questa email.</strong><br>
-        Questa è una comunicazione automatica da EventSite.
+        Questa è una comunicazione automatica da Excursio.
     </p>
 
     <a href="{{ url('/') }}" class="button">Visita il nostro sito</a>
 </div>
 
 <div class="footer">
-    <p>&copy; {{ date('Y') }} EventSite. Tutti i diritti riservati.</p>
+    <p>&copy; {{ date('Y') }} Excursio. Tutti i diritti riservati.</p>
     <p>
-        <a href="{{ url('/') }}">EventSite</a> |
+        <a href="{{ url('/') }}">Excursio</a> |
         <a href="{{ url('/privacy') }}">Privacy Policy</a> |
         <a href="{{ url('/unsubscribe') }}">Cancellati dalla newsletter</a>
     </p>

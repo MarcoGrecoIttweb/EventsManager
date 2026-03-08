@@ -295,16 +295,22 @@ class Event extends Model
 
     public function getShortPreviewAttribute(): string
     {
+        if (!empty($this->incipit)) {
+            return Str::limit(trim($this->incipit), 150);
+        }
         return $this->getHomepagePreview(150);
     }
 
     public function getHomepagePreview($length = 200): string
     {
+        if (!empty($this->incipit)) {
+            return Str::limit(trim($this->incipit), $length);
+        }
+
         if (empty($this->descrizione)) {
             return '';
         }
 
-        // Strip ALL HTML to avoid unclosed tags breaking the page layout
         $plainText = strip_tags($this->descrizione);
         $plainText = html_entity_decode($plainText, ENT_QUOTES, 'UTF-8');
         $plainText = preg_replace('/\s+/', ' ', $plainText);

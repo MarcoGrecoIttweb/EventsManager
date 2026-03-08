@@ -24,15 +24,22 @@ class User extends Authenticatable
     protected $rememberTokenName = '';
 
     protected $fillable = [
-        'username', 'password', 'nome', 'cognome', 'email',
+        'username', 'password', 'password_laravel', 'nome', 'cognome', 'email',
         'mail_visibile', 'datanascita', 'ruolo', 'residenza',
         'sesso', 'descr', 'avatar', 'abilitato', 'note_utente',
         'telefono', 'invia', 'ultimo_accesso',
     ];
 
     protected $hidden = [
-        'password',
+        'password', 'password_laravel',
     ];
+
+    // Laravel usa password_laravel per l'autenticazione, lasciando intatto il campo
+    // password (MD5) usato dal sito legacy
+    public function getAuthPassword(): string
+    {
+        return $this->password_laravel ?? $this->password;
+    }
 
     protected $casts = [
         'datanascita' => 'date',

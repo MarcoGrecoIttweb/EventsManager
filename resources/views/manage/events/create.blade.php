@@ -107,6 +107,14 @@
 
                 {{-- Descrizione --}}
                 <div class="mb-3">
+                    <label for="incipit" class="form-label">Incipit / Riassunto</label>
+                    <textarea name="incipit" id="incipit" class="form-control @error('incipit') is-invalid @enderror" rows="2" maxlength="500"
+                              placeholder="Breve testo di anteprima mostrato nelle liste (max 500 caratteri). Se vuoto viene usata la descrizione.">{{ old('incipit') }}</textarea>
+                    @error('incipit')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+                <div class="mb-3">
                     <label for="description" class="form-label">Descrizione <span class="text-danger">*</span></label>
                     <textarea name="description" id="description" class="form-control @error('description') is-invalid @enderror" rows="10">{{ old('description') }}</textarea>
                     @error('description')

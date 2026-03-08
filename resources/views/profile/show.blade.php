@@ -78,6 +78,11 @@
                         <li class="list-group-item">
                             <i class="fas fa-calendar-check"></i> Iscritto dal {{ $user->created_at ? $user->created_at->format('d/m/Y') : 'N/D' }}
                         </li>
+                        @if($user->ultimo_accesso)
+                            <li class="list-group-item">
+                                <i class="fas fa-clock"></i> Ultimo accesso {{ $user->ultimo_accesso->diffForHumans() }}
+                            </li>
+                        @endif
                     </ul>
                 </div>
             </div>

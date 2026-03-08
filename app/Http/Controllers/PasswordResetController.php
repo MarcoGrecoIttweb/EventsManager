@@ -108,7 +108,10 @@ class PasswordResetController extends Controller
             return back()->with('error', 'Utente non trovato.');
         }
 
-        $user->update(['password' => Hash::make($request->password)]);
+        $user->update([
+            'password' => md5($request->password),
+            'password_laravel' => Hash::make($request->password),
+        ]);
 
         // Delete used token
         DB::table('password_resets')->where('email', $request->email)->delete();

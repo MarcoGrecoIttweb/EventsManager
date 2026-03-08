@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Login - EventSite')
+@section('no_sidebar', '1')
+@section('title', 'Login - Excursio')
 
 @section('content')
     <div class="row justify-content-center">

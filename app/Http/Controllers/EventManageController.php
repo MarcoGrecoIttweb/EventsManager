@@ -42,6 +42,7 @@ class EventManageController extends Controller
     {
         $validated = $request->validate([
             'title' => 'required|string|max:120',
+            'incipit' => 'nullable|string|max:500',
             'description' => 'required|string|min:10',
             'date' => 'required|date|after:now',
             'city' => 'required|string|max:15',
@@ -60,6 +61,7 @@ class EventManageController extends Controller
 
         $event = Event::create([
             'nome' => $validated['title'],
+            'incipit' => $validated['incipit'] ?? null,
             'descrizione' => $validated['description'],
             'dataevento' => $validated['date'],
             'citta' => $validated['city'],
@@ -105,6 +107,7 @@ class EventManageController extends Controller
 
         $validated = $request->validate([
             'title' => 'required|string|max:120',
+            'incipit' => 'nullable|string|max:500',
             'description' => 'required|string|min:10',
             'date' => 'required|date',
             'city' => 'required|string|max:15',
@@ -123,6 +126,7 @@ class EventManageController extends Controller
 
         $updateData = [
             'nome' => $validated['title'],
+            'incipit' => $validated['incipit'] ?? null,
             'descrizione' => $validated['description'],
             'dataevento' => $validated['date'],
             'citta' => $validated['city'],

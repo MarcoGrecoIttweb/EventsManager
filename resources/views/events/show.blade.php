@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', $event->title . ' - EventSite')
+@section('title', $event->title . ' - Excursio')
 
 @section('content')
     <div class="container">

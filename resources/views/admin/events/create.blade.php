@@ -109,6 +109,16 @@
                             </div>
 
                             <div class="mb-3">
+                                <label for="incipit" class="form-label">Incipit / Riassunto</label>
+                                <textarea class="form-control @error('incipit') is-invalid @enderror"
+                                          id="incipit" name="incipit" rows="2" maxlength="500"
+                                          placeholder="Breve testo di anteprima mostrato nelle liste (max 500 caratteri). Se vuoto viene usata la descrizione.">{{ old('incipit') }}</textarea>
+                                @error('incipit')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="mb-3">
                                 <label for="description" class="form-label">Descrizione *</label>
                                 <textarea class="form-control @error('description') is-invalid @enderror"
                                           id="description" name="description" rows="8">{{ old('description') }}</textarea>

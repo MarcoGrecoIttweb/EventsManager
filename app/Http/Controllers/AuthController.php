@@ -25,15 +25,22 @@ class AuthController extends Controller
             ]);
         }
 
-        // Dual-hash: try bcrypt first, then MD5 with gradual migration
+        // Dual-hash: controlla password_laravel (bcrypt), poi password (bcrypt legacy o MD5)
         $authenticated = false;
 
-        if (Hash::check($credentials['password'], $user->password)) {
-            // Password is already bcrypt
+        if ($user->password_laravel && Hash::check($credentials['password'], $user->password_laravel)) {
+            // Utente già migrato: bcrypt in password_laravel
+            $authenticated = true;
+        } elseif (Hash::check($credentials['password'], $user->password)) {
+            // Bcrypt già in password (migrati dalla vecchia logica): sposta in password_laravel
+            // e ripristina MD5 in password per il sito legacy
+            $user->password = md5($credentials['password']);
+            $user->password_laravel = Hash::make($credentials['password']);
+            $user->save();
             $authenticated = true;
         } elseif (md5($credentials['password']) === $user->password) {
-            // Password is still MD5 - re-hash to bcrypt for gradual migration
-            $user->password = Hash::make($credentials['password']);
+            // Password legacy MD5: salva bcrypt in password_laravel senza toccare password
+            $user->password_laravel = Hash::make($credentials['password']);
             $user->save();
             $authenticated = true;
         }
@@ -84,7 +91,8 @@ class AuthController extends Controller
             'cognome' => $request->cognome,
             'username' => $request->nickname,
             'email' => $request->email,
-            'password' => Hash::make($request->password),
+            'password' => '',
+            'password_laravel' => Hash::make($request->password),
             'sesso' => $request->sesso,
             'residenza' => $request->residenza ?? '',
             'abilitato' => 0,  // pending

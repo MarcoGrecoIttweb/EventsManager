@@ -38,6 +38,7 @@ class EventController extends Controller
     {
         $validated = $request->validate([
             'title' => 'required|string|max:120',
+            'incipit' => 'nullable|string|max:500',
             'description' => 'required|string|min:10',
             'date' => 'required|date|after:now',
             'city' => 'required|string|max:15',
@@ -58,6 +59,7 @@ class EventController extends Controller
         // Create event with legacy column names
         $event = Event::create([
             'nome' => $validated['title'],
+            'incipit' => $validated['incipit'] ?? null,
             'descrizione' => $validated['description'],
             'dataevento' => $validated['date'],
             'citta' => $validated['city'],
@@ -114,6 +116,7 @@ class EventController extends Controller
     {
         $validated = $request->validate([
             'title' => 'required|string|max:120',
+            'incipit' => 'nullable|string|max:500',
             'description' => 'required|string|min:10',
             'date' => 'required|date',
             'city' => 'required|string|max:15',
@@ -145,6 +148,7 @@ class EventController extends Controller
         // Map to legacy columns
         $updateData = [
             'nome' => $validated['title'],
+            'incipit' => $validated['incipit'] ?? null,
             'descrizione' => $validated['description'],
             'dataevento' => $validated['date'],
             'citta' => $validated['city'],

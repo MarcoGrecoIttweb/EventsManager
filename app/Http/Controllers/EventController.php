@@ -36,6 +36,11 @@ class EventController extends Controller
             abort(404);
         }
 
+        if (!Auth::check()) {
+            return redirect()->route('login')
+                ->with('error', 'Devi essere loggato per vedere i dettagli dell\'evento.');
+        }
+
         $userParticipating = false;
         $comments = collect();
 
