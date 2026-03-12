@@ -81,12 +81,12 @@ class EventManageController extends Controller
         ]);
 
         if ($request->hasFile('cover_image')) {
-            $coverResult = $this->imageService->uploadImage(
+            $coverResult = $this->imageService->uploadCoverImage(
                 $request->file('cover_image'),
-                "events/{$event->getKey()}"
+                $event->getKey()
             );
             if ($coverResult['success']) {
-                $event->update(['immagine' => $coverResult['path']]);
+                $event->update(['immagine' => $coverResult['filename']]);
             }
         }
 
@@ -141,20 +141,20 @@ class EventManageController extends Controller
         ];
 
         if ($request->has('remove_cover') && $event->immagine) {
-            $this->imageService->deleteImage("events/{$event->getKey()}/{$event->immagine}");
+            $this->imageService->deleteCoverImage($event->immagine);
             $updateData['immagine'] = null;
         }
 
         if ($request->hasFile('cover_image')) {
             if ($event->immagine) {
-                $this->imageService->deleteImage("events/{$event->getKey()}/{$event->immagine}");
+                $this->imageService->deleteCoverImage($event->immagine);
             }
-            $coverResult = $this->imageService->uploadImage(
+            $coverResult = $this->imageService->uploadCoverImage(
                 $request->file('cover_image'),
-                "events/{$event->getKey()}"
+                $event->getKey()
             );
             if ($coverResult['success']) {
-                $updateData['immagine'] = $coverResult['path'];
+                $updateData['immagine'] = $coverResult['filename'];
             }
         }
 

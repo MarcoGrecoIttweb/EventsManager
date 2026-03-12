@@ -250,6 +250,37 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('input[type="password"]').forEach(function (input) {
+        // Wrappa l'input in un input-group se non lo è già
+        var parent = input.parentElement;
+        if (!parent.classList.contains('input-group')) {
+            var wrapper = document.createElement('div');
+            wrapper.className = 'input-group';
+            parent.insertBefore(wrapper, input);
+            wrapper.appendChild(input);
+            // Sposta il feedback di validazione fuori dal wrapper
+            var feedback = parent.querySelector('.invalid-feedback');
+            if (feedback) parent.appendChild(feedback);
+        }
+
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn btn-outline-secondary';
+        btn.innerHTML = '<i class="fas fa-eye"></i>';
+        btn.title = 'Mostra/nascondi password';
+        btn.addEventListener('click', function () {
+            var isHidden = input.type === 'password';
+            input.type = isHidden ? 'text' : 'password';
+            btn.innerHTML = isHidden ? '<i class="fas fa-eye-slash"></i>' : '<i class="fas fa-eye"></i>';
+        });
+
+        input.parentElement.appendChild(btn);
+    });
+});
+</script>
+
 @stack('scripts')
 @yield('scripts')
 </body>

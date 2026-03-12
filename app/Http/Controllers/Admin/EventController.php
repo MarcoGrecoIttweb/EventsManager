@@ -21,12 +21,10 @@ class EventController extends Controller
     public function index()
     {
         $events = Event::with(['user', 'participants'])
-            ->active()
-            ->upcoming()
-            ->ordered()
-            ->paginate(12);
+            ->orderBy('dataevento', 'desc')
+            ->paginate(20);
 
-        return view('events.index', compact('events'));
+        return view('admin.events.index', compact('events'));
     }
 
     public function create()
@@ -80,13 +78,13 @@ class EventController extends Controller
 
         // Handle cover image
         if ($request->hasFile('cover_image')) {
-            $coverResult = $this->imageService->uploadImage(
+            $coverResult = $this->imageService->uploadCoverImage(
                 $request->file('cover_image'),
-                "events/{$event->getKey()}"
+                $event->getKey()
             );
 
             if ($coverResult['success']) {
-                $event->update(['immagine' => $coverResult['path']]);
+                $event->update(['immagine' => $coverResult['filename']]);
             }
         }
 
@@ -165,23 +163,23 @@ class EventController extends Controller
 
         // Handle cover image removal
         if ($request->has('remove_cover') && $event->immagine) {
-            $this->imageService->deleteImage("events/{$event->getKey()}/{$event->immagine}");
+            $this->imageService->deleteCoverImage($event->immagine);
             $updateData['immagine'] = null;
         }
 
         // Handle new cover image
         if ($request->hasFile('cover_image')) {
             if ($event->immagine) {
-                $this->imageService->deleteImage("events/{$event->getKey()}/{$event->immagine}");
+                $this->imageService->deleteCoverImage($event->immagine);
             }
 
-            $coverResult = $this->imageService->uploadImage(
+            $coverResult = $this->imageService->uploadCoverImage(
                 $request->file('cover_image'),
-                "events/{$event->getKey()}"
+                $event->getKey()
             );
 
             if ($coverResult['success']) {
-                $updateData['immagine'] = $coverResult['path'];
+                $updateData['immagine'] = $coverResult['filename'];
             }
         }
 

@@ -13,17 +13,14 @@ class UserController extends Controller
      */
     public function index()
     {
-        $users = User::where('is_admin', false)
-            ->withCount(['events' => function($query) {
-                $query->where('is_active', true);
-            }])
-            ->orderBy('status')
-            ->orderBy('created_at', 'desc')
+        $users = User::where('ruolo', '!=', 0)
+            ->orderBy('abilitato')
+            ->orderBy('iscrittodal', 'desc')
             ->get();
 
-        $pendingCount = User::where('status', 'pending')->where('is_admin', false)->count();
-        $approvedCount = User::where('status', 'approved')->where('is_admin', false)->count();
-        $bannedCount = User::where('status', 'banned')->where('is_admin', false)->count();
+        $pendingCount  = User::where('ruolo', '!=', 0)->where('abilitato', 0)->count();
+        $approvedCount = User::where('ruolo', '!=', 0)->where('abilitato', 1)->count();
+        $bannedCount   = User::where('ruolo', '!=', 0)->where('abilitato', 2)->count();
 
         return view('admin.users.index', compact('users', 'pendingCount', 'approvedCount', 'bannedCount'));
     }
@@ -33,7 +30,7 @@ class UserController extends Controller
      */
     public function approve(User $user)
     {
-        if ($user->is_admin) {
+        if ($user->isAdmin()) {
             return back()->with('error', 'Non puoi modificare lo stato di un amministratore.');
         }
 
@@ -47,7 +44,7 @@ class UserController extends Controller
      */
     public function ban(User $user)
     {
-        if ($user->is_admin) {
+        if ($user->isAdmin()) {
             return back()->with('error', 'Non puoi bannare un amministratore.');
         }
 
@@ -61,7 +58,7 @@ class UserController extends Controller
      */
     public function unban(User $user)
     {
-        if ($user->is_admin) {
+        if ($user->isAdmin()) {
             return back()->with('error', 'Non puoi modificare lo stato di un amministratore.');
         }
 
@@ -75,7 +72,7 @@ class UserController extends Controller
      */
     public function destroy(User $user)
     {
-        if ($user->is_admin) {
+        if ($user->isAdmin()) {
             return back()->with('error', 'Non puoi eliminare un amministratore.');
         }
 

@@ -63,6 +63,41 @@ class ImageService
     }
 
     /**
+     * Upload cover image to public/upload_immagini/ (condiviso con il sito legacy).
+     * Salva solo il nome file in evento.immagine, come fa il sito legacy.
+     */
+    public function uploadCoverImage(UploadedFile $image, int $eventId): array
+    {
+        try {
+            $extension = $image->getClientOriginalExtension();
+            $filename = $eventId . '_' . time() . '.' . $extension;
+            $destDir = public_path('upload_immagini');
+
+            $image->move($destDir, $filename);
+
+            return [
+                'success'  => true,
+                'filename' => $filename,
+                'url'      => asset("upload_immagini/{$filename}"),
+            ];
+        } catch (Exception $e) {
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Delete cover image from public/upload_immagini/
+     */
+    public function deleteCoverImage(string $filename): bool
+    {
+        $path = public_path("upload_immagini/{$filename}");
+        if (file_exists($path)) {
+            return unlink($path);
+        }
+        return false;
+    }
+
+    /**
      * Delete image from storage
      */
     public function deleteImage(string $path): bool
