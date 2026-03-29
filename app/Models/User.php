@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\SafeRichText;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Notifications\Notifiable;
@@ -63,12 +64,46 @@ class User extends Authenticatable
 
     public function getNameAttribute()
     {
+        // Alias legacy: "name" → "nome"
         return $this->nome;
     }
 
     public function setNameAttribute($value)
     {
-        $this->attributes['nome'] = $value;
+        // Alias legacy: "name" → "nome"
+        $this->nome = $value;
+    }
+
+    public function getNomeAttribute($value): string
+    {
+        $value = trim((string) $value);
+        if ($value === '') {
+            return $value;
+        }
+        $lower = mb_strtolower($value, 'UTF-8');
+        return mb_convert_case($lower, MB_CASE_TITLE, 'UTF-8');
+    }
+
+    public function setNomeAttribute($value): void
+    {
+        // Salva già in formato "Titolo" per avere coerenza ovunque (DB incluso)
+        $value = trim((string) $value);
+        if ($value === '') {
+            $this->attributes['nome'] = $value;
+            return;
+        }
+        $lower = mb_strtolower($value, 'UTF-8');
+        $this->attributes['nome'] = mb_convert_case($lower, MB_CASE_TITLE, 'UTF-8');
+    }
+
+    public function getCognomeAttribute($value): string
+    {
+        $value = trim((string) $value);
+        if ($value === '') {
+            return $value;
+        }
+        $lower = mb_strtolower($value, 'UTF-8');
+        return mb_convert_case($lower, MB_CASE_TITLE, 'UTF-8');
     }
 
     public function getNicknameAttribute()
@@ -139,12 +174,36 @@ class User extends Authenticatable
         $this->attributes['descr'] = $value;
     }
 
+    /**
+     * Descrizione profilo con HTML consentito (stesso schema dell'evento).
+     */
+    public function getSafeDescrAttribute(): string
+    {
+        $raw = $this->attributes['descr'] ?? '';
+        if ($raw === '' || $raw === null) {
+            return '';
+        }
+
+        return SafeRichText::sanitize((string) $raw, true);
+    }
+
+    public function getResidenzaAttribute($value): string
+    {
+        $value = trim((string) $value);
+        if ($value === '') {
+            return $value;
+        }
+
+        $lower = mb_strtolower($value, 'UTF-8');
+        return mb_convert_case($lower, MB_CASE_TITLE, 'UTF-8');
+    }
+
     // ─── Relationships ────────────────────────────────────────────
 
     public function events(): BelongsToMany
     {
         return $this->belongsToMany(Event::class, 'partecipa', 'id_utente', 'id_evento', 'userID', 'IDevento')
-            ->withPivot('amici', 'data_iscrizione');
+            ->withPivot('amici', 'data_iscrizione', 'ospiti_inseriti_il');
     }
 
     public function participatingEvents()

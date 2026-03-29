@@ -54,7 +54,7 @@ class EventManageController extends Controller
             'max_participants' => 'nullable|integer|min:1',
             'allow_guests' => 'sometimes|boolean',
             'max_guests_per_user' => 'nullable|integer|min:1|max:10',
-            'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,heic,heif|max:4096',
         ]);
 
         $allowGuests = $request->has('allow_guests');
@@ -105,6 +105,10 @@ class EventManageController extends Controller
     {
         $this->authorizeEvent($event);
 
+        if ($request->input('cover_image_selected') == '1' && !$request->hasFile('cover_image')) {
+            return back()->with('error', 'La nuova copertina non è stata ricevuta dal server. Probabile file troppo grande o limite PHP (upload_max_filesize / post_max_size). Prova con un file più piccolo.');
+        }
+
         $validated = $request->validate([
             'title' => 'required|string|max:120',
             'incipit' => 'nullable|string|max:500',
@@ -120,9 +124,11 @@ class EventManageController extends Controller
             'allow_guests' => 'sometimes|boolean',
             'max_guests_per_user' => 'nullable|integer|min:1|max:10',
             'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'cover_image_selected' => 'nullable|in:0,1',
         ]);
 
         $allowGuests = $request->has('allow_guests');
+        $wasPastEvent = $event->is_past_event;
 
         $updateData = [
             'nome' => $validated['title'],
@@ -132,6 +138,8 @@ class EventManageController extends Controller
             'citta' => $validated['city'],
             'dove' => $validated['venue'] ?? '',
             'via' => $validated['address'],
+            // Se nel DB legacy esisteva un civico separato, lo azzeriamo: l'input "Indirizzo" salva la stringa completa in "via".
+            'civico' => '',
             'costo' => $validated['cost'] ?? null,
             'datascadenza' => $validated['deadline'] ?? $validated['date'],
             'elenco_visibile' => $request->has('elenco_visibile') ? 1 : 0,
@@ -141,27 +149,63 @@ class EventManageController extends Controller
         ];
 
         if ($request->has('remove_cover') && $event->immagine) {
+            // Supporta sia copertine legacy (public/upload_immagini) sia copertine in storage/events/{id}
             $this->imageService->deleteCoverImage($event->immagine);
+            $disk = \Illuminate\Support\Facades\Storage::disk('public');
+            if (str_contains($event->immagine, '/')) {
+                $disk->delete($event->immagine);
+            } else {
+                $disk->delete('events/' . $event->getKey() . '/' . $event->immagine);
+            }
             $updateData['immagine'] = null;
+            $event->immagine = null;
         }
 
         if ($request->hasFile('cover_image')) {
             if ($event->immagine) {
                 $this->imageService->deleteCoverImage($event->immagine);
+                $disk = \Illuminate\Support\Facades\Storage::disk('public');
+                if (str_contains($event->immagine, '/')) {
+                    $disk->delete($event->immagine);
+                } else {
+                    $disk->delete('events/' . $event->getKey() . '/' . $event->immagine);
+                }
             }
             $coverResult = $this->imageService->uploadCoverImage(
                 $request->file('cover_image'),
                 $event->getKey()
             );
-            if ($coverResult['success']) {
-                $updateData['immagine'] = $coverResult['filename'];
+            if (!$coverResult['success']) {
+                return back()->with('error', 'Caricamento copertina fallito: ' . ($coverResult['error'] ?? 'errore sconosciuto'));
+            }
+            $updateData['immagine'] = $coverResult['filename'];
+        }
+
+        $newDate = \Carbon\Carbon::parse($validated['date']);
+        if ($wasPastEvent && $newDate->gt(now())) {
+            try {
+                $deadlineAt = \Carbon\Carbon::parse($updateData['datascadenza']);
+                if ($deadlineAt->lte(now())) {
+                    $updateData['datascadenza'] = $newDate->format('Y-m-d H:i:s');
+                }
+            } catch (\Throwable $e) {
+                $updateData['datascadenza'] = $newDate->format('Y-m-d H:i:s');
             }
         }
 
         $event->update($updateData);
 
-        return redirect()->route('manage.events.index')
-            ->with('success', 'Evento aggiornato con successo!');
+        $success = 'Evento aggiornato con successo!';
+        if ($wasPastEvent && $newDate->gt(now())) {
+            $success = 'Evento aggiornato: con la nuova data futura è di nuovo visibile in homepage (se pubblicato).';
+        }
+
+        // Usa la root della request (es. "http://localhost/excursio/public") per evitare 404 Apache
+        // quando l'app è servita da una sottocartella.
+        $publicUrl = rtrim($request->root(), '/') . route('events.show', $event, false);
+
+        return redirect()->to($publicUrl)
+            ->with('success', $success);
     }
 
     public function destroy(Event $event)

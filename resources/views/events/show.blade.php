@@ -4,17 +4,52 @@
 
 @section('content')
     <div class="container">
+        <div class="mb-3">
+            @auth
+                @if(auth()->user()->isAdmin())
+                    <a href="{{ route('admin.events.index') }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-arrow-left"></i> Torna alla lista
+                    </a>
+                @else
+                    <a href="{{ url()->previous() }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-arrow-left"></i> Torna alla lista
+                    </a>
+                @endif
+            @else
+                <a href="{{ url()->previous() }}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-arrow-left"></i> Torna alla lista
+                </a>
+            @endauth
+        </div>
         <div class="row">
             <div class="col-md-8">
                 <div class="card">
                     <div class="card-header">
-                        <h2 class="mb-0">{{ $event->title }}</h2>
+                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                            <h2 class="mb-0">{{ $event->title }}</h2>
+                            @auth
+                                @if(auth()->user()->isAdmin() || auth()->id() === $event->id_organizzatore)
+                                    @if(auth()->user()->isAdmin())
+                                        <a href="{{ route('admin.events.edit', $event) }}" class="btn btn-warning btn-sm">
+                                            <i class="fas fa-edit"></i> Modifica evento
+                                        </a>
+                                    @else
+                                        <a href="{{ route('manage.events.edit', $event) }}" class="btn btn-warning btn-sm">
+                                            <i class="fas fa-edit"></i> Modifica evento
+                                        </a>
+                                    @endif
+                                @endif
+                            @endauth
+                        </div>
                     </div>
                     {{-- Cover Image --}}
                     @if($event->cover_image_url)
-                        <div class="mb-4">
-                            <img src="{{ $event->cover_image_url }}" alt="{{ $event->title }}"
-                                 class="img-fluid rounded shadow" style="max-height: 400px; width: 100%; object-fit: cover;">
+                        <div class="mb-4 event-cover-frame rounded shadow overflow-hidden">
+                            <img
+                                src="{{ $event->cover_image_url }}"
+                                alt="{{ $event->title }}"
+                                class="event-cover-img"
+                            >
                         </div>
                     @endif
 
@@ -55,20 +90,53 @@
                         </div>
                     @endif
 
+                    @if($event->is_past_event)
+                        <div class="alert alert-secondary border-dark mb-0 rounded-0" role="alert">
+                            <div class="d-flex flex-wrap align-items-center gap-2 justify-content-between">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="fas fa-flag-checkered fa-lg"></i>
+                                    <div>
+                                        <strong>Evento concluso</strong>
+                                        <span class="d-block small text-muted mb-0">La data dell'evento è nel passato.</span>
+                                    </div>
+                                </div>
+                                @auth
+                                    @if(auth()->user()->isAdmin())
+                                        <a href="{{ route('admin.events.edit', $event) }}" class="btn btn-warning btn-sm flex-shrink-0">
+                                            <i class="fas fa-edit"></i> Modifica evento
+                                        </a>
+                                        <span class="small text-muted d-none d-md-inline">Imposta una nuova data futura per ripristinarlo tra i prossimi eventi.</span>
+                                    @endif
+                                @endauth
+                            </div>
+                        </div>
+                    @endif
+
                     <div class="card-body">
                         <div class="mb-4">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                            <span class="badge bg-primary fs-6">
-                                <i class="fas fa-calendar"></i>
-                                {{ $event->date->format('d/m/Y H:i') }}
-                            </span>
-                                <span class="badge bg-secondary fs-6">
-                                <i class="fas fa-users"></i>
-                                {{ $event->participants_count }}
-                                    @if($event->max_participants)
-                                        / {{ $event->max_participants }}
-                                    @endif
-                            </span>
+                            @php
+                                $iscrittiCount = $event->participants_count;
+                                $postiTotali = $event->max_participants ? (int) $event->max_participants : null;
+                                $postiLiberi = $postiTotali !== null ? max(0, $postiTotali - $iscrittiCount) : null;
+                            @endphp
+                            <div class="event-meta-stack mb-3">
+                                <div class="event-meta-date-box">
+                                    <i class="fas fa-calendar"></i>
+                                    <span>{{ $event->italian_event_date ?? $event->date->format('d/m/Y H:i') }}</span>
+                                </div>
+                                <div class="event-meta-posti-box">
+                                    <i class="fas fa-users"></i>
+                                    <span class="event-meta-posti-line">
+                                        <span class="event-meta-label-iscritti">Iscritti:</span> <strong>{{ $iscrittiCount }}</strong>
+                                        <span class="event-meta-posti-sep"> / </span>
+                                        <span class="event-meta-label-liberi">Liberi:</span> <strong>{{ $postiLiberi !== null ? $postiLiberi : '—' }}</strong>
+                                        <span class="event-meta-posti-sep"> / </span>
+                                        <span class="event-meta-label-totali">Totali:</span> <strong>{{ $postiTotali !== null ? $postiTotali : '—' }}</strong>
+                                        @if($postiTotali === null)
+                                            <small class="event-meta-posti-hint"> (posti illimitati)</small>
+                                        @endif
+                                    </span>
+                                </div>
                             </div>
 
                             @if($event->formatted_cost)
@@ -127,23 +195,20 @@
                                                     }
                                                 @endphp
 
-                                                <form action="{{ route('events.cancel', $event) }}" method="POST">
-                                                    @csrf
-                                                    <button type="submit" class="btn btn-danger">
-                                                        <i class="fas fa-times"></i> Lascia Evento
+                                                <div class="d-flex flex-nowrap gap-2 align-items-stretch event-participation-btns">
+                                                    <button type="button" class="btn btn-success" disabled aria-disabled="true">
+                                                        <i class="fas fa-check-circle"></i> Partecipo
                                                     </button>
-                                                </form>
-
-                                                {{-- Indicatore partecipazione --}}
-                                                <div class="alert alert-success ms-3 mb-0 py-2 d-flex align-items-center">
-                                                    <i class="fas fa-check-circle fa-lg me-2"></i>
-                                                    <div>
-                                                        <strong>Sei iscritto a questo evento!</strong>
-                                                        @if($currentUserGuestsCount > 0)
-                                                            <br><small>Porti con te {{ $currentUserGuestsCount }} ospite{{ $currentUserGuestsCount > 1 ? 'i' : '' }}</small>
-                                                        @endif
-                                                    </div>
+                                                    <form action="{{ route('events.cancel', $event) }}" method="POST" class="mb-0 d-flex align-items-stretch">
+                                                        @csrf
+                                                        <button type="submit" class="btn btn-danger w-100 h-100">
+                                                            <i class="fas fa-times"></i> Toglimi
+                                                        </button>
+                                                    </form>
                                                 </div>
+                                                @if($currentUserGuestsCount > 0)
+                                                    <small class="text-muted d-block mt-2">Porti con te {{ $currentUserGuestsCount }} ospite{{ $currentUserGuestsCount > 1 ? 'i' : '' }}</small>
+                                                @endif
                                             @else
                                                 @php
                                                     $cannotJoin = $event->isFull() || !$event->isRegistrationOpen();
@@ -332,34 +397,27 @@
                 <div class="card {{ $event->isFull() ? 'border-danger' : '' }}">
                     <div class="card-header {{ $event->isFull() ? 'bg-danger text-white' : 'bg-dark text-white' }}">
                         <div class="d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">
-                                <i class="fas fa-users"></i> Partecipanti
+                            <h5 class="mb-0 d-flex align-items-center flex-wrap gap-1">
+                                <span>
+                                    <i class="fas fa-users"></i> Partecipanti
+                                </span>
+                                <span class="badge rounded-pill bg-light text-dark"
+                                      title="Iscritti all'evento più ospiti inseriti (amici)">
+                                    {{ $event->participants_count }}
+                                </span>
                                 @auth
-                                    @if(auth()->user()->canManageEvents())
-                                        <a href="{{ route('events.print', $event) }}" class="btn btn-sm btn-outline-light ms-2" target="_blank" title="Stampa lista">
+                                    @if(auth()->user()->isAdmin())
+                                        <a href="{{ route('events.print', $event) }}" class="btn btn-sm btn-outline-light ms-1" target="_blank" title="Stampa lista (solo admin)">
                                             <i class="fas fa-print"></i>
                                         </a>
                                     @endif
                                 @endauth
                             </h5>
-                            <div>
-                <span class="badge bg-{{ $event->isFull() ? 'warning' : 'light text-dark' }}">
-                    {{ $event->participants_count }}
-                    @if($event->max_participants)
-                        / {{ $event->max_participants }}
-                        @if($event->isFull())
-                            <i class="fas fa-lock ms-1"></i>
-                        @else
-                            <i class="fas fa-user-plus ms-1"></i>
-                        @endif
-                    @endif
-                </span>
-                                @if($event->allow_guests && ($event->participants_count - $event->real_participants_count) > 0)
-                                    <span class="badge bg-success ms-1">
-                        +{{ $event->participants_count - $event->real_participants_count }} ospiti
-                    </span>
-                                @endif
-                            </div>
+                            @if($event->allow_guests && ($event->participants_count - $event->real_participants_count) > 0)
+                                <span class="badge bg-success">
+                                    +{{ $event->participants_count - $event->real_participants_count }} ospiti
+                                </span>
+                            @endif
                         </div>
                     </div>
                     <div class="card-body">
@@ -406,50 +464,121 @@
                         @if(!$canSeeList)
                             <p class="text-muted"><i class="fas fa-eye-slash"></i> L'elenco dei partecipanti non è visibile per questo evento.</p>
                         @elseif($event->participants->count() > 0)
-                            <div class="list-group">
+                            <div class="list-group list-group-flush">
                                 @foreach($event->participants as $participant)
                                     @php
                                         $currentUserIsParticipant = auth()->check() && auth()->id() === $participant->getKey();
                                         $canAddMoreGuests = $currentUserIsParticipant && $event->canAddMoreGuests($participant);
                                         $hasGuests = $participant->pivot->amici > 0;
+                                        $ospitiEntries = \App\Support\OspitiGuestStore::decode($participant->pivot->ospiti_inseriti_il ?? null);
+                                        $showGuestRows = $hasGuests && ($canSeeList || $currentUserIsParticipant);
                                     @endphp
 
-                                    <div class="list-group-item d-flex justify-content-between align-items-center"
-                                         id="participant-{{ $participant->getKey() }}">
-                                        <div>
-                                            <a href="{{ route('profile.show', $participant) }}" class="text-decoration-none">
-                                                <i class="fas fa-user"></i> {{ $participant->nickname }}
-                                            </a>
-                                            @if($hasGuests)
-                                                <span class="badge bg-success ms-2">+{{ $participant->pivot->amici }}</span>
-                                            @endif
-                                            @if($currentUserIsParticipant)
-                                                <span class="badge bg-primary ms-1">Tu</span>
-                                            @endif
-                                        </div>
+                                    <div class="mb-2 border rounded overflow-hidden" id="participant-{{ $participant->getKey() }}">
+                                        <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2 border-0">
+                                            <div>
+                                                <a href="{{ route('profile.show', $participant) }}" class="text-decoration-none">
+                                                    <i class="fas fa-user"></i> {{ $participant->nickname }}
+                                                </a>
+                                                @if($hasGuests)
+                                                    <span class="badge bg-success ms-2">+{{ $participant->pivot->amici }}</span>
+                                                @endif
+                                                @if($currentUserIsParticipant)
+                                                    <span class="badge bg-primary ms-1">Tu</span>
+                                                @endif
+                                            </div>
 
-                                        @auth
-                                            @if($currentUserIsParticipant && $event->allow_guests)
-                                                <div class="btn-group btn-group-sm">
+                                            @auth
+                                                @if($currentUserIsParticipant && $event->allow_guests)
                                                     <form action="{{ route('events.add-guest', $event) }}" method="POST" class="d-inline">
                                                         @csrf
                                                         <button type="submit" class="btn btn-outline-success btn-sm"
-                                                                title="Porta un amico"
+                                                                title="Con il più aggiungi amico"
+                                                                aria-label="Con il più aggiungi amico"
                                                             {{ !$canAddMoreGuests || $event->isFull() ? 'disabled' : '' }}>
-                                                            <i class="fas fa-user-plus"></i>
+                                                            <i class="fas fa-user-plus" aria-hidden="true"></i>
                                                         </button>
                                                     </form>
-                                                    <form action="{{ route('events.remove-guest', $event) }}" method="POST" class="d-inline">
-                                                        @csrf
-                                                        <button type="submit" class="btn btn-outline-warning btn-sm"
-                                                                title="Togli un amico"
-                                                            {{ !$hasGuests ? 'disabled' : '' }}>
-                                                            <i class="fas fa-user-minus"></i>
-                                                        </button>
-                                                    </form>
+                                                @endif
+                                            @endauth
+                                        </div>
+
+                                        @if($showGuestRows)
+                                            @for($gi = 0; $gi < (int) $participant->pivot->amici; $gi++)
+                                                @php
+                                                    $gEntry = $ospitiEntries[$gi] ?? ['nome' => '', 'at' => ''];
+                                                    $gNome = $gEntry['nome'] ?? '';
+                                                    $giOld = old('guest_index');
+                                                    $nomeFormError = $errors->has('nome') && $giOld !== null && (int) $giOld === $gi;
+                                                    $showNomeForm = ($gNome === '' || $nomeFormError);
+                                                @endphp
+                                                <div class="list-group-item border-0 border-top bg-light py-2 ps-4 pe-3">
+                                                    @if($currentUserIsParticipant && $event->allow_guests)
+                                                        @if($showNomeForm)
+                                                            <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap">
+                                                                <div class="flex-grow-1" style="min-width: 12rem;">
+                                                                    <div class="small text-muted mb-1">
+                                                                        Amico di <strong>{{ $participant->nickname }}</strong>
+                                                                    </div>
+                                                                    <form action="{{ route('events.update-guest-name', $event) }}" method="POST"
+                                                                          class="d-flex flex-wrap align-items-center gap-2">
+                                                                        @csrf
+                                                                        <input type="hidden" name="guest_index" value="{{ $gi }}">
+                                                                        <input type="text" name="nome"
+                                                                               class="form-control form-control-sm flex-grow-1 @error('nome') is-invalid @enderror"
+                                                                               style="min-width: 10rem; max-width: 18rem;"
+                                                                               placeholder="Nominativo"
+                                                                               value="{{ $nomeFormError ? old('nome', '') : '' }}"
+                                                                               maxlength="120"
+                                                                               autocomplete="name">
+                                                                        <button type="submit" class="btn btn-sm btn-outline-primary">
+                                                                            Salva
+                                                                        </button>
+                                                                    </form>
+                                                                    @error('nome')
+                                                                        @if($nomeFormError)
+                                                                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                                                                        @endif
+                                                                    @enderror
+                                                                </div>
+                                                                <form action="{{ route('events.remove-guest', $event) }}" method="POST" class="d-inline flex-shrink-0"
+                                                                      onsubmit="return confirm('Rimuovere questo amico dall\'elenco?');">
+                                                                    @csrf
+                                                                    <input type="hidden" name="guest_index" value="{{ $gi }}">
+                                                                    <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                                            title="Con il meno togli amico"
+                                                                            aria-label="Con il meno togli amico">
+                                                                        <i class="fas fa-user-minus" aria-hidden="true"></i>
+                                                                    </button>
+                                                                </form>
+                                                            </div>
+                                                        @else
+                                                            <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
+                                                                <span class="small">
+                                                                    <span class="fw-semibold">{{ $gNome }}</span>
+                                                                    <span class="text-muted"> — amico di {{ $participant->nickname }}</span>
+                                                                </span>
+                                                                <form action="{{ route('events.remove-guest', $event) }}" method="POST" class="d-inline flex-shrink-0"
+                                                                      onsubmit="return confirm('Rimuovere questo amico dall\'elenco?');">
+                                                                    @csrf
+                                                                    <input type="hidden" name="guest_index" value="{{ $gi }}">
+                                                                    <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                                            title="Con il meno togli amico"
+                                                                            aria-label="Con il meno togli amico">
+                                                                        <i class="fas fa-user-minus" aria-hidden="true"></i>
+                                                                    </button>
+                                                                </form>
+                                                            </div>
+                                                        @endif
+                                                    @else
+                                                        <span class="small text-muted">
+                                                            <span class="{{ $gNome !== '' ? 'fw-semibold text-dark' : '' }}">{{ $gNome !== '' ? $gNome : 'Ospite' }}</span>
+                                                            <span class="text-muted"> — amico di {{ $participant->nickname }}</span>
+                                                        </span>
+                                                    @endif
                                                 </div>
-                                            @endif
-                                        @endauth
+                                            @endfor
+                                        @endif
                                     </div>
                                 @endforeach
                             </div>
@@ -486,7 +615,7 @@
                                     <i class="fas fa-info-circle text-info me-2"></i>
                                     <div>
                                         <small class="text-muted">
-                                            È possibile portare fino a <strong>{{ $event->max_guests_per_user }}</strong> ospiti per partecipante.
+                                            Con <strong>+</strong> aggiungi un amico: sotto compare <strong>Amico di</strong> (il tuo nickname) e il campo per il <strong>nominativo</strong> (con <strong>Salva</strong> solo finché il nome è vuoto). Accanto a ogni amico c’è <strong>−</strong> per togliere proprio quello. Il <strong>+</strong> resta sulla tua riga. Massimo <strong>{{ $event->max_guests_per_user }}</strong> ospiti.
                                             @if($event->isFull())
                                                 <br><span class="text-danger"><i class="fas fa-exclamation-triangle"></i> Evento al completo - non è possibile aggiungere nuovi ospiti</span>
                                             @endif
@@ -518,37 +647,10 @@
 @endsection
 @section('scripts')
     @parent
-    <script src="https://cdn.tiny.cloud/1/{{ config('services.tinymce.api_key') }}/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+    @include('partials.ckeditor4-description', ['field' => 'commentContent', 'height' => 250])
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            tinymce.init({
-                selector: '#commentContent',
-                plugins: 'advlist autolink lists link image charmap preview anchor',
-                toolbar: 'undo redo | blocks | bold italic underline | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link',
-                menubar: false,
-                height: 250,
-                branding: false,
-                statusbar: true,
-                placeholder: 'Scrivi il tuo commento qui...',
-                content_style: `
-            body {
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                font-size: 14px;
-                line-height: 1.6;
-            }
-        `,
-                setup: function (editor) {
-                    editor.on('change', function () {
-                        editor.save();
-                    });
-
-                    editor.on('init', function() {
-                        console.log('TinyMCE inizializzato con successo');
-                    });
-                }
-            });
-
             // Scroll al commento se specificato
             @if(session('scrollTo'))
             const commentId = '{{ session('scrollTo') }}';
@@ -564,6 +666,114 @@
     </script>
 
     <style>
+        .event-cover-frame {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            height: auto;
+            max-height: 400px;
+            background: #f1f3f5;
+        }
+
+        .event-cover-img {
+            display: block;
+            position: absolute;
+            inset: 0;
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important;
+            object-position: center;
+        }
+
+        @media (max-width: 767.98px) {
+            .event-cover-frame {
+                max-height: 240px;
+            }
+        }
+
+        .event-meta-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            max-width: 100%;
+        }
+
+        .event-meta-date-box,
+        .event-meta-posti-box {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.35rem;
+            width: 100%;
+            box-sizing: border-box;
+            border-radius: 0.375rem;
+            padding: 0.65rem 0.9rem;
+            font-size: 1rem;
+            line-height: 1.45;
+            border: 2px solid #000;
+        }
+
+        .event-meta-date-box > i,
+        .event-meta-posti-box > i {
+            margin-top: 0.15rem;
+            flex-shrink: 0;
+        }
+
+        .event-meta-posti-line {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .event-meta-date-box {
+            background-color: #0d6efd;
+            color: #fff;
+        }
+
+        .event-meta-posti-box {
+            background-color: #dee2e6;
+            color: #212529;
+        }
+
+        .event-meta-posti-box strong {
+            color: #1a1d20;
+        }
+
+        .event-meta-posti-box > i {
+            color: #495057;
+        }
+
+        .event-meta-label-iscritti {
+            color: #e0113c;
+            font-weight: 700;
+            text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
+        }
+
+        .event-meta-label-liberi {
+            color: #008f4a;
+            font-weight: 700;
+            text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
+        }
+
+        .event-meta-label-totali {
+            color: #e65100;
+            font-weight: 700;
+            text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
+        }
+
+        .event-meta-posti-hint {
+            color: #495057;
+            font-weight: normal;
+        }
+
+        .event-meta-posti-sep {
+            color: #6c757d;
+        }
+
+        .event-participation-btns > .btn,
+        .event-participation-btns > form {
+            flex: 1 1 0;
+            min-width: 0;
+        }
+
         .highlight-comment {
             background-color: #fff3cd;
             padding: 10px;
@@ -572,19 +782,12 @@
             transition: background-color 2s ease;
         }
 
-        /* Migliora l'aspetto dell'editor */
-        .tox-tinymce {
+        .cke_chrome {
             border-radius: 8px !important;
             border: 2px solid #e9ecef !important;
-            transition: border-color 0.3s ease;
         }
-
-        .tox-tinymce:focus-within {
+        .cke_focus .cke_chrome {
             border-color: #0d6efd !important;
-        }
-
-        .tox-toolbar {
-            background: #f8f9fa !important;
         }
          .comment-content {
              line-height: 1.6;

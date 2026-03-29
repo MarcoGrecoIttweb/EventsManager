@@ -34,7 +34,7 @@
                                 </div>
                             @endif
                             <h6 class="mb-1">{{ $user->nome }} {{ $user->cognome }}</h6>
-                            <small class="text-muted">{{ '@' . $user->username }}</small>
+                            <small class="text-muted">{{ $user->username }}</small>
                             <div class="mt-2 d-flex gap-1 justify-content-center flex-wrap">
                                 <a href="{{ route('profile.show', $user) }}" class="btn btn-sm btn-outline-primary">
                                     <i class="fas fa-user"></i> Profilo

@@ -8,47 +8,45 @@
         <img src="{{ asset('upload_immagini/hero.jpg') }}" alt="Excursio" class="hero-img">
     </div>
 
-    {{-- Intro testuale (stile vecchio sito) --}}
-    @guest
-    <div class="intro-box mb-4">
-        <p class="intro-text">
-            Excursio è una community di amici, che propone iniziative con l'obiettivo di offrire opportunità per conoscere persone e fare nuove amicizie, per evadere dalla solita routine quotidiana. Le iniziative proposte si svolgono a Milano e sono di costi modesti, alla portata di tutti, e in alcune occasioni anche gratuite, senza alcun fine di lucro. <strong>La registrazione è gratuita.</strong>
-        </p>
-        <p class="intro-text">
-            Dopo esserti registrato dovrai loggarti per poter visualizzare gli eventi proposti e potrai aggregarti senza alcun obbligo — la tua adesione è libera.
-        </p>
-        <div class="intro-actions">
-            <a href="{{ route('register') }}" class="btn btn-primary">
-                <i class="fas fa-user-plus"></i> Registrati
-            </a>
-            <a href="mailto:info@excursio.org" class="btn btn-outline-secondary ms-2">
-                <i class="fas fa-envelope"></i> Scrivici
-            </a>
-        </div>
-    </div>
-    @endguest
-
     <div class="container">
-        <div class="row mb-4">
-            <div class="col-md-8">
-                <h2>Prossimi Eventi</h2>
-            </div>
-            <div class="col-md-4 text-end">
-                @auth
-                    @if(auth()->user()->isAdmin())
+        <div class="text-center mb-4">
+            <h2 class="mb-0 text-uppercase title-algerian">Eventi in programma</h2>
+            @auth
+                @if(auth()->user()->isAdmin())
+                    <div class="mt-3 text-md-end">
                         <a href="{{ route('admin.events.create') }}" class="btn btn-success">
                             <i class="fas fa-plus"></i> Crea Evento
                         </a>
-                    @endif
-                @endauth
-            </div>
+                    </div>
+                @endif
+            @endauth
         </div>
+
+        {{-- Intro sotto il titolo: box centrato (ancora #descrizione-eventi dalla navbar) --}}
+        @guest
+            <div id="descrizione-eventi" class="intro-box-below-events mb-4" tabindex="-1">
+                <p class="intro-text">
+                    Excursio è una community di amici, che propone iniziative con l'obiettivo di offrire opportunità per conoscere persone e fare nuove amicizie, per evadere dalla solita routine quotidiana. Le iniziative proposte si svolgono a Milano e sono di costi modesti, alla portata di tutti, e in alcune occasioni anche gratuite, senza alcun fine di lucro. <strong>La registrazione è gratuita.</strong>
+                </p>
+                <p class="intro-text mb-0">
+                    Dopo esserti registrato dovrai loggarti per poter visualizzare gli eventi proposti e potrai aggregarti senza alcun obbligo — la tua adesione è libera.
+                </p>
+                <div class="intro-actions">
+                    <a href="{{ route('register') }}" class="btn btn-primary">
+                        <i class="fas fa-user-plus"></i> Registrati
+                    </a>
+                    <a href="mailto:info@excursio.org" class="btn btn-outline-secondary">
+                        <i class="fas fa-envelope"></i> Scrivici
+                    </a>
+                </div>
+            </div>
+        @endguest
 
         @if($events->count() > 0)
             <div class="row">
                 @foreach($events as $event)
                     <div class="col-md-6 col-lg-4 mb-4">
-                        <div class="card h-100 shadow-sm {{ $event->isFull() ? 'border-danger' : '' }}">
+                        <div class="card event-box h-100 {{ $event->isFull() ? 'event-box--full' : '' }}">
                             @if($event->isFull())
                                 <div class="card-header bg-danger text-white text-center py-2">
                                     <small><i class="fas fa-exclamation-triangle"></i> <strong>EVENTO AL COMPLETO</strong></small>
@@ -86,14 +84,7 @@
                                 <div class="mb-3">
                                     <span class="badge bg-primary">
                                         <i class="fas fa-calendar"></i>
-                                        @php
-                                            try {
-                                                $date = \Carbon\Carbon::parse($event->date);
-                                                echo $date->format('d/m/Y H:i');
-                                            } catch (\Exception $e) {
-                                                echo $event->date;
-                                            }
-                                        @endphp
+                                        {{ $event->italian_event_date ?? ($event->date ? $event->date->format('d/m/Y H:i') : '') }}
                                     </span>
                                     <span class="badge bg-{{ $event->isFull() ? 'danger' : 'secondary' }} ms-1">
                                         <i class="fas fa-users"></i>
@@ -127,7 +118,7 @@
                                         {{ $event->isFull() ? 'Visualizza (Completo)' : 'Dettagli Evento' }}
                                     </a>
                                 @else
-                                    <a href="{{ route('login') }}" class="btn btn-outline-secondary w-100">
+                                    <a href="{{ route('login') }}" class="btn btn-guest-details w-100">
                                         <i class="fas fa-lock"></i> Accedi per vedere i dettagli
                                     </a>
                                 @endauth
@@ -144,15 +135,17 @@
                 </div>
             @endif
         @else
-            <div class="text-center py-5">
-                <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
-                <h3>Nessun evento in programma</h3>
-                <p class="text-muted">Non ci sono eventi in programma al momento.</p>
+            <div class="intro-box-below-events intro-box-below-events--empty py-5">
+                <i class="fas fa-calendar-times fa-3x text-muted mb-3 d-block"></i>
+                <h3 class="h4">Nessun evento in programma</h3>
+                <p class="text-muted mb-0">Non ci sono eventi in programma al momento.</p>
                 @auth
                     @if(auth()->user()->isAdmin())
-                        <a href="{{ route('admin.events.create') }}" class="btn btn-primary mt-3">
-                            <i class="fas fa-plus"></i> Crea il primo evento
-                        </a>
+                        <div class="intro-actions">
+                            <a href="{{ route('admin.events.create') }}" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Crea il primo evento
+                            </a>
+                        </div>
                     @endif
                 @endauth
             </div>
@@ -160,17 +153,45 @@
     </div>{{-- /container --}}
 
     <style>
+        .title-algerian {
+            font-family: Algerian, "Algerian", serif;
+            letter-spacing: 0.5px;
+        }
         .hero-section {
             position: relative;
             width: 70%;
             margin: 0 auto;
-            border-radius: 8px;
+            border-radius: 6px;
             overflow: hidden;
+            border: 3px solid #f5c400;
+            box-shadow: 0 0 0 2px #000;
+            background: #000;
         }
         .hero-img {
             width: 100%;
             height: auto;
             display: block;
+        }
+
+        @media (max-width: 767.98px) {
+            .hero-section {
+                width: 100%;
+                max-width: 100%;
+            }
+
+            .hero-img {
+                max-height: 200px;
+                height: 200px;
+                object-fit: cover;
+                object-position: center;
+            }
+        }
+
+        @media (max-width: 374.98px) {
+            .hero-img {
+                max-height: 160px;
+                height: 160px;
+            }
         }
         .hero-overlay {
             position: absolute;
@@ -193,11 +214,43 @@
             font-size: 1.2rem;
             text-shadow: 1px 1px 4px rgba(0,0,0,0.7);
         }
-        .intro-box {
+        .intro-box-below-events {
             background: #f8f9fa;
-            border-left: 4px solid #0d6efd;
-            border-radius: 6px;
-            padding: 1.25rem 1.5rem;
+            max-width: 48rem;
+            margin-left: auto;
+            margin-right: auto;
+            text-align: center;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+            padding: 1.5rem 1.75rem;
+        }
+        /* Visibile solo con URL #descrizione-eventi (click su «Chi siamo e cosa facciamo») */
+        #descrizione-eventi {
+            display: none;
+            scroll-margin-top: 5.5rem;
+        }
+        #descrizione-eventi:target {
+            display: block;
+            outline: 3px solid #0d6efd;
+            outline-offset: 3px;
+            box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.25), 0 1px 3px rgba(0, 0, 0, 0.06);
+        }
+        .intro-box-below-events--empty {
+            max-width: 36rem;
+        }
+        .intro-box-below-events .intro-text {
+            text-align: center;
+        }
+        .intro-box-below-events .intro-actions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem 0.75rem;
+        }
+        .intro-box-below-events .intro-actions .btn {
+            margin-left: 0 !important;
         }
         .intro-text {
             font-size: 1rem;
@@ -214,15 +267,6 @@
             -webkit-line-clamp: 3;
             -webkit-box-orient: vertical;
             overflow: hidden;
-        }
-
-        .card {
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        .card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
 
         .alert-sm {

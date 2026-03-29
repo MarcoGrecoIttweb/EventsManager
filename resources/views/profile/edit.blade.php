@@ -163,3 +163,7 @@
         </div>
     </div>
 @endsection
+
+@push('scripts')
+    @include('partials.ckeditor4-description', ['height' => 320])
+@endpush

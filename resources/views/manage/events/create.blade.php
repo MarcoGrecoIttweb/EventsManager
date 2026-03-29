@@ -186,20 +186,9 @@
     </form>
 </div>
 
-<script src="https://cdn.tiny.cloud/1/{{ config('services.tinymce.api_key') }}/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+@include('partials.ckeditor4-description', ['height' => 400])
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // TinyMCE
-        tinymce.init({
-            selector: '#description',
-            language: 'it',
-            height: 400,
-            menubar: false,
-            plugins: 'lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table help wordcount',
-            toolbar: 'undo redo | blocks | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image | removeformat | help',
-            content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 14px; }',
-        });
-
         // Toggle ospiti
         const allowGuestsCheckbox = document.getElementById('allow_guests');
         const maxGuestsWrapper = document.getElementById('max_guests_wrapper');

@@ -13,16 +13,29 @@ class UserController extends Controller
      */
     public function index()
     {
-        $users = User::where('ruolo', '!=', 0)
+        $users = User::withCount('events')
+            ->orderBy('ruolo') // admin/organizzatore/utente insieme, ordinati
             ->orderBy('abilitato')
             ->orderBy('iscrittodal', 'desc')
             ->get();
 
-        $pendingCount  = User::where('ruolo', '!=', 0)->where('abilitato', 0)->count();
-        $approvedCount = User::where('ruolo', '!=', 0)->where('abilitato', 1)->count();
-        $bannedCount   = User::where('ruolo', '!=', 0)->where('abilitato', 2)->count();
+        $pendingCount  = User::where('abilitato', 0)->count();
+        $approvedCount = User::where('abilitato', 1)->count();
+        $bannedCount   = User::where('abilitato', 2)->count();
 
         return view('admin.users.index', compact('users', 'pendingCount', 'approvedCount', 'bannedCount'));
+    }
+
+    /**
+     * Display registered users gallery with profile links.
+     */
+    public function gallery()
+    {
+        $users = User::orderBy('nome')
+            ->orderBy('cognome')
+            ->get();
+
+        return view('admin.users.gallery', compact('users'));
     }
 
     /**
@@ -34,7 +47,8 @@ class UserController extends Controller
             return back()->with('error', 'Non puoi modificare lo stato di un amministratore.');
         }
 
-        $user->update(['status' => 'approved']);
+        $user->status = 'approved';
+        $user->save();
 
         return back()->with('success', "Utente {$user->nickname} approvato con successo!");
     }
@@ -48,7 +62,8 @@ class UserController extends Controller
             return back()->with('error', 'Non puoi bannare un amministratore.');
         }
 
-        $user->update(['status' => 'banned']);
+        $user->status = 'banned';
+        $user->save();
 
         return back()->with('success', "Utente {$user->nickname} bannato con successo!");
     }
@@ -62,7 +77,8 @@ class UserController extends Controller
             return back()->with('error', 'Non puoi modificare lo stato di un amministratore.');
         }
 
-        $user->update(['status' => 'approved']);
+        $user->status = 'approved';
+        $user->save();
 
         return back()->with('success', "Utente {$user->nickname} sbannato con successo!");
     }

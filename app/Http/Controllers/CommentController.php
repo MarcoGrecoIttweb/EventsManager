@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Comment;
 use App\Models\Event;
+use App\Support\SafeRichText;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -72,7 +73,7 @@ class CommentController extends Controller
         ]);
 
         try {
-            $cleanContent = strip_tags($request->content, '<p><br><strong><em><u><a><ul><ol><li><code>');
+            $cleanContent = $this->sanitizeHtml($request->content);
 
             $comment->update([
                 'testo' => $cleanContent,
@@ -110,19 +111,8 @@ class CommentController extends Controller
         }
     }
 
-    private function sanitizeHtml($content)
+    private function sanitizeHtml(string $content): string
     {
-        $allowedTags = '<p><br><strong><b><em><i><u><a><ul><ol><li><code><pre><span><div>';
-        $cleanContent = strip_tags($content, $allowedTags);
-        $cleanContent = preg_replace('/<([a-z][a-z0-9]*)[^>]*?(\/?)>/i', '<$1$2>', $cleanContent);
-        $cleanContent = preg_replace_callback('/<a(.*?)>/i', function($matches) {
-            if (preg_match('/href=["\']([^"\'<>]*)["\']/i', $matches[1], $hrefMatch)) {
-                $href = e($hrefMatch[1]);
-                return '<a href="' . $href . '">';
-            }
-            return '<a>';
-        }, $cleanContent);
-
-        return $cleanContent;
+        return SafeRichText::sanitize($content, true);
     }
 }

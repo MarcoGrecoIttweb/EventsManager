@@ -70,7 +70,8 @@ class ImageService
     {
         try {
             $extension = $image->getClientOriginalExtension();
-            $filename = $eventId . '_' . time() . '.' . $extension;
+            // Usa microsecondi per evitare collisioni (e cache browser) se si ricarica due volte nello stesso secondo
+            $filename = $eventId . '_' . now()->format('Ymd_His_u') . '.' . $extension;
             $destDir = public_path('upload_immagini');
 
             $image->move($destDir, $filename);

@@ -55,8 +55,10 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/events/{event}/cancel', [EventController::class, 'cancelParticipation'])
         ->name('events.cancel');
 
-    // Stampa partecipanti
-    Route::get('/events/{event}/print', [EventController::class, 'printParticipants'])->name('events.print');
+    // Stampa partecipanti (solo amministratori)
+    Route::get('/events/{event}/print', [EventController::class, 'printParticipants'])
+        ->name('events.print')
+        ->middleware('admin');
 
     // Invito amici a evento
     Route::post('/events/{event}/invite', [FriendController::class, 'inviteToEvent'])->name('events.invite');
@@ -83,6 +85,7 @@ Route::middleware(['auth'])->group(function () {
     // Gestione ospiti
     Route::post('/events/{event}/add-guest', [GuestController::class, 'addGuest'])->name('events.add-guest');
     Route::post('/events/{event}/remove-guest', [GuestController::class, 'removeGuest'])->name('events.remove-guest');
+    Route::post('/events/{event}/guest-name', [GuestController::class, 'updateGuestName'])->name('events.update-guest-name');
 });
 
 // Route gestione eventi (organizzatori e admin)
@@ -107,12 +110,14 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     })->name('dashboard');
 
     Route::resource('events', \App\Http\Controllers\Admin\EventController::class);
+    Route::post('/events/{event}/duplicate', [\App\Http\Controllers\Admin\EventController::class, 'duplicate'])->name('events.duplicate');
     Route::post('/events/{event}/toggle-status', [\App\Http\Controllers\Admin\EventController::class, 'toggleStatus'])->name('events.toggle-status');
     Route::get('/users', [\App\Http\Controllers\Admin\UserController::class, 'index'])->name('users.index');
     Route::post('/users/{user}/approve', [\App\Http\Controllers\Admin\UserController::class, 'approve'])->name('users.approve');
     Route::post('/users/{user}/ban', [\App\Http\Controllers\Admin\UserController::class, 'ban'])->name('users.ban');
     Route::post('/users/{user}/unban', [\App\Http\Controllers\Admin\UserController::class, 'unban'])->name('users.unban');
     Route::delete('/users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'destroy'])->name('users.destroy');
+    Route::get('/users/gallery', [\App\Http\Controllers\Admin\UserController::class, 'gallery'])->name('users.gallery');
 
     // Gruppi
     Route::resource('groups', \App\Http\Controllers\Admin\GroupController::class);

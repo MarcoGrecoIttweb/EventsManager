@@ -18,6 +18,21 @@
             max-height: 100px;
             width: auto;
         }
+
+        @media (max-width: 767.98px) {
+            .site-header {
+                padding: 4px 0.5rem;
+            }
+            .site-header-logo {
+                max-height: 52px;
+            }
+        }
+
+        @media (max-width: 374.98px) {
+            .site-header-logo {
+                max-height: 44px;
+            }
+        }
         .sidebar-left {
             position: sticky;
             top: 1rem;
@@ -45,6 +60,70 @@
             border-radius: 4px;
             padding-left: 2px;
         }
+        /* Immagine presentazione sidebar: cornice gialla + bordo nero */
+        .sidebar-presentazione {
+            border: 3px solid #f5c400;
+            box-shadow: 0 0 0 2px #000;
+            border-radius: 6px;
+            overflow: hidden;
+            line-height: 0;
+            background: #000;
+        }
+        .sidebar-presentazione-img {
+            width: 100%;
+            height: auto;
+            display: block;
+            vertical-align: top;
+        }
+        @media (max-width: 767.98px) {
+            /* Smartphone: sidebar non sticky, niente colonna “fissa” sullo sfondo */
+            .sidebar-left {
+                position: static;
+                max-height: none;
+                overflow: visible;
+            }
+        }
+
+        /* Elenco eventi (card griglia): bordo blu + anello bianco — mobile e desktop */
+        .card.event-box {
+            border: 3px solid #0d6efd !important;
+            box-shadow: 0 0 0 2px #fff, 0 0.125rem 0.25rem rgba(0, 0, 0, 0.08) !important;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .card.event-box:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 0 2px #fff, 0 4px 15px rgba(0, 0, 0, 0.12) !important;
+        }
+        /* Evento al completo: bordo rosso (override del bordo blu) */
+        .card.event-box.event-box--full {
+            border-color: #dc3545 !important;
+        }
+        /* Titoli delle card eventi centrati */
+        .card.event-box .card-title {
+            text-align: center;
+        }
+        /* Pulsante guest: verde chiaro */
+        .btn-guest-details {
+            background: #b7f3c2;
+            border-color: #7adf92;
+            color: #0f5132;
+        }
+        .btn-guest-details:hover {
+            background: #a6eeb4;
+            border-color: #63d87f;
+            color: #0f5132;
+        }
+        /* Navbar mobile: hamburger a sinistra, menu a tutta larghezza sotto */
+        @media (max-width: 991.98px) {
+            .excursio-navbar > .container {
+                flex-wrap: wrap;
+                justify-content: flex-start;
+            }
+            .excursio-navbar .navbar-collapse {
+                flex-basis: 100%;
+                width: 100% !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -53,13 +132,15 @@
         <img src="{{ asset('upload_immagini/excursio.png') }}" alt="Excursio" class="site-header-logo">
     </a>
 </div>
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark excursio-navbar">
     <div class="container">
-<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Apri il menu">
             <span class="navbar-toggler-icon"></span>
         </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav me-auto">
+        {{-- flex-column sotto lg: tutti i link in colonna (niente «Chi siamo…» affianco all’hamburger) --}}
+        <div class="collapse navbar-collapse flex-column flex-lg-row align-items-stretch align-items-lg-center" id="navbarNav">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0 w-100 w-lg-auto">
                 <li class="nav-item">
                     <a class="nav-link" href="{{ route('home') }}">Home</a>
                 </li>
@@ -104,6 +185,7 @@
                                 <li><a class="dropdown-item" href="{{ route('admin.dashboard') }}">Dashboard</a></li>
                                 <li><a class="dropdown-item" href="{{ route('admin.events.index') }}">Gestione Eventi</a></li>
                                 <li><a class="dropdown-item" href="{{ route('admin.users.index') }}">Gestione Utenti</a></li>
+                                <li><a class="dropdown-item" href="{{ route('admin.users.gallery') }}">Admin. Immagini utenti</a></li>
                                 <li><a class="dropdown-item" href="{{ route('admin.groups.index') }}">Gestione Gruppi</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="{{ route('admin.newsletter.create') }}">Newsletter</a></li>
@@ -113,13 +195,18 @@
                     @endif
                 @endauth
             </ul>
-            <ul class="navbar-nav">
+            <ul class="navbar-nav ms-lg-auto w-100 w-lg-auto">
                 @guest
                     <li class="nav-item">
                         <a class="nav-link" href="{{ route('login') }}">Login</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ route('register') }}">Registrati</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('home') }}#descrizione-eventi" title="Chi siamo e cosa facciamo">
+                            <i class="fas fa-info-circle"></i> Chi siamo e cosa facciamo
+                        </a>
                     </li>
                 @else
                     @auth
@@ -148,40 +235,18 @@
         {{-- Sidebar sinistra (nascosta nelle pagine auth) --}}
         @if(!$hideSidebar)
         <div class="col-md-2 sidebar-left">
-            @auth
-                {{-- Utenti online --}}
-                @php
-                    $onlineUsers = \Illuminate\Support\Facades\DB::table('utentionline as o')
-                        ->join('utente as u', 'u.userID', '=', 'o.id_utente')
-                        ->whereNotNull('o.id_utente')
-                        ->where('o.time', '>', time() - 900)
-                        ->select('u.userID', 'u.username')
-                        ->orderBy('u.username')
-                        ->get();
-                @endphp
-                <div class="card card-sidebar mb-3">
-                    <div class="card-header py-2">
-                        <small class="fw-bold">
-                            <i class="fas fa-circle text-success" style="font-size:0.6em"></i>
-                            Online ({{ $onlineUsers->count() }})
-                        </small>
-                    </div>
-                    <div class="card-body p-2">
-                        @forelse($onlineUsers as $ou)
-                            <a href="{{ route('profile.show', $ou->userID) }}"
-                               class="d-flex align-items-center text-decoration-none text-dark mb-1 online-user-row"
-                               title="{{ $ou->username }}">
-                                <span class="online-dot"></span>
-                                <span class="small text-truncate">{{ $ou->username }}</span>
-                            </a>
-                        @empty
-                            <span class="text-muted small">Nessuno online</span>
-                        @endforelse
-                    </div>
+            @if(request()->routeIs('home', 'events.index'))
+                {{-- Solo da md in su: su smartphone la hero in pagina ha la stessa immagine con cornice giallo/nero --}}
+                <div class="sidebar-presentazione mb-3 d-none d-md-block" title="Excursio">
+                    <img src="{{ asset('upload_immagini/hero.jpg') }}"
+                         alt="Excursio — presentazione"
+                         class="sidebar-presentazione-img"
+                         loading="lazy">
                 </div>
-            @else
-                {{-- Form login per ospiti --}}
-                <div class="card card-sidebar mb-3">
+            @endif
+            @guest
+                {{-- Form login sidebar: nascosto su smartphone (login dalla navbar) --}}
+                <div class="card card-sidebar mb-3 d-none d-md-block">
                     <div class="card-header py-2">
                         <small class="fw-bold"><i class="fas fa-sign-in-alt"></i> Accedi</small>
                     </div>
@@ -215,7 +280,7 @@
                         </div>
                     </div>
                 </div>
-            @endauth
+            @endguest
         </div>
         @endif
 

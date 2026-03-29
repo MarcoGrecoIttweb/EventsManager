@@ -209,40 +209,12 @@
             </div>
         </div>
     </div>
+@endsection
 
 @section('scripts')
-    <!-- TinyMCE -->
-    <script src="https://cdn.tiny.cloud/1/{{ config('services.tinymce.api_key') }}/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+    @include('partials.ckeditor4-description', ['height' => 400])
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Inizializza TinyMCE per la descrizione
-            tinymce.init({
-                selector: '#description',
-                plugins: 'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table help wordcount',
-                toolbar: 'undo redo | blocks | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image media | code help',
-                menubar: 'edit view insert format tools table help',
-                height: 400,
-                branding: false,
-                statusbar: true,
-                promotion: false,
-                placeholder: 'Descrivi il tuo evento in dettaglio...',
-                content_style: `
-            body {
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                font-size: 14px;
-                line-height: 1.6;
-            }
-            h1, h2, h3 { margin-top: 1rem; margin-bottom: 0.5rem; }
-            p { margin-bottom: 0.8rem; }
-            ul, ol { margin-left: 1.5rem; margin-bottom: 0.8rem; }
-        `,
-                setup: function (editor) {
-                    editor.on('change', function () {
-                        editor.save();
-                    });
-                }
-            });
-
             // Toggle per gli ospiti
             const allowGuestsCheckbox = document.getElementById('allow_guests');
             const maxGuestsContainer = document.getElementById('max_guests_container');
@@ -290,5 +262,4 @@
             }
         });
     </script>
-@endsection
 @endsection

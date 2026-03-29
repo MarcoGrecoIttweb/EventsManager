@@ -65,27 +65,8 @@
             </div>
         </div>
     </div>
-
-    <!-- TinyMCE per l'editor WYSIWYG -->
-@section('scripts')
-    <script src="https://cdn.tiny.cloud/1/{{ config('services.tinymce.api_key') }}/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            tinymce.init({
-                selector: '#content',
-                plugins: 'link lists code emoticons',
-                toolbar: 'undo redo | bold italic | alignleft aligncenter alignright | bullist numlist | link emoticons | code',
-                menubar: false,
-                height: 300,
-                branding: false,
-                statusbar: false,
-                setup: function (editor) {
-                    editor.on('change', function () {
-                        editor.save();
-                    });
-                }
-            });
-        });
-    </script>
 @endsection
+
+@section('scripts')
+    @include('partials.ckeditor4-description', ['field' => 'content', 'height' => 300])
 @endsection

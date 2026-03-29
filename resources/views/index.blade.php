@@ -24,7 +24,7 @@
             <div class="row">
                 @foreach($events as $event)
                     <div class="col-md-6 col-lg-4 mb-4">
-                        <div class="card h-100 shadow-sm {{ $event->isFull() ? 'border-danger' : '' }}">
+                        <div class="card event-box h-100">
                             @if($event->isFull())
                                 <div class="card-header bg-danger text-white text-center py-2">
                                     <small><i class="fas fa-exclamation-triangle"></i> <strong>EVENTO AL COMPLETO</strong></small>
@@ -35,14 +35,7 @@
                                 <div class="mb-3">
                             <span class="badge bg-primary">
                                 <i class="fas fa-calendar"></i>
-                                @php
-                                    try {
-                                        $date = \Carbon\Carbon::parse($event->date);
-                                        echo $date->format('d/m/Y H:i');
-                                    } catch (\Exception $e) {
-                                        echo $event->date;
-                                    }
-                                @endphp
+                                {{ $event->italian_event_date ?? ($event->date ? $event->date->format('d/m/Y H:i') : '') }}
                             </span>
                                     <span class="badge bg-{{ $event->isFull() ? 'danger' : 'secondary' }} ms-1">
                                 <i class="fas fa-users"></i>

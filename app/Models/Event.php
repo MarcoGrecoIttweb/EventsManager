@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Facades\Storage;
+use App\Support\SafeRichText;
 use Illuminate\Support\Str;
 
 class Event extends Model
@@ -73,6 +74,31 @@ class Event extends Model
     public function setDateAttribute($value)
     {
         $this->attributes['dataevento'] = $value;
+    }
+
+    /**
+     * Data e ora in italiano: "lunedì 24 marzo 2026, h:14:30"
+     * (giorno della settimana, giorno, mese, anno, ora come h:HH:MM).
+     */
+    public function getItalianEventDateAttribute(): ?string
+    {
+        if (!$this->dataevento) {
+            return null;
+        }
+
+        try {
+            $d = $this->date->copy()->locale('it');
+
+            return $d->translatedFormat('l j F Y') . ', h:' . $d->format('H:i');
+        } catch (\Throwable $e) {
+            try {
+                $d = \Carbon\Carbon::parse($this->dataevento)->locale('it');
+
+                return $d->translatedFormat('l j F Y') . ', h:' . $d->format('H:i');
+            } catch (\Throwable $e2) {
+                return null;
+            }
+        }
     }
 
     public function getCityAttribute()
@@ -169,7 +195,7 @@ class Event extends Model
     public function participants(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'partecipa', 'id_evento', 'id_utente', 'IDevento', 'userID')
-            ->withPivot('amici', 'data_iscrizione');
+            ->withPivot('amici', 'data_iscrizione', 'ospiti_inseriti_il');
     }
 
     public function comments(): HasMany
@@ -275,22 +301,7 @@ class Event extends Model
             return '';
         }
 
-        $allowedTags = '<p><br><strong><b><em><i><u><a><ul><ol><li><code><pre><span><div><h1><h2><h3><h4><h5><h6><blockquote><table><thead><tbody><tr><th><td>';
-        $cleanContent = strip_tags($this->descrizione, $allowedTags);
-
-        $cleanContent = preg_replace_callback('/<a\s+([^>]*)>/i', function($matches) {
-            $attributes = $matches[1];
-            $href = '';
-            if (preg_match('/href=(["\'])(.*?)\1/i', $attributes, $hrefMatches)) {
-                $url = $hrefMatches[2];
-                if (preg_match('/^(https?:\/\/|mailto:)/i', $url)) {
-                    $href = ' href="' . e($url) . '"';
-                }
-            }
-            return '<a' . $href . '>';
-        }, $cleanContent);
-
-        return $cleanContent;
+        return SafeRichText::sanitize($this->descrizione, false);
     }
 
     public function getShortPreviewAttribute(): string
@@ -376,6 +387,18 @@ class Event extends Model
     public function scopePast($query)
     {
         return $query->where('dataevento', '<=', now());
+    }
+
+    /**
+     * True se la data/ora dell'evento non è più futura (concluso rispetto al calendario).
+     */
+    public function getIsPastEventAttribute(): bool
+    {
+        if (!$this->dataevento) {
+            return false;
+        }
+
+        return $this->date->lte(now());
     }
 
     public function scopeOrdered($query, $direction = 'asc')

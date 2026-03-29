@@ -14,19 +14,12 @@ class ProfileController extends Controller
     {
         $this->authorize('view', $user);
 
-        $upcomingEvents = $user->events()
+        $allParticipatedEvents = $user->events()
             ->where('pubblicato', 1)
-            ->where('dataevento', '>', now())
-            ->orderBy('dataevento')
-            ->get();
-
-        $pastEvents = $user->events()
-            ->where('pubblicato', 1)
-            ->where('dataevento', '<=', now())
             ->orderBy('dataevento', 'desc')
             ->get();
 
-        return view('profile.show', compact('user', 'upcomingEvents', 'pastEvents'));
+        return view('profile.show', compact('user', 'allParticipatedEvents'));
     }
 
     public function edit(User $user)
@@ -50,7 +43,7 @@ class ProfileController extends Controller
             'residenza' => 'nullable|string|max:30',
             'sesso' => 'required|in:m,f',
             'mail_visibile' => 'sometimes|boolean',
-            'description' => 'nullable|string|max:1000',
+            'description' => 'nullable|string|max:65535',
             'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
         ]);
 

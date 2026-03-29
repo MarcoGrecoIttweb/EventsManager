@@ -8,16 +8,43 @@
             <div class="col-md-8">
                 <div class="card">
                     <div class="card-header bg-warning text-white">
-                        <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
                             <h4 class="mb-0">
                                 <i class="fas fa-edit"></i> Modifica Evento: {{ $event->title }}
                             </h4>
-                            <a href="{{ route('admin.events.index') }}" class="btn btn-light btn-sm">
-                                <i class="fas fa-arrow-left"></i> Torna alla Lista
-                            </a>
+                            <div class="d-flex flex-wrap align-items-center gap-2">
+                                <form action="{{ route('admin.events.duplicate', $event) }}" method="POST"
+                                      class="d-inline"
+                                      onsubmit="return confirm('Creare una copia di questo evento? Il titolo avrà suffisso (copia), stessi testi e immagini; le iscrizioni non verranno copiate.');">
+                                    @csrf
+                                    <button type="submit" class="btn btn-dark btn-sm">
+                                        <i class="fas fa-copy"></i> Duplica
+                                    </button>
+                                </form>
+                                <a href="{{ route('admin.events.index') }}" class="btn btn-light btn-sm">
+                                    <i class="fas fa-arrow-left"></i> Torna alla Lista
+                                </a>
+                            </div>
                         </div>
                     </div>
                     <div class="card-body">
+                        @if($errors->any())
+                            <div class="alert alert-danger">
+                                <strong>Errore caricamento:</strong>
+                                <ul class="mb-0">
+                                    @foreach($errors->all() as $error)
+                                        <li>{{ $error }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+                        @if($event->is_past_event)
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i>
+                                <strong>Evento concluso.</strong>
+                                Impostando la <strong>data e ora</strong> nel futuro e salvando, l'evento viene <strong>ripubblicato</strong> e torna in <strong>homepage</strong> (Prossimi eventi). Se la scadenza iscrizioni era nel passato, viene allineata alla nuova data evento così le iscrizioni possono riaprirsi.
+                            </div>
+                        @endif
                         <form action="{{ route('admin.events.update', $event) }}" method="POST" enctype="multipart/form-data">
                             @csrf
                             @method('PUT')
@@ -25,20 +52,20 @@
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="mb-3">
-                                        <label for="title" class="form-label">Titolo Evento *</label>
-                                        <input type="text" class="form-control @error('title') is-invalid @enderror"
-                                               id="title" name="title" value="{{ old('title', $event->title) }}" required>
-                                        @error('title')
+                                        <label for="date" class="form-label">Data e Ora *</label>
+                                        <input type="datetime-local" class="form-control @error('date') is-invalid @enderror"
+                                               id="date" name="date" value="{{ old('date', $event->date->format('Y-m-d\TH:i')) }}" required>
+                                        @error('date')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="mb-3">
-                                        <label for="date" class="form-label">Data e Ora *</label>
-                                        <input type="datetime-local" class="form-control @error('date') is-invalid @enderror"
-                                               id="date" name="date" value="{{ old('date', $event->date->format('Y-m-d\TH:i')) }}" required>
-                                        @error('date')
+                                        <label for="title" class="form-label">Titolo Evento *</label>
+                                        <input type="text" class="form-control @error('title') is-invalid @enderror"
+                                               id="title" name="title" value="{{ old('title', $event->title) }}" required>
+                                        @error('title')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
@@ -187,18 +214,28 @@
                             <div class="mb-3">
                                 <label for="cover_image" class="form-label">Immagine Copertina</label>
 
-                                @if($event->cover_image_url)
-                                    <div class="mb-2">
-                                        <img src="{{ $event->cover_image_url }}" alt="Cover" class="img-thumbnail" style="max-height: 200px;">
+                                <div class="mb-2" id="coverPreviewBox" style="{{ $event->cover_image_url ? '' : 'display:none;' }}">
+                                    <img
+                                        id="coverPreviewImg"
+                                        src="{{ $event->cover_image_url ?? '' }}"
+                                        alt="Cover"
+                                        class="img-thumbnail"
+                                        style="max-height: 200px;"
+                                    >
+                                    @if($event->cover_image_url)
                                         <div class="form-check mt-2">
                                             <input type="checkbox" class="form-check-input" id="remove_cover" name="remove_cover" value="1">
                                             <label class="form-check-label text-danger" for="remove_cover">
                                                 Rimuovi immagine copertina
                                             </label>
                                         </div>
-                                    </div>
-                                @endif
+                                        <small class="text-muted d-block mt-1">
+                                            Per <strong>sostituire</strong> la copertina basta scegliere un nuovo file qui sotto (non serve spuntare “Rimuovi”).
+                                        </small>
+                                    @endif
+                                </div>
 
+                                <input type="hidden" name="cover_image_selected" id="cover_image_selected" value="0">
                                 <input type="file" class="form-control @error('cover_image') is-invalid @enderror"
                                        id="cover_image" name="cover_image" accept="image/*">
                                 @error('cover_image')
@@ -269,45 +306,12 @@
             </div>
         </div>
     </div>
+@endsection
 
 @section('scripts')
-    <!-- TinyMCE -->
-    <script src="https://cdn.tiny.cloud/1/{{ config('services.tinymce.api_key') }}/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+    @include('partials.ckeditor4-description', ['height' => 400])
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Inizializza TinyMCE per la descrizione
-            tinymce.init({
-                selector: '#description',
-                plugins: 'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table help wordcount',
-                toolbar: 'undo redo | blocks | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image media | code help',
-                menubar: 'edit view insert format tools table help',
-                height: 400,
-                branding: false,
-                statusbar: true,
-                promotion: false,
-                placeholder: 'Descrivi il tuo evento in dettaglio...',
-                content_style: `
-            body {
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                font-size: 14px;
-                line-height: 1.6;
-            }
-            h1, h2, h3 { margin-top: 1rem; margin-bottom: 0.5rem; }
-            p { margin-bottom: 0.8rem; }
-            ul, ol { margin-left: 1.5rem; margin-bottom: 0.8rem; }
-        `,
-                setup: function (editor) {
-                    editor.on('change', function () {
-                        editor.save();
-                    });
-
-                    // Carica il contenuto esistente nell'editor
-                    editor.on('init', function() {
-                        editor.setContent(document.getElementById('description').value);
-                    });
-                }
-            });
-
             // Toggle per gli ospiti
             const allowGuestsCheckbox = document.getElementById('allow_guests');
             const maxGuestsContainer = document.getElementById('max_guests_container');
@@ -352,7 +356,45 @@
                     }
                 });
             }
+
+            // UX copertina: se spunti "Rimuovi", nasconde anteprima e mette focus su scegli file
+            const removeCover = document.getElementById('remove_cover');
+            const coverPreviewBox = document.getElementById('coverPreviewBox');
+            const coverPreviewImg = document.getElementById('coverPreviewImg');
+            const coverInput = document.getElementById('cover_image');
+            if (removeCover && coverPreviewBox && coverInput) {
+                removeCover.addEventListener('change', function () {
+                    if (this.checked) {
+                        coverPreviewBox.style.display = 'none';
+                        coverInput.classList.add('border', 'border-warning');
+                        coverInput.focus();
+                    } else {
+                        coverPreviewBox.style.display = '';
+                        coverInput.classList.remove('border', 'border-warning');
+                    }
+                });
+            }
+
+            // Anteprima copertina: scegli file → mostra subito e deseleziona "Rimuovi"
+            if (coverInput && coverPreviewBox && coverPreviewImg) {
+                coverInput.addEventListener('change', function () {
+                    const file = this.files && this.files[0] ? this.files[0] : null;
+                    if (!file) return;
+                    if (!file.type || !file.type.startsWith('image/')) return;
+
+                    const coverSelected = document.getElementById('cover_image_selected');
+                    if (coverSelected) coverSelected.value = '1';
+
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        coverPreviewImg.src = e.target.result;
+                        coverPreviewBox.style.display = '';
+                        coverInput.classList.remove('border', 'border-warning');
+                        if (removeCover) removeCover.checked = false;
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }
         });
     </script>
-@endsection
 @endsection

@@ -8,6 +8,8 @@ use App\Models\EventImage;
 use App\Services\ImageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class EventController extends Controller
 {
@@ -48,8 +50,8 @@ class EventController extends Controller
             'max_participants' => 'nullable|integer|min:1',
             'allow_guests' => 'sometimes|boolean',
             'max_guests_per_user' => 'nullable|integer|min:1|max:10',
-            'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
-            'gallery_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+            'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,heic,heif|max:4096',
+            'gallery_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,heic,heif|max:10240',
         ]);
 
         $allowGuests = $request->has('allow_guests');
@@ -110,8 +112,68 @@ class EventController extends Controller
         return view('admin.events.edit', compact('event'));
     }
 
+    /**
+     * Crea una copia dell'evento (stessi dati e media). Le iscrizioni non vengono copiate.
+     */
+    public function duplicate(Event $event)
+    {
+        $event->load(['images' => fn ($q) => $q->orderBy('order')]);
+
+        try {
+            $newEvent = DB::transaction(function () use ($event) {
+                return Event::create([
+                    'nome' => $event->nome . ' (copia)',
+                    'incipit' => $event->incipit,
+                    'descrizione' => $event->descrizione,
+                    'dataevento' => $event->dataevento,
+                    'citta' => $event->citta,
+                    'dove' => $event->dove ?? '',
+                    'via' => $event->via,
+                    'civico' => $event->civico ?? '',
+                    'costo' => $event->costo,
+                    'numeromax' => $event->numeromax,
+                    'id_organizzatore' => $event->id_organizzatore,
+                    'pubblicato' => $event->pubblicato,
+                    'elenco_visibile' => $event->elenco_visibile ? 1 : 0,
+                    'sondaggio' => $event->sondaggio ?? '',
+                    'url_galleria' => $event->url_galleria ?? '',
+                    'datascadenza' => $event->datascadenza,
+                    'allow_guests' => (bool) $event->allow_guests,
+                    'max_guests_per_user' => (int) ($event->max_guests_per_user ?? 0),
+                    'immagine' => null,
+                ]);
+            });
+        } catch (\Throwable $e) {
+            return redirect()
+                ->back()
+                ->with('error', 'Impossibile duplicare l\'evento: ' . $e->getMessage());
+        }
+
+        $this->duplicateEventCoverFiles($event, $newEvent);
+        $this->duplicateEventGalleryFiles($event, $newEvent);
+
+        return redirect()
+            ->route('admin.events.edit', $newEvent)
+            ->with('success', 'Evento duplicato. Le iscrizioni non sono state copiate: controlla data e dettagli, poi salva.');
+    }
+
     public function update(Request $request, Event $event)
     {
+        // Se l'utente ha selezionato un file in UI ma PHP non lo ha ricevuto, spesso è un limite di upload.
+        if ($request->input('cover_image_selected') == '1' && !$request->hasFile('cover_image')) {
+            return back()->with('error', 'La nuova copertina non è stata ricevuta dal server. Probabile file troppo grande o limite PHP (upload_max_filesize / post_max_size). Prova con un file più piccolo.');
+        }
+
+        $debugCover = [
+            'selected_flag' => (string) $request->input('cover_image_selected', ''),
+            'has_file' => $request->hasFile('cover_image'),
+            'is_valid' => $request->hasFile('cover_image') ? $request->file('cover_image')->isValid() : null,
+            'orig_name' => $request->hasFile('cover_image') ? $request->file('cover_image')->getClientOriginalName() : null,
+            'size' => $request->hasFile('cover_image') ? $request->file('cover_image')->getSize() : null,
+            'mime' => $request->hasFile('cover_image') ? $request->file('cover_image')->getMimeType() : null,
+            'before_immagine' => $event->immagine,
+        ];
+
         $validated = $request->validate([
             'title' => 'required|string|max:120',
             'incipit' => 'nullable|string|max:500',
@@ -126,22 +188,25 @@ class EventController extends Controller
             'max_participants' => 'nullable|integer|min:1',
             'allow_guests' => 'sometimes|boolean',
             'max_guests_per_user' => 'nullable|integer|min:1|max:10',
+            'cover_image_selected' => 'nullable|in:0,1',
         ]);
 
         if ($request->hasFile('cover_image')) {
             $request->validate([
-                'cover_image' => 'file|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+                'cover_image' => 'file|image|mimes:jpeg,png,jpg,gif,webp,heic,heif|max:4096',
             ]);
         }
 
         if ($request->hasFile('gallery_images')) {
             $request->validate([
-                'gallery_images.*' => 'file|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+                'gallery_images.*' => 'file|image|mimes:jpeg,png,jpg,gif,webp,heic,heif|max:10240',
             ]);
         }
 
         $allowGuests = $request->has('allow_guests');
         $isActive = $request->has('is_active');
+
+        $wasPastEvent = $event->is_past_event;
 
         // Map to legacy columns
         $updateData = [
@@ -152,6 +217,8 @@ class EventController extends Controller
             'citta' => $validated['city'],
             'dove' => $validated['venue'] ?? '',
             'via' => $validated['address'],
+            // Se nel DB legacy esisteva un civico separato, lo azzeriamo: l'input "Indirizzo" salva la stringa completa in "via".
+            'civico' => '',
             'costo' => $validated['cost'] ?? null,
             'datascadenza' => $validated['deadline'] ?? $validated['date'],
             'elenco_visibile' => $request->has('elenco_visibile') ? 1 : 0,
@@ -163,14 +230,16 @@ class EventController extends Controller
 
         // Handle cover image removal
         if ($request->has('remove_cover') && $event->immagine) {
-            $this->imageService->deleteCoverImage($event->immagine);
+            $this->deleteEventCover($event);
             $updateData['immagine'] = null;
+            // Evita doppi tentativi di delete più avanti nello stesso request
+            $event->immagine = null;
         }
 
         // Handle new cover image
         if ($request->hasFile('cover_image')) {
             if ($event->immagine) {
-                $this->imageService->deleteCoverImage($event->immagine);
+                $this->deleteEventCover($event);
             }
 
             $coverResult = $this->imageService->uploadCoverImage(
@@ -178,9 +247,12 @@ class EventController extends Controller
                 $event->getKey()
             );
 
-            if ($coverResult['success']) {
-                $updateData['immagine'] = $coverResult['filename'];
+            if (!$coverResult['success']) {
+                return back()->with('error', 'Caricamento copertina fallito: ' . ($coverResult['error'] ?? 'errore sconosciuto'));
             }
+
+            $updateData['immagine'] = $coverResult['filename'];
+            $debugCover['uploaded_filename'] = $coverResult['filename'];
         }
 
         // Delete selected gallery images
@@ -193,10 +265,46 @@ class EventController extends Controller
             $this->processGalleryImages($request->file('gallery_images'), $event);
         }
 
-        $event->update($updateData);
+        $newDate = \Carbon\Carbon::parse($validated['date']);
 
-        return redirect()->route('admin.events.index')
-            ->with('success', 'Evento aggiornato con successo!');
+        // Evento concluso → nuova data futura: torna in homepage (pubblicato) e iscrizioni non restano chiuse da vecchia scadenza
+        if ($wasPastEvent && $newDate->gt(now())) {
+            $updateData['pubblicato'] = 1;
+            try {
+                $deadlineAt = \Carbon\Carbon::parse($updateData['datascadenza']);
+                if ($deadlineAt->lte(now())) {
+                    $updateData['datascadenza'] = $newDate->format('Y-m-d H:i:s');
+                }
+            } catch (\Throwable $e) {
+                $updateData['datascadenza'] = $newDate->format('Y-m-d H:i:s');
+            }
+        }
+
+        $event->update($updateData);
+        $event->refresh();
+        $debugCover['after_immagine'] = $event->immagine;
+        try {
+            \Log::info('Admin event cover update debug', ['event_id' => $event->getKey(), 'cover' => $debugCover]);
+        } catch (\Throwable $e) {
+            // no-op
+        }
+
+        $successMessage = 'Evento aggiornato con successo!';
+        if ($wasPastEvent && $newDate->gt(now())) {
+            $successMessage = 'Evento aggiornato: la nuova data è futura, l\'evento è di nuovo pubblicato e visibile in homepage (Prossimi eventi).';
+        }
+        if ($request->hasFile('cover_image') && !empty($updateData['immagine'])) {
+            $successMessage .= ' Copertina aggiornata (' . $event->immagine . ').';
+        } elseif ($request->input('cover_image_selected') == '1') {
+            $successMessage .= ' (DEBUG: copertina selezionata ma non elaborata — vedi log)';
+        }
+
+        // Usa la root della request (es. "http://localhost/excursio/public") per evitare 404 Apache
+        // quando l'app è servita da una sottocartella.
+        $publicUrl = rtrim($request->root(), '/') . route('events.show', $event, false);
+
+        return redirect()->to($publicUrl)
+            ->with('success', $successMessage);
     }
 
     public function destroy(Event $event)
@@ -245,6 +353,94 @@ class EventController extends Controller
         foreach ($images as $image) {
             $this->imageService->deleteImage($image->path);
             $image->delete();
+        }
+    }
+
+    private function deleteEventCover(Event $event): void
+    {
+        if (!$event->immagine) {
+            return;
+        }
+
+        // 1) Legacy: public/upload_immagini/<filename>
+        $this->imageService->deleteCoverImage($event->immagine);
+
+        // 2) Storage: "events/<id>/<filename>" oppure path completo già salvato
+        $disk = Storage::disk('public');
+        if (str_contains($event->immagine, '/')) {
+            $disk->delete($event->immagine);
+        } else {
+            $disk->delete('events/' . $event->getKey() . '/' . $event->immagine);
+        }
+    }
+
+    private function duplicateEventCoverFiles(Event $source, Event $newEvent): void
+    {
+        if (!$source->immagine) {
+            return;
+        }
+
+        $disk = Storage::disk('public');
+        $uploadDir = public_path('upload_immagini');
+        $legacySrc = $uploadDir . DIRECTORY_SEPARATOR . $source->immagine;
+
+        if (!str_contains($source->immagine, '/') && is_file($legacySrc)) {
+            $ext = pathinfo($source->immagine, PATHINFO_EXTENSION) ?: 'jpg';
+            $newName = $newEvent->getKey() . '_' . time() . '.' . $ext;
+            $legacyDest = $uploadDir . DIRECTORY_SEPARATOR . $newName;
+            if (@copy($legacySrc, $legacyDest)) {
+                $newEvent->update(['immagine' => $newName]);
+            }
+
+            return;
+        }
+
+        $srcRel = str_contains($source->immagine, '/')
+            ? $source->immagine
+            : ('events/' . $source->getKey() . '/' . $source->immagine);
+
+        if (!$disk->exists($srcRel)) {
+            return;
+        }
+
+        $disk->makeDirectory('events/' . $newEvent->getKey());
+        $ext = pathinfo($srcRel, PATHINFO_EXTENSION) ?: 'jpg';
+        $newFile = uniqid('', true) . '_' . time() . '.' . $ext;
+        $destRel = 'events/' . $newEvent->getKey() . '/' . $newFile;
+
+        if ($disk->copy($srcRel, $destRel)) {
+            $newEvent->update(['immagine' => $newFile]);
+        }
+    }
+
+    private function duplicateEventGalleryFiles(Event $source, Event $newEvent): void
+    {
+        $disk = Storage::disk('public');
+        $disk->makeDirectory('events/' . $newEvent->getKey());
+
+        foreach ($source->images as $index => $image) {
+            if (!$disk->exists($image->path)) {
+                continue;
+            }
+
+            $ext = pathinfo($image->path, PATHINFO_EXTENSION) ?: 'jpg';
+            $newFilename = uniqid('', true) . '_' . time() . '.' . $ext;
+            $newPath = 'events/' . $newEvent->getKey() . '/' . $newFilename;
+
+            if (!$disk->copy($image->path, $newPath)) {
+                continue;
+            }
+
+            EventImage::create([
+                'event_id' => $newEvent->getKey(),
+                'filename' => $newFilename,
+                'path' => $newPath,
+                'original_name' => $image->original_name,
+                'mime_type' => $image->mime_type,
+                'size' => $disk->size($newPath) ?: $image->size,
+                'order' => (int) ($image->order ?? $index),
+                'is_cover' => (bool) $image->is_cover,
+            ]);
         }
     }
 }

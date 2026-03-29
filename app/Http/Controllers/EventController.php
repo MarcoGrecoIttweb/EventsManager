@@ -32,7 +32,8 @@ class EventController extends Controller
 
     public function show(Event $event)
     {
-        if (!$event->is_active) {
+        // Gli admin possono vedere anche eventi disattivati dalla lista gestione eventi.
+        if (!$event->is_active && (!Auth::check() || !Auth::user()->isAdmin())) {
             abort(404);
         }
 
@@ -95,12 +96,12 @@ class EventController extends Controller
 
     public function printParticipants(Event $event)
     {
-        $user = Auth::user();
-        if (!$user->isAdmin() && !$user->isOrganizer()) {
+        if (!Auth::user()->isAdmin()) {
             abort(403);
         }
 
         $participants = $event->participants()
+            ->orderBy('cognome')
             ->orderBy('nome')
             ->get();
 

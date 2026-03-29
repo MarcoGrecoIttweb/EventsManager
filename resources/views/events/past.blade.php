@@ -20,7 +20,7 @@
             <div class="row">
                 @foreach($events as $event)
                     <div class="col-md-6 col-lg-4 mb-4">
-                        <div class="card h-100 shadow-sm border-secondary">
+                        <div class="card event-box h-100">
                             {{-- Badge Evento Passato --}}
                             <div class="card-header bg-secondary text-white text-center py-2">
                                 <small><i class="fas fa-history"></i> <strong>EVENTO CONCLUSO</strong></small>
@@ -55,14 +55,7 @@
                                 <div class="mb-3">
                                     <span class="badge bg-secondary">
                                         <i class="fas fa-calendar"></i>
-                                        @php
-                                            try {
-                                                $date = \Carbon\Carbon::parse($event->date);
-                                                echo $date->format('d/m/Y H:i');
-                                            } catch (\Exception $e) {
-                                                echo $event->date;
-                                            }
-                                        @endphp
+                                        {{ $event->italian_event_date ?? ($event->date ? $event->date->format('d/m/Y H:i') : '') }}
                                     </span>
                                     <span class="badge bg-info ms-1">
                                         <i class="fas fa-users"></i>
@@ -96,9 +89,18 @@
                                 @endauth
                             </div>
                             <div class="card-footer bg-transparent">
-                                <a href="{{ route('events.show', $event) }}" class="btn btn-outline-secondary w-100">
-                                    <i class="fas fa-eye"></i> Dettagli Evento
-                                </a>
+                                <div class="d-grid gap-2">
+                                    <a href="{{ route('events.show', $event) }}" class="btn btn-outline-secondary w-100">
+                                        <i class="fas fa-eye"></i> Dettagli evento
+                                    </a>
+                                    @auth
+                                        @if(auth()->user()->isAdmin())
+                                            <a href="{{ route('admin.events.edit', $event) }}" class="btn btn-warning w-100">
+                                                <i class="fas fa-edit"></i> Modifica / ripristina data
+                                            </a>
+                                        @endif
+                                    @endauth
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -150,9 +152,5 @@
             border-bottom: 1px solid rgba(0,0,0,0.125);
         }
 
-        /* Stile per eventi passati */
-        .border-secondary {
-            border-color: #6c757d !important;
-        }
     </style>
 @endsection

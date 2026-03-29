@@ -4,195 +4,370 @@
 
 @section('content')
     <div class="container">
+        <div class="mb-3">
+            @auth
+                @if(auth()->user()->isAdmin())
+                    <a href="{{ route('admin.users.index') }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-arrow-left"></i> Torna all'elenco
+                    </a>
+                @else
+                    <a href="{{ url()->previous() }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-arrow-left"></i> Torna all'elenco
+                    </a>
+                @endif
+            @else
+                <a href="{{ url()->previous() }}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-arrow-left"></i> Torna all'elenco
+                </a>
+            @endauth
+        </div>
+        @if($user->status === 'banned')
+            <div class="alert alert-danger border-2 fw-semibold mb-3" role="alert">
+                <i class="fas fa-user-slash"></i> Disattivato
+            </div>
+        @endif
         <div class="row">
-            <div class="col-md-4">
-                <div class="card">
-                    <div class="card-body text-center">
-                        @if($user->photo_url)
-                            <img src="{{ $user->photo_url }}"
-                                 alt="{{ $user->name }}"
-                                 class="rounded-circle mb-3"
-                                 style="width: 150px; height: 150px; object-fit: cover;">
-                        @else
-                            <div class="rounded-circle bg-secondary d-inline-flex align-items-center justify-content-center mb-3"
-                                 style="width: 150px; height: 150px;">
-                                <i class="fas fa-user fa-3x text-white"></i>
+            <div class="col-12 mb-3">
+                <div class="card profile-upcoming-events">
+                    <div class="card-body">
+                        <div class="row g-3 align-items-start">
+                            <div class="col-12 col-md-6">
+                                <div class="d-flex flex-column gap-2 profile-fields-compact">
+                                    <div class="profile-field pt-0">
+                                        <span class="profile-label">Username:</span>
+                                        <span class="profile-value">{{ $user->username ?: '—' }}</span>
+                                    </div>
+                                    <div class="profile-field">
+                                        <span class="profile-label">Nome:</span>
+                                        <span class="profile-value">{{ $user->nome ?: '—' }}</span>
+                                    </div>
+                                    <div class="profile-field">
+                                        <span class="profile-label">Cognome:</span>
+                                        <span class="profile-value">{{ $user->cognome ?: '—' }}</span>
+                                    </div>
+                                    <div class="profile-field">
+                                        <span class="profile-label">Sesso:</span>
+                                        <span class="profile-value">
+                                            @if($user->sesso === 'f') Donna
+                                            @elseif($user->sesso === 'm') Uomo
+                                            @else —
+                                            @endif
+                                        </span>
+                                    </div>
+                                    <div class="profile-field">
+                                        <span class="profile-label">E-mail:</span>
+                                        <span class="profile-value">
+                                            @auth
+                                                @if($user->mail_visibile || auth()->id() === $user->id || auth()->user()->isAdmin())
+                                                    {{ $user->email ?: '—' }}
+                                                @else
+                                                    —
+                                                @endif
+                                            @else
+                                                —
+                                            @endauth
+                                        </span>
+                                    </div>
+                                    <div class="profile-field">
+                                        <span class="profile-label">Telefono:</span>
+                                        <span class="profile-value">
+                                            @auth
+                                                @if(auth()->id() === $user->id || auth()->user()->isAdmin())
+                                                    {{ $user->telefono ?: '—' }}
+                                                @else
+                                                    —
+                                                @endif
+                                            @else
+                                                —
+                                            @endauth
+                                        </span>
+                                    </div>
+                                    <div class="profile-field">
+                                        <span class="profile-label">Residenza:</span>
+                                        <span class="profile-value">{{ $user->residenza ?: '—' }}</span>
+                                    </div>
+                                    <div class="profile-field">
+                                        <span class="profile-label">Età:</span>
+                                        <span class="profile-value">{{ $user->datanascita ? $user->datanascita->age : '—' }}</span>
+                                    </div>
+                                    <div class="profile-field pb-0">
+                                        <span class="profile-label">Data di nascita:</span>
+                                        <span class="profile-value">{{ $user->datanascita ? $user->datanascita->format('d-m-Y') : '—' }}</span>
+                                    </div>
+                                    <div class="profile-field">
+                                        <span class="profile-label">Ultimo collegamento:</span>
+                                        <span class="profile-value">{{ $user->ultimo_accesso ? $user->ultimo_accesso->format('d/m/Y H:i') : '—' }}</span>
+                                    </div>
+                                </div>
+
+                                @auth
+                                    @if(auth()->id() === $user->id)
+                                        <a href="{{ route('profile.edit', $user) }}" class="btn btn-primary btn-sm mt-3">
+                                            <i class="fas fa-edit"></i> Modifica Profilo
+                                        </a>
+                                    @endif
+                                @endauth
                             </div>
-                        @endif
 
-                        <h3>{{ $user->nome }} {{ $user->cognome }}</h3>
-                        <p class="text-muted">{{ '@' . $user->username }}</p>
+                            <div class="col-12 col-md-6 text-center text-md-start">
+                                <div class="text-muted small mb-2">La foto</div>
+                                @if($user->photo_url)
+                                    <img src="{{ $user->photo_url }}"
+                                         alt="{{ $user->name }}"
+                                         class="profile-photo-full"
+                                         loading="lazy">
+                                @else
+                                    <div class="rounded-circle bg-secondary d-inline-flex align-items-center justify-content-center"
+                                         style="width: 150px; height: 150px;">
+                                        <i class="fas fa-user fa-3x text-white"></i>
+                                    </div>
+                                @endif
 
-                        <span class="badge bg-{{ $user->isAdmin() ? 'danger' : ($user->isOrganizer() ? 'warning' : 'info') }} mb-2">
-                            {{ $user->role_name }}
-                        </span>
-
-                        @if($user->descr)
-                            <p class="card-text mt-2">{{ $user->descr }}</p>
-                        @endif
-
-                        @auth
-                            @if(auth()->id() === $user->id)
-                                <a href="{{ route('profile.edit', $user) }}" class="btn btn-primary mt-3">
-                                    <i class="fas fa-edit"></i> Modifica Profilo
-                                </a>
-                            @endif
-                        @endauth
+                                <div class="mt-3 d-flex flex-wrap justify-content-center justify-content-md-start gap-2">
+                                    <span class="badge profile-action-chip bg-{{ $user->isAdmin() ? 'danger' : ($user->isOrganizer() ? 'warning' : 'info') }}">
+                                        {{ $user->role_name }}
+                                    </span>
+                                    @php
+                                        $isBanned = $user->status === 'banned';
+                                        $isApproved = $user->status === 'approved';
+                                        $statusLabel = $isApproved ? 'Attivo' : ($isBanned ? 'Disattivato' : 'Sospeso');
+                                        $statusBg = $isApproved ? 'success' : 'danger';
+                                    @endphp
+                                    <span class="badge profile-action-chip bg-{{ $statusBg }}">
+                                        {{ $statusLabel }}
+                                    </span>
+                                    @auth
+                                        @if(auth()->user()->isAdmin() && !$user->isAdmin())
+                                            @if($user->status === 'banned')
+                                                <form action="{{ route('admin.users.unban', $user) }}" method="POST" class="d-inline">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-warning btn-sm profile-action-chip-btn">
+                                                        <i class="fas fa-unlock"></i> Ripristina Utente
+                                                    </button>
+                                                </form>
+                                            @else
+                                                <form action="{{ route('admin.users.ban', $user) }}" method="POST" class="d-inline">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-danger btn-sm profile-action-chip-btn">
+                                                        <i class="fas fa-ban"></i> Banna Utente
+                                                    </button>
+                                                </form>
+                                            @endif
+                                        @endif
+                                    @endauth
+                                    @auth
+                                        @if(auth()->id() !== $user->id)
+                                            @if(auth()->user()->isFriendOf($user))
+                                                <form action="{{ route('friends.remove', $user) }}" method="POST" class="d-inline">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-outline-danger btn-sm profile-action-chip-btn">
+                                                        <i class="fas fa-user-minus"></i> Rimuovi dagli amici
+                                                    </button>
+                                                </form>
+                                            @else
+                                                <form action="{{ route('friends.add', $user) }}" method="POST" class="d-inline">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-outline-primary btn-sm profile-action-chip-btn">
+                                                        <i class="fas fa-user-plus"></i> Aggiungi agli amici
+                                                    </button>
+                                                </form>
+                                            @endif
+                                        @endif
+                                    @endauth
+                                </div>
+                            </div>
+                        </div>
+                        <div class="profile-field profile-field--descr mt-3">
+                            <div class="profile-label">Descrizione</div>
+                            <div class="profile-value profile-value--descr">{!! $user->safe_descr !== '' ? $user->safe_descr : '—' !!}</div>
+                        </div>
                     </div>
-                </div>
-
-                {{-- Info personali --}}
-                <div class="card mt-3">
-                    <div class="card-header">
-                        <h5 class="mb-0"><i class="fas fa-info-circle"></i> Informazioni</h5>
-                    </div>
-                    <ul class="list-group list-group-flush">
-                        @if($user->sesso)
-                            <li class="list-group-item">
-                                <i class="fas fa-{{ $user->sesso === 'f' ? 'venus' : 'mars' }}"></i>
-                                {{ $user->sesso === 'f' ? 'Donna' : 'Uomo' }}
-                            </li>
-                        @endif
-                        @if($user->residenza)
-                            <li class="list-group-item">
-                                <i class="fas fa-home"></i> {{ $user->residenza }}
-                            </li>
-                        @endif
-                        @if($user->datanascita)
-                            <li class="list-group-item">
-                                <i class="fas fa-birthday-cake"></i> {{ $user->datanascita->format('d/m/Y') }}
-                            </li>
-                        @endif
-                        @auth
-                            @if($user->mail_visibile || auth()->id() === $user->id || auth()->user()->isAdmin())
-                                <li class="list-group-item">
-                                    <i class="fas fa-envelope"></i> {{ $user->email }}
-                                </li>
-                            @endif
-                            @if($user->telefono && (auth()->id() === $user->id || auth()->user()->isAdmin()))
-                                <li class="list-group-item">
-                                    <i class="fas fa-phone"></i> {{ $user->telefono }}
-                                </li>
-                            @endif
-                        @endauth
-                        <li class="list-group-item">
-                            <i class="fas fa-calendar-check"></i> Iscritto dal {{ $user->created_at ? $user->created_at->format('d/m/Y') : 'N/D' }}
-                        </li>
-                        @if($user->ultimo_accesso)
-                            <li class="list-group-item">
-                                <i class="fas fa-clock"></i> Ultimo accesso {{ $user->ultimo_accesso->diffForHumans() }}
-                            </li>
-                        @endif
-                    </ul>
                 </div>
             </div>
 
-            <div class="col-md-8">
-                {{-- Friends section --}}
-                @auth
-                    @if(auth()->id() !== $user->id)
-                        <div class="mb-3">
-                            @if(auth()->user()->isFriendOf($user))
-                                <form action="{{ route('friends.remove', $user) }}" method="POST" class="d-inline">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-outline-danger btn-sm">
-                                        <i class="fas fa-user-minus"></i> Rimuovi dagli amici
-                                    </button>
-                                </form>
-                            @else
-                                <form action="{{ route('friends.add', $user) }}" method="POST" class="d-inline">
-                                    @csrf
-                                    <button type="submit" class="btn btn-outline-primary btn-sm">
-                                        <i class="fas fa-user-plus"></i> Aggiungi agli amici
-                                    </button>
-                                </form>
-                            @endif
-                        </div>
-                    @endif
-                @endauth
-
+            <div class="col-12">
                 <div class="card">
                     <div class="card-header">
                         <h4 class="mb-0">
-                            <i class="fas fa-calendar"></i> Prossimi Eventi
-                            <span class="badge bg-primary">{{ $upcomingEvents->count() }}</span>
+                            <i class="fas fa-calendar"></i> Eventi Partecipati
+                            <span class="badge bg-primary">{{ $allParticipatedEvents->count() }}</span>
                         </h4>
                     </div>
                     <div class="card-body">
-                        @if($upcomingEvents->count() > 0)
-                            <div class="list-group">
-                                @foreach($upcomingEvents as $event)
-                                    <a href="{{ route('events.show', $event) }}"
-                                       class="list-group-item list-group-item-action">
-                                        <div class="d-flex w-100 justify-content-between">
-                                            <h5 class="mb-1">{{ $event->title }}</h5>
-                                            <small class="text-muted">
-                                                {{ $event->date->format('d/m/Y H:i') }}
-                                            </small>
-                                        </div>
-                                        <p class="mb-1">
-                                            <i class="fas fa-map-marker-alt"></i>
-                                            {{ $event->city }}
-                                            @if($event->dove) - {{ $event->dove }} @endif
-                                        </p>
-                                        <small class="text-muted">
-                                            {{ $event->participants_count }} partecipanti
-                                        </small>
-                                    </a>
-                                @endforeach
+                        @if($allParticipatedEvents->count() > 0)
+                            <div class="table-responsive">
+                                <table class="table table-sm table-striped table-hover align-middle mb-0 profile-events-table">
+                                    <thead>
+                                    <tr>
+                                        <th>Titolo</th>
+                                        <th>Data</th>
+                                        <th>Luogo</th>
+                                        <th>Stato</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    @foreach($allParticipatedEvents as $event)
+                                        @php
+                                            $eventDate = $event->date ?? $event->dataevento;
+                                            $isPast = $eventDate ? $eventDate->lte(now()) : false;
+                                        @endphp
+                                        <tr onclick="window.location='{{ route('events.show', $event) }}'" style="cursor:pointer;">
+                                            <td class="fw-semibold">{{ $event->title }}</td>
+                                            <td>{{ $eventDate ? $eventDate->format('d/m/Y H:i') : '—' }}</td>
+                                            <td>{{ $event->city ?: '—' }}@if($event->dove) - {{ $event->dove }} @endif</td>
+                                            <td>
+                                                <span class="badge bg-{{ $isPast ? 'secondary' : 'success' }}">
+                                                    {{ $isPast ? 'Passato' : 'In programma' }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                    </tbody>
+                                </table>
                             </div>
                         @else
                             <div class="text-center py-4">
                                 <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
-                                <h5>Nessun evento in programma</h5>
+                                <h5>Nessun evento partecipato</h5>
                                 <p class="text-muted">
-                                    {{ $user->username }} non partecipa a nessun evento futuro.
+                                    {{ $user->username }} non ha ancora partecipato a eventi.
                                 </p>
                             </div>
                         @endif
                     </div>
                 </div>
 
-                @auth
-                    @if(auth()->user()->isAdmin() && !$user->isAdmin())
-                        <div class="card mt-4">
-                            <div class="card-header bg-admin">
-                                <h5 class="mb-0 text-white">
-                                    <i class="fas fa-shield-alt"></i> Azioni Amministrative
-                                </h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="d-grid gap-2 d-md-flex">
-                                    @if($user->status === 'pending')
-                                        <form action="{{ route('admin.users.approve', $user) }}" method="POST">
-                                            @csrf
-                                            <button type="submit" class="btn btn-success">
-                                                <i class="fas fa-check"></i> Approva Utente
-                                            </button>
-                                        </form>
-                                    @endif
-
-                                    @if($user->status !== 'banned')
-                                        <form action="{{ route('admin.users.ban', $user) }}" method="POST">
-                                            @csrf
-                                            <button type="submit" class="btn btn-danger">
-                                                <i class="fas fa-ban"></i> Banna Utente
-                                            </button>
-                                        </form>
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
-                    @endif
-                @endauth
             </div>
         </div>
     </div>
 
     <style>
-        .bg-admin {
-            background: linear-gradient(45deg, #6c5ce7, #a29bfe);
+        .profile-photo-full {
+            max-width: 240px;
+            width: 100%;
+            height: auto;
+            object-fit: contain;
+            border-radius: 12px;
+            border: 1px solid rgba(0,0,0,0.12);
+            background: #fff;
+        }
+        .profile-fields-compact {
+            max-width: 380px;
+        }
+        .profile-field {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.25rem 0.55rem;
+            border-bottom: 1px solid rgba(0,0,0,0.08);
+            background: #f2f4f6;
+            border-radius: 8px;
+        }
+        .profile-fields-compact .profile-field {
+            border: 1px solid #cfe8f3;
+            border-radius: 8px;
+            padding: 0.22rem 0.55rem;
+            margin-bottom: 0.32rem;
+            background: #f2f4f6;
+        }
+        .profile-fields-compact .profile-field:last-child {
+            margin-bottom: 0;
+        }
+        .profile-field--descr {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.35rem;
+            width: 100%;
+        }
+        .profile-field:last-child {
+            border-bottom: 0;
+        }
+        .profile-label {
+            font-size: 0.83rem;
+            color: #5c6670;
+            font-weight: 600;
+            white-space: nowrap;
+            min-width: 98px;
+        }
+        .profile-value {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #212529;
+            word-break: break-word;
+        }
+        .profile-value--descr {
+            border: 0;
+            background: transparent;
+            border-radius: 0;
+            padding: 0;
+            font-weight: 500;
+            width: 100%;
+            display: block;
+            white-space: normal;
+            word-break: break-word;
+        }
+        .profile-value--descr p {
+            margin-bottom: 0.5rem;
+        }
+        .profile-value--descr p:last-child {
+            margin-bottom: 0;
+        }
+        .profile-value--descr ul,
+        .profile-value--descr ol {
+            margin: 0.25rem 0 0.5rem 1.25rem;
+        }
+        .profile-action-chip {
+            display: inline-flex;
+            align-items: center;
+            min-height: 28px;
+            padding: 0.2rem 0.5rem;
+            font-size: 0.78rem;
+            line-height: 1;
+        }
+        .profile-action-chip-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            min-height: 28px;
+            padding: 0.2rem 0.5rem;
+            line-height: 1;
+        }
+        .profile-upcoming-events .list-group-item {
+            border: 2px solid #0dcaf0 !important;
+            --bs-list-group-border-color: #0dcaf0;
+            border-radius: 10px;
+            margin-bottom: 1.1rem;
+            padding-top: 0.85rem;
+            padding-bottom: 0.85rem;
+            box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.08);
+        }
+        .profile-upcoming-events .card-header,
+        .profile-upcoming-events .card-body {
+            border-color: #0dcaf0;
+        }
+        .profile-upcoming-events .list-group-item:last-child {
+            margin-bottom: 0;
+        }
+        .profile-upcoming-events .list-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.9rem;
+        }
+        .profile-events-table th,
+        .profile-events-table td {
+            padding-top: 0.2rem;
+            padding-bottom: 0.2rem;
+            font-size: 0.8rem;
+            line-height: 1.05;
+            white-space: nowrap;
+            vertical-align: middle;
+        }
+        .profile-events-table td:first-child {
+            max-width: 320px;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
     </style>
 @endsection

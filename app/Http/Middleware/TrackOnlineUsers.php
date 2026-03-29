@@ -14,14 +14,15 @@ class TrackOnlineUsers
 
     public function handle(Request $request, Closure $next)
     {
+        $now = time();
+        $cutoff = $now - (self::TIMEOUT_MINUTES * 60);
+
+        // Sempre: rimuovi record scaduti (anche per visitatori sulla home pubblica)
+        DB::table('utentionline')->where('time', '<', $cutoff)->delete();
+
         if (Auth::check()) {
             $userId = Auth::id();
             $ip = $request->ip();
-            $now = time();
-            $cutoff = $now - (self::TIMEOUT_MINUTES * 60);
-
-            // Rimuovi record scaduti
-            DB::table('utentionline')->where('time', '<', $cutoff)->delete();
 
             // Upsert: aggiorna se esiste già un record per questo utente, altrimenti inserisci
             $exists = DB::table('utentionline')->where('id_utente', $userId)->exists();

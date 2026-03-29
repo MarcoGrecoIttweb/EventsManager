@@ -28,20 +28,20 @@
                 <h5 class="mb-0">Dettagli Evento</h5>
             </div>
             <div class="card-body">
-                {{-- Titolo --}}
-                <div class="mb-3">
-                    <label for="title" class="form-label">Titolo <span class="text-danger">*</span></label>
-                    <input type="text" name="title" id="title" class="form-control @error('title') is-invalid @enderror" value="{{ old('title', $event->title) }}" maxlength="120" required>
-                    @error('title')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-
                 {{-- Data --}}
                 <div class="mb-3">
                     <label for="date" class="form-label">Data e Ora <span class="text-danger">*</span></label>
                     <input type="datetime-local" name="date" id="date" class="form-control @error('date') is-invalid @enderror" value="{{ old('date', $event->date->format('Y-m-d\TH:i')) }}" required>
                     @error('date')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+
+                {{-- Titolo --}}
+                <div class="mb-3">
+                    <label for="title" class="form-label">Titolo <span class="text-danger">*</span></label>
+                    <input type="text" name="title" id="title" class="form-control @error('title') is-invalid @enderror" value="{{ old('title', $event->title) }}" maxlength="120" required>
+                    @error('title')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
@@ -198,20 +198,9 @@
     </form>
 </div>
 
-<script src="https://cdn.tiny.cloud/1/{{ config('services.tinymce.api_key') }}/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+@include('partials.ckeditor4-description', ['height' => 400])
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // TinyMCE
-        tinymce.init({
-            selector: '#description',
-            language: 'it',
-            height: 400,
-            menubar: false,
-            plugins: 'lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table help wordcount',
-            toolbar: 'undo redo | blocks | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image | removeformat | help',
-            content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 14px; }',
-        });
-
         // Toggle ospiti
         const allowGuestsCheckbox = document.getElementById('allow_guests');
         const maxGuestsWrapper = document.getElementById('max_guests_wrapper');
