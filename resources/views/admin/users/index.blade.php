@@ -12,10 +12,22 @@
                         <i class="fas fa-users-cog admin-users-page-title-icon"></i>
                         <span class="admin-users-page-title-text">Gestione Utenti</span>
                     </h1>
-                    <a href="{{ route('admin.dashboard') }}" class="btn btn-secondary btn-sm">
-                        <i class="fas fa-home"></i> Home
-                    </a>
+                    <div class="d-flex gap-2">
+                        <a href="{{ route('admin.users.logins') }}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-sign-in-alt"></i> Ingressi giornalieri utenti ult. 10 gg.
+                        </a>
+                        <a href="{{ route('admin.dashboard') }}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-home"></i> Home
+                        </a>
+                    </div>
                 </div>
+
+                @if(request('registrations') === 'pending')
+                    <div class="alert alert-warning d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                        <span><i class="fas fa-filter me-1"></i> Stai visualizzando <strong>solo le iscrizioni in attesa</strong> di approvazione.</span>
+                        <a href="{{ route('admin.users.index') }}" class="btn btn-sm btn-outline-dark">Mostra tutti gli utenti</a>
+                    </div>
+                @endif
 
                 <!-- Tabella Utenti -->
                 <div class="card">
@@ -118,7 +130,15 @@
                                             </button>
                                         </th>
                                         <th class="col-residenza">Residenza</th>
-                                        <th>Ruolo</th>
+                                        <th>
+                                            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-dark fw-semibold admin-sort" data-sort-key="ruolo" aria-label="Ordina per ruolo">
+                                                Ruolo
+                                                <span class="admin-sort-icons" aria-hidden="true">
+                                                    <i class="fas fa-sort-up"></i>
+                                                    <i class="fas fa-sort-down"></i>
+                                                </span>
+                                            </button>
+                                        </th>
                                         <th>
                                             <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-dark fw-semibold admin-sort" data-sort-key="stato" aria-label="Ordina per stato">
                                                 Stato
@@ -174,6 +194,7 @@
                                             data-user-cognome="{{ strtolower(trim($user->cognome ?? '')) }}"
                                             data-user-nickname="{{ strtolower(trim($user->nickname ?? $user->username ?? '')) }}"
                                             data-user-sesso="{{ strtolower(trim($user->sesso ?? '')) }}"
+                                            data-user-ruolo="{{ (int) ($user->ruolo ?? 2) }}"
                                             data-user-stato="{{ strtolower(trim($user->status ?? '')) }}"
                                             data-user-stato-rank="{{ $user->status === 'approved' ? 0 : ($user->status === 'pending' ? 1 : 2) }}"
                                             data-user-news-rank="{{ $user->invia ? 1 : 0 }}"
@@ -202,13 +223,17 @@
                                             </td>
                                             <td class="col-residenza" title="{{ $user->residenza ?: '—' }}">{{ $user->residenza ?: '—' }}</td>
                                             <td>
-                                                @if((int) $user->ruolo === 0)
-                                                    <span class="badge bg-danger">Admin</span>
-                                                @elseif((int) $user->ruolo === 1)
-                                                    <span class="badge bg-info">Organizzatore</span>
-                                                @else
-                                                    <span class="badge bg-secondary">Utente</span>
-                                                @endif
+                                                <form action="{{ route('admin.users.update-role', $user) }}" method="POST" class="d-flex align-items-center gap-1">
+                                                    @csrf
+                                                    <select name="ruolo" class="form-select form-select-sm w-auto">
+                                                        <option value="2" {{ (int)$user->ruolo === 2 ? 'selected' : '' }}>Utente</option>
+                                                        <option value="1" {{ (int)$user->ruolo === 1 ? 'selected' : '' }}>Organizzatore</option>
+                                                        <option value="0" {{ (int)$user->ruolo === 0 ? 'selected' : '' }}>Amministratore</option>
+                                                    </select>
+                                                    <button type="submit" class="btn btn-outline-secondary btn-sm" title="Aggiorna ruolo">
+                                                        <i class="fas fa-save"></i>
+                                                    </button>
+                                                </form>
                                             </td>
                                             <td>
                                                 @if($user->status === 'pending')
@@ -550,11 +575,17 @@
                 });
             }
 
-            function sortVisibleRows(primaryKey, primaryDir, secondaryKey, secondaryDir) {
+            function defaultSortDirForKey(sortKey) {
+                return (sortKey === 'ultimo_accesso' || sortKey === 'iscr' || sortKey === 'datanascita' || sortKey === 'eventi')
+                    ? 'desc'
+                    : 'asc';
+            }
+
+            function sortAllRowsByColumn(sortKey, sortDir) {
                 var tbody = document.querySelector('.admin-users-table tbody');
                 if (!tbody) return;
 
-                var visible = rows.filter(function (tr) { return tr.style.display !== 'none'; });
+                var all = rows.slice();
 
                 function getStr(tr, attrName) {
                     return normalize(tr.getAttribute(attrName));
@@ -567,86 +598,83 @@
                     return parseInt(tr.getAttribute(attrName) || '0', 10);
                 }
 
-                function cmpForKey(a, b, sortKey) {
-                    if (sortKey === 'ultimo_accesso') {
+                function cmpForKey(a, b, key) {
+                    if (key === 'ultimo_accesso') {
                         var av = getNumFromCell(a, '[data-sort-ultimo-accesso]', 'data-sort-ultimo-accesso');
                         var bv = getNumFromCell(b, '[data-sort-ultimo-accesso]', 'data-sort-ultimo-accesso');
                         return av - bv;
-                    } else if (sortKey === 'iscr') {
+                    }
+                    if (key === 'iscr') {
                         var ai = getNumFromCell(a, '[data-sort-iscr]', 'data-sort-iscr');
                         var bi = getNumFromCell(b, '[data-sort-iscr]', 'data-sort-iscr');
                         return ai - bi;
-                    } else if (sortKey === 'nome') {
-                        return getStr(a, 'data-user-nome').localeCompare(getStr(b, 'data-user-nome'));
-                    } else if (sortKey === 'cognome') {
-                        return getStr(a, 'data-user-cognome').localeCompare(getStr(b, 'data-user-cognome'));
-                    } else if (sortKey === 'nickname') {
-                        return getStr(a, 'data-user-nickname').localeCompare(getStr(b, 'data-user-nickname'));
-                    } else if (sortKey === 'sesso') {
-                        return getStr(a, 'data-user-sesso').localeCompare(getStr(b, 'data-user-sesso'));
-                    } else if (sortKey === 'datanascita') {
+                    }
+                    if (key === 'nome') {
+                        return getStr(a, 'data-user-nome').localeCompare(getStr(b, 'data-user-nome'), 'it', { sensitivity: 'base' });
+                    }
+                    if (key === 'cognome') {
+                        return getStr(a, 'data-user-cognome').localeCompare(getStr(b, 'data-user-cognome'), 'it', { sensitivity: 'base' });
+                    }
+                    if (key === 'nickname') {
+                        return getStr(a, 'data-user-nickname').localeCompare(getStr(b, 'data-user-nickname'), 'it', { sensitivity: 'base' });
+                    }
+                    if (key === 'sesso') {
+                        return getStr(a, 'data-user-sesso').localeCompare(getStr(b, 'data-user-sesso'), 'it', { sensitivity: 'base' });
+                    }
+                    if (key === 'datanascita') {
                         var ad = getNumFromCell(a, '[data-sort-datanascita]', 'data-sort-datanascita');
                         var bd = getNumFromCell(b, '[data-sort-datanascita]', 'data-sort-datanascita');
                         return ad - bd;
-                    } else if (sortKey === 'stato') {
+                    }
+                    if (key === 'ruolo') {
+                        return getNumAttr(a, 'data-user-ruolo') - getNumAttr(b, 'data-user-ruolo');
+                    }
+                    if (key === 'stato') {
                         return getNumAttr(a, 'data-user-stato-rank') - getNumAttr(b, 'data-user-stato-rank');
-                    } else if (sortKey === 'news') {
+                    }
+                    if (key === 'news') {
                         return getNumAttr(a, 'data-user-news-rank') - getNumAttr(b, 'data-user-news-rank');
-                    } else if (sortKey === 'eventi') {
+                    }
+                    if (key === 'eventi') {
                         return getNumAttr(a, 'data-user-eventi-count') - getNumAttr(b, 'data-user-eventi-count');
                     }
-
                     return 0;
                 }
 
-                visible.sort(function (a, b) {
-                    var cmp1 = cmpForKey(a, b, primaryKey);
-                    if (primaryDir !== 'asc') cmp1 = -cmp1;
-
-                    if (cmp1 !== 0 || !secondaryKey) {
-                        return cmp1;
+                all.sort(function (a, b) {
+                    var cmp = cmpForKey(a, b, sortKey);
+                    if (sortDir !== 'asc') {
+                        cmp = -cmp;
                     }
-
-                    var cmp2 = cmpForKey(a, b, secondaryKey);
-                    if (secondaryDir !== 'asc') cmp2 = -cmp2;
-                    return cmp2;
+                    return cmp;
                 });
 
-                visible.forEach(function (tr) { tbody.appendChild(tr); });
+                all.forEach(function (tr) {
+                    tbody.appendChild(tr);
+                });
             }
 
             var sortButtons = Array.prototype.slice.call(document.querySelectorAll('.admin-sort'));
-            var primarySortKey = null;
-            var primarySortDir = null;
-            var secondarySortKey = null;
-            var secondarySortDir = null;
 
             sortButtons.forEach(function (btn) {
-                // default: desc per date, asc per testo
                 var key = btn.getAttribute('data-sort-key');
-                var def = (key === 'ultimo_accesso' || key === 'iscr' || key === 'datanascita' || key === 'eventi') ? 'desc' : 'asc';
-                btn.setAttribute('data-dir', def);
+                btn.setAttribute('data-dir', defaultSortDirForKey(key));
 
                 btn.addEventListener('click', function () {
-                    var dir = btn.getAttribute('data-dir') === 'asc' ? 'desc' : 'asc';
-                    btn.setAttribute('data-dir', dir);
+                    var dir = btn.getAttribute('data-dir') || 'asc';
+                    btn.setAttribute('data-dir', dir === 'asc' ? 'desc' : 'asc');
 
-                    if (!primarySortKey || primarySortKey === key) {
-                        primarySortKey = key;
-                        primarySortDir = dir;
-                    } else {
-                        // secondo click su un'altra colonna = ordinamento secondario (dentro il gruppo del primario)
-                        secondarySortKey = key;
-                        secondarySortDir = dir;
-                    }
-
-                    // evidenzia solo il primario (il secondario resta comunque attivo a livello logico)
                     sortButtons.forEach(function (b) {
-                        if (b.getAttribute('data-sort-key') !== primarySortKey) b.removeAttribute('data-active');
+                        if (b === btn) {
+                            return;
+                        }
+                        var k = b.getAttribute('data-sort-key');
+                        b.setAttribute('data-dir', defaultSortDirForKey(k));
+                        b.removeAttribute('data-active');
                     });
                     btn.setAttribute('data-active', '1');
 
-                    sortVisibleRows(primarySortKey, primarySortDir, secondarySortKey, secondarySortDir);
+                    sortAllRowsByColumn(key, dir);
                 });
             });
         })();

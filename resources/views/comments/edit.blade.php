@@ -20,6 +20,18 @@
                             <i class="fas fa-info-circle"></i>
                             Stai modificando il commento per l'evento: <strong>{{ $comment->event->title }}</strong>
                         </div>
+                        @if(auth()->user()->isAdmin() && auth()->id() !== $comment->id_utente)
+                            <div class="alert alert-warning py-2 mb-3">
+                                <i class="fas fa-user-shield"></i>
+                                <strong>Modifica come amministratore:</strong> il commento è di
+                                @if($comment->user)
+                                    <strong>{{ $comment->user->nickname }}</strong>
+                                @else
+                                    un utente non più disponibile
+                                @endif
+                                .
+                            </div>
+                        @endif
 
                         <form action="{{ route('comments.update', $comment) }}" method="POST">
                             @csrf
@@ -27,9 +39,10 @@
 
                             <div class="mb-3">
                                 <label for="content" class="form-label">Commento</label>
+                                {{-- HTML non escapato: CKEditor deve ricevere markup reale, non &lt;p&gt;… --}}
                                 <textarea class="form-control" id="content" name="content"
                                           rows="6" placeholder="Modifica il tuo commento..."
-                                          required>{{ old('content', $comment->content) }}</textarea>
+                                          required>{!! old('content', $comment->content) !!}</textarea>
                                 @error('content')
                                 <div class="text-danger">{{ $message }}</div>
                                 @enderror

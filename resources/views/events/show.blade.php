@@ -3,6 +3,20 @@
 @section('title', $event->title . ' - Excursio')
 
 @section('content')
+    <style>
+        .event-description img {
+            max-width: 100%;
+            height: auto;
+            max-height: 250px;
+            width: auto;
+            object-fit: contain;
+            display: block;
+            margin: 8px auto;
+        }
+    </style>
+    @php
+        $eventProfileBackQuery = http_build_query(['return' => route('events.show', $event)]);
+    @endphp
     <div class="container">
         <div class="mb-3">
             @auth
@@ -28,17 +42,29 @@
                         <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
                             <h2 class="mb-0">{{ $event->title }}</h2>
                             @auth
-                                @if(auth()->user()->isAdmin() || auth()->id() === $event->id_organizzatore)
-                                    @if(auth()->user()->isAdmin())
-                                        <a href="{{ route('admin.events.edit', $event) }}" class="btn btn-warning btn-sm">
-                                            <i class="fas fa-edit"></i> Modifica evento
-                                        </a>
-                                    @else
-                                        <a href="{{ route('manage.events.edit', $event) }}" class="btn btn-warning btn-sm">
-                                            <i class="fas fa-edit"></i> Modifica evento
-                                        </a>
+                                <div class="d-flex flex-wrap gap-2">
+                                    @if(auth()->user()->isAdmin() || auth()->id() === $event->id_organizzatore)
+                                        @if(auth()->user()->isAdmin())
+                                            <a href="{{ route('admin.events.edit', $event) }}" class="btn btn-warning btn-sm">
+                                                <i class="fas fa-edit"></i> Modifica evento
+                                            </a>
+                                        @else
+                                            <a href="{{ route('manage.events.edit', $event) }}" class="btn btn-warning btn-sm">
+                                                <i class="fas fa-edit"></i> Modifica evento
+                                            </a>
+                                        @endif
                                     @endif
-                                @endif
+                                    @if(auth()->user()->isAdmin())
+                                        <form action="{{ route('admin.events.destroy', $event) }}" method="POST"
+                                              onsubmit="return confirm('Sei sicuro di voler cancellare definitivamente questo evento?');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-danger btn-sm">
+                                                <i class="fas fa-trash-alt"></i> Cancella evento
+                                            </button>
+                                        </form>
+                                    @endif
+                                </div>
                             @endauth
                         </div>
                     </div>
@@ -119,6 +145,15 @@
                                 $postiTotali = $event->max_participants ? (int) $event->max_participants : null;
                                 $postiLiberi = $postiTotali !== null ? max(0, $postiTotali - $iscrittiCount) : null;
                             @endphp
+                            <div class="mb-2 d-flex align-items-center gap-2 flex-wrap">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-user-circle"></i>
+                                    <span>Organizzatore</span>
+                                </h5>
+                                <span class="mb-0 text-primary fw-semibold">
+                                    {{ $event->user->nickname ?? $event->user->nome ?? '—' }}
+                                </span>
+                            </div>
                             <div class="event-meta-stack mb-3">
                                 <div class="event-meta-date-box">
                                     <i class="fas fa-calendar"></i>
@@ -170,12 +205,75 @@
                                         <a href="{{ route('login') }}">Accedi</a> per vedere l'indirizzo completo
                                     </p>
                                 @endauth
+
+                                @php
+                                    $mapWithAddress = auth()->check();
+                                    $mapSrc = $event->googleMapsEmbedUrl($mapWithAddress);
+                                    $mapOpen = $event->googleMapsExternalUrl($mapWithAddress);
+                                @endphp
+                                @if($mapSrc)
+                                    <div class="mt-3">
+                                        <button type="button"
+                                                class="btn btn-outline-primary btn-sm"
+                                                data-bs-toggle="collapse"
+                                                data-bs-target="#eventMapCollapse"
+                                                aria-expanded="false"
+                                                aria-controls="eventMapCollapse"
+                                                id="btnEventMapToggle">
+                                            <i class="fas fa-map"></i> <span class="event-map-toggle-label">Mostra mappa</span>
+                                        </button>
+                                        <div class="collapse mt-2" id="eventMapCollapse">
+                                            <p class="small text-muted mb-2">
+                                                <i class="fas fa-map"></i> Google Maps
+                                                @if(!$mapWithAddress)
+                                                    <span class="d-block mt-1">Posizione approssimativa: effettua l’accesso per includere l’indirizzo nella ricerca.</span>
+                                                @endif
+                                            </p>
+                                            <div class="ratio ratio-16x9 rounded overflow-hidden border shadow-sm">
+                                                <iframe
+                                                    id="eventMapIframe"
+                                                    data-src="{{ $mapSrc }}"
+                                                    src="about:blank"
+                                                    style="border:0;"
+                                                    allowfullscreen=""
+                                                    loading="lazy"
+                                                    referrerpolicy="no-referrer-when-downgrade"
+                                                    title="Mappa: {{ $event->title }}"
+                                                ></iframe>
+                                            </div>
+                                            @if($mapOpen)
+                                                <a href="{{ $mapOpen }}" class="btn btn-outline-secondary btn-sm mt-2" target="_blank" rel="noopener noreferrer">
+                                                    <i class="fas fa-external-link-alt"></i> Apri in Google Maps
+                                                </a>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    <script>
+                                        document.addEventListener('DOMContentLoaded', function () {
+                                            var col = document.getElementById('eventMapCollapse');
+                                            var iframe = document.getElementById('eventMapIframe');
+                                            var btn = document.getElementById('btnEventMapToggle');
+                                            var label = btn ? btn.querySelector('.event-map-toggle-label') : null;
+                                            if (col) {
+                                                col.addEventListener('shown.bs.collapse', function () {
+                                                    if (iframe && iframe.dataset.src && (!iframe.src || iframe.src === 'about:blank')) {
+                                                        iframe.src = iframe.dataset.src;
+                                                    }
+                                                    if (label) label.textContent = 'Nascondi mappa';
+                                                });
+                                                col.addEventListener('hidden.bs.collapse', function () {
+                                                    if (label) label.textContent = 'Mostra mappa';
+                                                });
+                                            }
+                                        });
+                                    </script>
+                                @endif
                             </div>
 
                             <div class="mb-4">
-                                <h5><i class="fas fa-info-circle"></i> Descrizione</h5>
+                                <h5><i class="fas fa-info-circle"></i> Dettagli</h5>
                                 <div class="event-description">
-                                    {!! $event->safe_description !!}
+                                    {!! ( (int) $event->id === 2204 ? $event->safe_description_no_images : $event->safe_description ) !!}
                                 </div>
                             </div>
                         </div>
@@ -195,20 +293,32 @@
                                                     }
                                                 @endphp
 
-                                                <div class="d-flex flex-nowrap gap-2 align-items-stretch event-participation-btns">
-                                                    <button type="button" class="btn btn-success" disabled aria-disabled="true">
-                                                        <i class="fas fa-check-circle"></i> Partecipo
-                                                    </button>
-                                                    <form action="{{ route('events.cancel', $event) }}" method="POST" class="mb-0 d-flex align-items-stretch">
-                                                        @csrf
-                                                        <button type="submit" class="btn btn-danger w-100 h-100">
-                                                            <i class="fas fa-times"></i> Toglimi
+                                                <div class="d-flex flex-column gap-2">
+                                                    <div class="d-flex flex-nowrap gap-2 align-items-stretch event-participation-btns">
+                                                        <button type="button" class="btn btn-success" disabled aria-disabled="true">
+                                                            <i class="fas fa-check-circle"></i> Partecipo
                                                         </button>
-                                                    </form>
+                                                        <form action="{{ route('events.cancel', $event) }}" method="POST" class="mb-0 d-flex align-items-stretch">
+                                                            @csrf
+                                                            <button type="submit" class="btn btn-danger w-100 h-100">
+                                                                <i class="fas fa-times"></i> Toglimi
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                    @if($event->allow_guests)
+                                                        <form action="{{ route('events.add-guest', $event) }}" method="POST" class="mb-0">
+                                                            @csrf
+                                                            <button type="submit" class="btn btn-outline-success btn-sm">
+                                                                <i class="fas fa-user-plus"></i> Porta un amico
+                                                            </button>
+                                                        </form>
+                                                    @endif
+                                                    @if($currentUserGuestsCount > 0)
+                                                        <small class="text-muted d-block">
+                                                            Porti con te {{ $currentUserGuestsCount }} ospite{{ $currentUserGuestsCount > 1 ? 'i' : '' }}
+                                                        </small>
+                                                    @endif
                                                 </div>
-                                                @if($currentUserGuestsCount > 0)
-                                                    <small class="text-muted d-block mt-2">Porti con te {{ $currentUserGuestsCount }} ospite{{ $currentUserGuestsCount > 1 ? 'i' : '' }}</small>
-                                                @endif
                                             @else
                                                 @php
                                                     $cannotJoin = $event->isFull() || !$event->isRegistrationOpen();
@@ -265,7 +375,8 @@
                                         </div>
                                     </div>
                                 </div>
-                            @endauth                        @else
+                            @endauth
+                            @else
                             <div class="alert alert-info">
                                 <a href="{{ route('login') }}" class="btn btn-primary">Accedi</a>
                                 per partecipare a questo evento
@@ -274,30 +385,75 @@
                     </div>
                 </div>
 
+                @if($event->google_album_url)
+                    <div class="card mt-4 border-primary">
+                        <div class="card-header bg-primary text-white py-2">
+                            <h5 class="mb-0">
+                                <i class="fab fa-google"></i> Album foto (Google Foto)
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <label class="form-label small text-muted mb-1" for="event-google-album-url">Link album condiviso</label>
+                            <div class="input-group input-group-sm mb-2">
+                                <input type="url"
+                                       class="form-control"
+                                       id="event-google-album-url"
+                                       value="{{ $event->google_album_url }}"
+                                       readonly
+                                       aria-readonly="true">
+                                <a href="{{ $event->google_album_url }}"
+                                   class="btn btn-primary"
+                                   target="_blank"
+                                   rel="noopener noreferrer">
+                                    <i class="fas fa-external-link-alt"></i> Apri album
+                                </a>
+                            </div>
+                            <p class="small text-muted mb-0">Raccolta foto dell’evento pubblicata dall’organizzatore.</p>
+                        </div>
+                    </div>
+                @endif
+
                 <!-- Sezione Commenti -->
                 @auth
                     @if(auth()->user()->isApproved())
                         <div class="card mt-4">
-                            <div class="card-header">
-                                <h5 class="mb-0"><i class="fas fa-comments"></i> Aggiungi un Commento</h5>
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0"><i class="fas fa-comments"></i> Commento</h5>
+                                <button class="btn btn-outline-primary btn-sm" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#eventCommentCollapse"
+                                        aria-expanded="false" aria-controls="eventCommentCollapse">
+                                    Scrivi un commento
+                                </button>
                             </div>
-                            <div class="card-body">
-                                <form action="{{ route('comments.store', $event) }}" method="POST" id="commentForm">
-                                    @csrf
-                                    <div class="mb-3">
-                                        <label for="commentContent" class="form-label">Il tuo commento</label>
-                                        <textarea class="form-control" id="commentContent" name="content"
-                                                  rows="5" placeholder="Scrivi il tuo commento..." required></textarea>
-                                    </div>
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <small class="text-muted">
-                                            <i class="fas fa-info-circle"></i> Puoi usare la formattazione base
-                                        </small>
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="fas fa-paper-plane"></i> Invia Commento
-                                        </button>
-                                    </div>
-                                </form>
+                            <div id="eventCommentCollapse" class="collapse">
+                                <div class="card-body">
+                                    <form action="{{ route('comments.store', $event) }}" method="POST" id="commentForm">
+                                        @csrf
+                                        <div class="mb-3">
+                                            <label for="commentContent" class="form-label">Il tuo commento</label>
+                                            <textarea class="form-control" id="commentContent" name="content"
+                                                      rows="5" placeholder="Scrivi il tuo commento..." required></textarea>
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-muted">
+                                                <i class="fas fa-info-circle"></i> Puoi usare la formattazione, inserire link e immagini.
+                                            </small>
+                                            <div class="d-flex gap-2">
+                                                <button type="button"
+                                                        class="btn btn-outline-secondary"
+                                                        data-bs-toggle="collapse"
+                                                        data-bs-target="#eventCommentCollapse"
+                                                        aria-expanded="true"
+                                                        aria-controls="eventCommentCollapse">
+                                                    Chiudi
+                                                </button>
+                                                <button type="submit" class="btn btn-primary">
+                                                    <i class="fas fa-paper-plane"></i> Invia Commento
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
                             </div>
                         </div>
                 @endif
@@ -307,7 +463,7 @@
                 <div class="card mt-4">
                     <div class="card-header">
                         <h5 class="mb-0">
-                            <i class="fas fa-comments"></i> Commenti
+                            <i class="fas fa-comments"></i> Appunti
                             <span class="badge bg-primary">{{ $comments->count() }}</span>
                         </h5>
                     </div>
@@ -332,7 +488,7 @@
                                             <div>
                                                 <strong>
                                                     @if($comment->user)
-                                                        <a href="{{ route('profile.show', $comment->user) }}" class="text-decoration-none">
+                                                        <a href="{{ route('profile.show', $comment->user) }}?{{ $eventProfileBackQuery }}" class="text-decoration-none">
                                                             {{ $comment->user->nickname }}
                                                         </a>
                                                     @else
@@ -341,12 +497,7 @@
                                                 </strong>
                                                 <br>
                                                 <small class="text-muted">
-                                                    {{ $comment->created_at->diffForHumans() }}
-                                                    @if($comment->is_edited)
-                                                        • <span class="text-warning" title="Modificato il {{ $comment->edited_at->format('d/m/Y H:i') }}">
-                                    <i class="fas fa-edit"></i> modificato
-                                </span>
-                                                    @endif
+                                                    {{ optional($comment->created_at)->timezone(config('app.timezone'))->format('d/m/Y H:i') }}
                                                 </small>
                                             </div>
                                         </div>
@@ -354,11 +505,11 @@
                                         {{-- Pulsanti azione --}}
                                         @auth
                                             <div class="btn-group" role="group">
-                                                {{-- Pulsante modifica (solo proprietario) --}}
-                                                @if(auth()->id() === $comment->id_utente)
+                                                {{-- Pulsante modifica (autore o amministratore) --}}
+                                                @if(auth()->id() === $comment->id_utente || auth()->user()->isAdmin())
                                                     <a href="{{ route('comments.edit', $comment) }}"
                                                        class="btn btn-sm btn-outline-primary"
-                                                       title="Modifica commento">
+                                                       title="{{ auth()->user()->isAdmin() && auth()->id() !== $comment->id_utente ? 'Modifica commento (admin)' : 'Modifica commento' }}">
                                                         <i class="fas fa-edit"></i>
                                                     </a>
                                                 @endif
@@ -383,6 +534,13 @@
                                     <div class="comment-content">
                                         {!! $comment->safe_content !!}
                                     </div>
+                                    @if($comment->edited_at)
+                                        <div class="mt-2 small" style="color:#8B4513;">
+                                            <i class="fas fa-edit"></i>
+                                            Commento modificato il: {{ $comment->edited_at->timezone(config('app.timezone'))->format('d/m/Y') }}
+                                            alle {{ $comment->edited_at->timezone(config('app.timezone'))->format('H:i') }}
+                                        </div>
+                                    @endif
                                 </div>
                             @endforeach
                         @else
@@ -394,77 +552,30 @@
 
             <div class="col-md-4">
                 <!-- Partecipanti -->
-                <div class="card {{ $event->isFull() ? 'border-danger' : '' }}">
-                    <div class="card-header {{ $event->isFull() ? 'bg-danger text-white' : 'bg-dark text-white' }}">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0 d-flex align-items-center flex-wrap gap-1">
-                                <span>
-                                    <i class="fas fa-users"></i> Partecipanti
-                                </span>
-                                <span class="badge rounded-pill bg-light text-dark"
-                                      title="Iscritti all'evento più ospiti inseriti (amici)">
-                                    {{ $event->participants_count }}
-                                </span>
-                                @auth
-                                    @if(auth()->user()->isAdmin())
-                                        <a href="{{ route('events.print', $event) }}" class="btn btn-sm btn-outline-light ms-1" target="_blank" title="Stampa lista (solo admin)">
-                                            <i class="fas fa-print"></i>
-                                        </a>
-                                    @endif
-                                @endauth
-                            </h5>
-                            @if($event->allow_guests && ($event->participants_count - $event->real_participants_count) > 0)
-                                <span class="badge bg-success">
-                                    +{{ $event->participants_count - $event->real_participants_count }} ospiti
-                                </span>
-                            @endif
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        {{-- Progress Bar --}}
-                        @if($event->max_participants)
-                            <div class="mb-3">
-                                <div class="d-flex justify-content-between mb-1">
-                                    <small class="text-muted">Posti occupati</small>
-                                    <small class="text-muted">
-                                        <strong>{{ $event->participants_count }}</strong> / {{ $event->max_participants }}
-                                        ({{ round(($event->participants_count / $event->max_participants) * 100) }}%)
-                                    </small>
-                                </div>
-                                <div class="progress" style="height: 8px;">
-                                    @php
-                                        $percentage = ($event->participants_count / $event->max_participants) * 100;
-                                        $progressClass = $percentage >= 100 ? 'bg-danger' : ($percentage >= 80 ? 'bg-warning' : 'bg-success');
-                                    @endphp
-                                    <div class="progress-bar {{ $progressClass }}"
-                                         role="progressbar"
-                                         style="width: {{ min($percentage, 100) }}%"
-                                         aria-valuenow="{{ $event->participants_count }}"
-                                         aria-valuemin="0"
-                                         aria-valuemax="{{ $event->max_participants }}">
-                                    </div>
-                                </div>
-                                @if($event->isFull())
-                                    <small class="text-danger mt-1 d-block">
-                                        <i class="fas fa-exclamation-circle"></i> Tutti i posti sono stati occupati
-                                    </small>
-                                @elseif($percentage >= 80)
-                                    <small class="text-warning mt-1 d-block">
-                                        <i class="fas fa-info-circle"></i> Posti quasi esauriti!
-                                    </small>
-                                @endif
-                            </div>
+                <h5 class="mb-2">
+                    <i class="fas fa-users"></i> Partecipanti
+                    <span class="badge rounded-pill bg-dark text-white"
+                          title="Iscritti all'evento più ospiti inseriti (amici)">
+                        {{ $event->participants_count }}
+                    </span>
+                    @auth
+                        @if(auth()->user()->isAdmin())
+                            <a href="{{ route('events.print', $event) }}" class="btn btn-sm btn-outline-secondary ms-1" target="_blank" title="Stampa lista (solo admin)">
+                                <i class="fas fa-print"></i>
+                            </a>
                         @endif
+                    @endauth
+                </h5>
 
-                        {{-- Lista partecipanti --}}
-                        @php
-                            $canSeeList = $event->elenco_visibile ||
-                                (auth()->check() && (auth()->user()->isAdmin() || auth()->user()->getKey() === $event->id_organizzatore));
-                        @endphp
-                        @if(!$canSeeList)
-                            <p class="text-muted"><i class="fas fa-eye-slash"></i> L'elenco dei partecipanti non è visibile per questo evento.</p>
-                        @elseif($event->participants->count() > 0)
-                            <div class="list-group list-group-flush">
+                {{-- Lista partecipanti --}}
+                @php
+                    $canSeeList = $event->elenco_visibile ||
+                        (auth()->check() && (auth()->user()->isAdmin() || auth()->user()->getKey() === $event->id_organizzatore));
+                @endphp
+                @if(!$canSeeList)
+                    <p class="text-muted"><i class="fas fa-eye-slash"></i> L'elenco dei partecipanti non è visibile per questo evento.</p>
+                @elseif($event->participants->count() > 0)
+                    <div class="list-group list-group-flush">
                                 @foreach($event->participants as $participant)
                                     @php
                                         $currentUserIsParticipant = auth()->check() && auth()->id() === $participant->getKey();
@@ -474,28 +585,24 @@
                                         $showGuestRows = $hasGuests && ($canSeeList || $currentUserIsParticipant);
                                     @endphp
 
-                                    <div class="mb-2 border rounded overflow-hidden" id="participant-{{ $participant->getKey() }}">
-                                        <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2 border-0">
+                                    <div class="mb-2" id="participant-{{ $participant->getKey() }}">
+                                        <div class="d-flex align-items-center flex-wrap gap-2">
                                             <div>
-                                                <a href="{{ route('profile.show', $participant) }}" class="text-decoration-none">
+                                                <a href="{{ route('profile.show', $participant) }}?{{ $eventProfileBackQuery }}" class="text-decoration-none">
                                                     <i class="fas fa-user"></i> {{ $participant->nickname }}
                                                 </a>
-                                                @if($hasGuests)
-                                                    <span class="badge bg-success ms-2">+{{ $participant->pivot->amici }}</span>
-                                                @endif
+                                                {{-- rimosso il badge verde "+1" ospiti su richiesta --}}
                                                 @if($currentUserIsParticipant)
                                                     <span class="badge bg-primary ms-1">Tu</span>
                                                 @endif
                                             </div>
-
                                             @auth
-                                                @if($currentUserIsParticipant && $event->allow_guests)
+                                                @if($currentUserIsParticipant)
                                                     <form action="{{ route('events.add-guest', $event) }}" method="POST" class="d-inline">
                                                         @csrf
                                                         <button type="submit" class="btn btn-outline-success btn-sm"
-                                                                title="Con il più aggiungi amico"
-                                                                aria-label="Con il più aggiungi amico"
-                                                            {{ !$canAddMoreGuests || $event->isFull() ? 'disabled' : '' }}>
+                                                                title="Con + aggiungi un amico, poi scrivi il nome nella riga sotto"
+                                                                aria-label="Con + aggiungi un amico, poi scrivi il nome nella riga sotto">
                                                             <i class="fas fa-user-plus" aria-hidden="true"></i>
                                                         </button>
                                                     </form>
@@ -512,11 +619,11 @@
                                                     $nomeFormError = $errors->has('nome') && $giOld !== null && (int) $giOld === $gi;
                                                     $showNomeForm = ($gNome === '' || $nomeFormError);
                                                 @endphp
-                                                <div class="list-group-item border-0 border-top bg-light py-2 ps-4 pe-3">
+                                                <div class="border-0 border-top bg-light py-2">
                                                     @if($currentUserIsParticipant && $event->allow_guests)
                                                         @if($showNomeForm)
-                                                            <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap">
-                                                                <div class="flex-grow-1" style="min-width: 12rem;">
+                                                            <div class="d-flex align-items-start gap-2 flex-wrap">
+                                                                <div style="min-width: 12rem;">
                                                                     <div class="small text-muted mb-1">
                                                                         Amico di <strong>{{ $participant->nickname }}</strong>
                                                                     </div>
@@ -541,7 +648,7 @@
                                                                         @endif
                                                                     @enderror
                                                                 </div>
-                                                                <form action="{{ route('events.remove-guest', $event) }}" method="POST" class="d-inline flex-shrink-0"
+                                                                <form action="{{ route('events.remove-guest', $event) }}" method="POST" class="d-inline flex-shrink-0 align-self-center"
                                                                       onsubmit="return confirm('Rimuovere questo amico dall\'elenco?');">
                                                                     @csrf
                                                                     <input type="hidden" name="guest_index" value="{{ $gi }}">
@@ -553,10 +660,12 @@
                                                                 </form>
                                                             </div>
                                                         @else
-                                                            <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
+                                                            <div class="d-flex align-items-center gap-2 flex-wrap">
                                                                 <span class="small">
-                                                                    <span class="fw-semibold">{{ $gNome }}</span>
-                                                                    <span class="text-muted"> — amico di {{ $participant->nickname }}</span>
+                                                                    <i class="fas fa-user" style="color:#8B4513;"></i>
+                                                                    <span class="fw-semibold" style="color:#8B4513;">
+                                                                        {{ $gNome !== '' ? $gNome : 'Ospite' }} /A. {{ $participant->nickname }}
+                                                                    </span>
                                                                 </span>
                                                                 <form action="{{ route('events.remove-guest', $event) }}" method="POST" class="d-inline flex-shrink-0"
                                                                       onsubmit="return confirm('Rimuovere questo amico dall\'elenco?');">
@@ -572,8 +681,10 @@
                                                         @endif
                                                     @else
                                                         <span class="small text-muted">
-                                                            <span class="{{ $gNome !== '' ? 'fw-semibold text-dark' : '' }}">{{ $gNome !== '' ? $gNome : 'Ospite' }}</span>
-                                                            <span class="text-muted"> — amico di {{ $participant->nickname }}</span>
+                                                            <i class="fas fa-user" style="color:#8B4513;"></i>
+                                                            <span class="{{ $gNome !== '' ? 'fw-semibold' : '' }}" style="color:#8B4513;">
+                                                                {{ $gNome !== '' ? $gNome : 'Ospite' }} /A. {{ $participant->nickname }}
+                                                            </span>
                                                         </span>
                                                     @endif
                                                 </div>
@@ -590,17 +701,22 @@
                         @auth
                             @if($userParticipating && auth()->user()->friends()->count() > 0)
                                 <div class="mt-3 p-3 bg-light rounded">
-                                    <h6><i class="fas fa-envelope"></i> Invita un amico</h6>
-                                    <form action="{{ route('events.invite', $event) }}" method="POST" class="d-flex gap-2">
+                                    <form action="{{ route('events.invite', $event) }}" method="POST"
+                                          class="d-flex flex-wrap align-items-center gap-2 mb-0">
                                         @csrf
-                                        <select name="friend_id" class="form-select form-select-sm">
+                                        <h6 class="mb-0 text-nowrap flex-shrink-0">
+                                            <i class="fas fa-envelope"></i> Invita un amico
+                                        </h6>
+                                        <select name="friend_id"
+                                                class="form-select form-select-sm"
+                                                style="width: auto; max-width: 11rem; min-width: 7rem;">
                                             @foreach(auth()->user()->friends()->orderBy('nome')->get() as $friend)
                                                 @if(!$event->participants->contains('userID', $friend->userID))
-                                                    <option value="{{ $friend->getKey() }}">{{ $friend->nome }} {{ $friend->cognome }}</option>
+                                                    <option value="{{ $friend->getKey() }}">{{ $friend->nickname }}</option>
                                                 @endif
                                             @endforeach
                                         </select>
-                                        <button type="submit" class="btn btn-sm btn-primary">
+                                        <button type="submit" class="btn btn-sm btn-primary flex-shrink-0">
                                             <i class="fas fa-paper-plane"></i>
                                         </button>
                                     </form>
@@ -609,21 +725,7 @@
                         @endauth
 
                         {{-- Informazioni ospiti --}}
-                        @if($event->allow_guests)
-                            <div class="mt-3 p-3 bg-light rounded">
-                                <div class="d-flex align-items-center">
-                                    <i class="fas fa-info-circle text-info me-2"></i>
-                                    <div>
-                                        <small class="text-muted">
-                                            Con <strong>+</strong> aggiungi un amico: sotto compare <strong>Amico di</strong> (il tuo nickname) e il campo per il <strong>nominativo</strong> (con <strong>Salva</strong> solo finché il nome è vuoto). Accanto a ogni amico c’è <strong>−</strong> per togliere proprio quello. Il <strong>+</strong> resta sulla tua riga. Massimo <strong>{{ $event->max_guests_per_user }}</strong> ospiti.
-                                            @if($event->isFull())
-                                                <br><span class="text-danger"><i class="fas fa-exclamation-triangle"></i> Evento al completo - non è possibile aggiungere nuovi ospiti</span>
-                                            @endif
-                                        </small>
-                                    </div>
-                                </div>
-                            </div>
-                        @endif
+                        {{-- Informazioni ospiti (solo se si vuole riattivare un testo esplicativo) --}}
                     </div>
                 </div>
 
@@ -635,7 +737,7 @@
                     <div class="card-body">
                         <p class="mb-0">
                             <i class="fas fa-user"></i>
-                            <a href="{{ route('profile.show', $event->user) }}">
+                            <a href="{{ route('profile.show', $event->user) }}?{{ $eventProfileBackQuery }}">
                                 {{ $event->user->nickname }}
                             </a>
                         </p>
@@ -647,8 +749,7 @@
 @endsection
 @section('scripts')
     @parent
-    @include('partials.ckeditor4-description', ['field' => 'commentContent', 'height' => 250])
-
+    @include('partials.ckeditor4-description', ['field' => 'commentContent', 'height' => 200])
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Scroll al commento se specificato
@@ -662,6 +763,7 @@
                 }, 500);
             }
             @endif
+
         });
     </script>
 
@@ -669,20 +771,23 @@
         .event-cover-frame {
             position: relative;
             width: 100%;
-            aspect-ratio: 16 / 9;
-            height: auto;
+            height: 0;
+            padding-top: 56.25%; /* 16:9 */
             max-height: 400px;
             background: #f1f3f5;
+            overflow: hidden;
         }
 
         .event-cover-img {
-            display: block;
             position: absolute;
-            inset: 0;
-            width: 100% !important;
-            height: 100% !important;
-            object-fit: cover !important;
-            object-position: center;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            object-fit: contain;
         }
 
         @media (max-width: 767.98px) {

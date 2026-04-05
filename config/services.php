@@ -34,4 +34,13 @@ return [
         'api_key' => env('TINYMCE_API_KEY', ''),
     ],
 
+    /*
+    | Google Maps Embed API (opzionale ma consigliato).
+    | Console: https://console.cloud.google.com/ — abilita "Maps Embed API"
+    | e crea una chiave API. Senza chiave si usa un iframe di fallback.
+    */
+    'google_maps' => [
+        'api_key' => env('GOOGLE_MAPS_API_KEY', ''),
+    ],
+
 ];

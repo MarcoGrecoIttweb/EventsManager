@@ -5,21 +5,27 @@
 @section('content')
     <div class="container">
         <div class="mb-3">
-            @auth
-                @if(auth()->user()->isAdmin())
-                    <a href="{{ route('admin.users.index') }}" class="btn btn-outline-secondary btn-sm">
-                        <i class="fas fa-arrow-left"></i> Torna all'elenco
-                    </a>
+            @if(!empty($profileReturnUrl))
+                <a href="{{ $profileReturnUrl }}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-arrow-left"></i> Torna all'elenco
+                </a>
+            @else
+                @auth
+                    @if(auth()->user()->isAdmin())
+                        <a href="{{ route('admin.users.index') }}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-arrow-left"></i> Torna all'elenco
+                        </a>
+                    @else
+                        <a href="{{ url()->previous() }}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-arrow-left"></i> Torna all'elenco
+                        </a>
+                    @endif
                 @else
                     <a href="{{ url()->previous() }}" class="btn btn-outline-secondary btn-sm">
                         <i class="fas fa-arrow-left"></i> Torna all'elenco
                     </a>
-                @endif
-            @else
-                <a href="{{ url()->previous() }}" class="btn btn-outline-secondary btn-sm">
-                    <i class="fas fa-arrow-left"></i> Torna all'elenco
-                </a>
-            @endauth
+                @endauth
+            @endif
         </div>
         @if($user->status === 'banned')
             <div class="alert alert-danger border-2 fw-semibold mb-3" role="alert">
@@ -32,6 +38,9 @@
                     <div class="card-body">
                         <div class="row g-3 align-items-start">
                             <div class="col-12 col-md-6">
+                                @php
+                                    $isAdminViewer = auth()->check() && auth()->user()->isAdmin();
+                                @endphp
                                 <div class="d-flex flex-column gap-2 profile-fields-compact">
                                     <div class="profile-field pt-0">
                                         <span class="profile-label">Username:</span>
@@ -43,7 +52,7 @@
                                     </div>
                                     <div class="profile-field">
                                         <span class="profile-label">Cognome:</span>
-                                        <span class="profile-value">{{ $user->cognome ?: '—' }}</span>
+                                        <span class="profile-value">{{ $isAdminViewer ? ($user->cognome ?: '—') : '—' }}</span>
                                     </div>
                                     <div class="profile-field">
                                         <span class="profile-label">Sesso:</span>
@@ -56,43 +65,29 @@
                                     </div>
                                     <div class="profile-field">
                                         <span class="profile-label">E-mail:</span>
-                                        <span class="profile-value">
-                                            @auth
-                                                @if($user->mail_visibile || auth()->id() === $user->id || auth()->user()->isAdmin())
-                                                    {{ $user->email ?: '—' }}
-                                                @else
-                                                    —
-                                                @endif
-                                            @else
-                                                —
-                                            @endauth
-                                        </span>
+                                        <span class="profile-value">{{ $isAdminViewer ? ($user->email ?: '—') : '—' }}</span>
                                     </div>
                                     <div class="profile-field">
                                         <span class="profile-label">Telefono:</span>
-                                        <span class="profile-value">
-                                            @auth
-                                                @if(auth()->id() === $user->id || auth()->user()->isAdmin())
-                                                    {{ $user->telefono ?: '—' }}
-                                                @else
-                                                    —
-                                                @endif
-                                            @else
-                                                —
-                                            @endauth
-                                        </span>
+                                        <span class="profile-value">{{ $isAdminViewer ? ($user->telefono ?: '—') : '—' }}</span>
                                     </div>
                                     <div class="profile-field">
                                         <span class="profile-label">Residenza:</span>
                                         <span class="profile-value">{{ $user->residenza ?: '—' }}</span>
                                     </div>
                                     <div class="profile-field">
+                                        <span class="profile-label">Descrizione:</span>
+                                        <span class="profile-value">
+                                            {{ \App\Support\StrLimit::limit(strip_tags($user->safe_descr ?? ''), 90, '…') ?: '—' }}
+                                        </span>
+                                    </div>
+                                    <div class="profile-field">
                                         <span class="profile-label">Età:</span>
-                                        <span class="profile-value">{{ $user->datanascita ? $user->datanascita->age : '—' }}</span>
+                                        <span class="profile-value">{{ $isAdminViewer && $user->datanascita ? $user->datanascita->age : '—' }}</span>
                                     </div>
                                     <div class="profile-field pb-0">
                                         <span class="profile-label">Data di nascita:</span>
-                                        <span class="profile-value">{{ $user->datanascita ? $user->datanascita->format('d-m-Y') : '—' }}</span>
+                                        <span class="profile-value">{{ $isAdminViewer && $user->datanascita ? $user->datanascita->format('d-m-Y') : '—' }}</span>
                                     </div>
                                     <div class="profile-field">
                                         <span class="profile-label">Ultimo collegamento:</span>
@@ -105,6 +100,54 @@
                                         <a href="{{ route('profile.edit', $user) }}" class="btn btn-primary btn-sm mt-3">
                                             <i class="fas fa-edit"></i> Modifica Profilo
                                         </a>
+                                    @endif
+                                    @if($isAdminViewer)
+                                        @php
+                                            $adminPwdOpen = $errors->has('password');
+                                        @endphp
+                                        <div class="mt-3 admin-pwd-discrete">
+                                            <button type="button"
+                                                    class="btn btn-link btn-sm text-muted text-decoration-none p-0 d-inline-flex align-items-center gap-1"
+                                                    data-bs-toggle="collapse"
+                                                    data-bs-target="#adminPasswordCollapse"
+                                                    aria-expanded="{{ $adminPwdOpen ? 'true' : 'false' }}"
+                                                    aria-controls="adminPasswordCollapse"
+                                                    id="adminPasswordToggle">
+                                                <i class="fas fa-key" style="font-size:0.85em;"></i>
+                                                <span>Imposta password utente</span>
+                                                <i class="fas fa-chevron-down small opacity-75" id="adminPasswordChevron" aria-hidden="true"></i>
+                                            </button>
+                                            <div class="collapse {{ $adminPwdOpen ? 'show' : '' }}" id="adminPasswordCollapse">
+                                                <div class="border rounded bg-light px-3 py-3 mt-2 small">
+                                                    <p class="text-muted mb-2 mb-md-3">
+                                                        Account: <strong>{{ $user->username }}</strong>
+                                                    </p>
+                                                    <form method="POST" action="{{ route('profile.password.update', $user) }}">
+                                                        @csrf
+                                                        <div class="row g-2">
+                                                            <div class="col-12 col-md-6">
+                                                                <label for="admin_new_password" class="form-label mb-0">Nuova password</label>
+                                                                <input type="password" id="admin_new_password" name="password"
+                                                                       class="form-control form-control-sm @error('password') is-invalid @enderror"
+                                                                       required autocomplete="new-password" minlength="8">
+                                                                @error('password')
+                                                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                                                @enderror
+                                                            </div>
+                                                            <div class="col-12 col-md-6">
+                                                                <label for="admin_new_password_confirmation" class="form-label mb-0">Conferma password</label>
+                                                                <input type="password" id="admin_new_password_confirmation" name="password_confirmation"
+                                                                       class="form-control form-control-sm"
+                                                                       required autocomplete="new-password" minlength="8">
+                                                            </div>
+                                                        </div>
+                                                        <button type="submit" class="btn btn-outline-secondary btn-sm mt-2">
+                                                            <i class="fas fa-save"></i> Salva password
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
                                     @endif
                                 @endauth
                             </div>
@@ -124,9 +167,28 @@
                                 @endif
 
                                 <div class="mt-3 d-flex flex-wrap justify-content-center justify-content-md-start gap-2">
-                                    <span class="badge profile-action-chip bg-{{ $user->isAdmin() ? 'danger' : ($user->isOrganizer() ? 'warning' : 'info') }}">
-                                        {{ $user->role_name }}
-                                    </span>
+                                    @php
+                                        $roleClass = $user->isAdmin() ? 'danger' : ($user->isOrganizer() ? 'warning' : 'info');
+                                    @endphp
+                                    @if($isAdminViewer)
+                                        <form action="{{ route('admin.users.update-role', $user) }}" method="POST" class="d-inline-flex align-items-center gap-1">
+                                            @csrf
+                                            <label for="role-select-{{ $user->id }}" class="small me-1 mb-0">Ruolo:</label>
+                                            <select id="role-select-{{ $user->id }}" name="ruolo"
+                                                    class="form-select form-select-sm w-auto">
+                                                <option value="2" {{ (int)$user->ruolo === 2 ? 'selected' : '' }}>Utente</option>
+                                                <option value="1" {{ (int)$user->ruolo === 1 ? 'selected' : '' }}>Organizzatore</option>
+                                                <option value="0" {{ (int)$user->ruolo === 0 ? 'selected' : '' }}>Amministratore</option>
+                                            </select>
+                                            <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                                <i class="fas fa-save"></i>
+                                            </button>
+                                        </form>
+                                    @else
+                                        <span class="badge profile-action-chip bg-{{ $roleClass }}">
+                                            {{ $user->role_name }}
+                                        </span>
+                                    @endif
                                     @php
                                         $isBanned = $user->status === 'banned';
                                         $isApproved = $user->status === 'approved';
@@ -368,6 +430,15 @@
             max-width: 320px;
             overflow: hidden;
             text-overflow: ellipsis;
+        }
+        .admin-pwd-discrete #adminPasswordToggle:hover {
+            color: #495057 !important;
+        }
+        .admin-pwd-discrete #adminPasswordChevron {
+            transition: transform 0.2s ease;
+        }
+        .admin-pwd-discrete #adminPasswordToggle[aria-expanded="true"] #adminPasswordChevron {
+            transform: rotate(180deg);
         }
     </style>
 @endsection

@@ -32,14 +32,19 @@
                         </div>
                     @endif
 
-                    <form method="POST" action="{{ route('register.post') }}" enctype="multipart/form-data">
+                    <form method="POST" action="{{ route('register.post') }}" enctype="multipart/form-data" autocomplete="off">
                         @csrf
+                        {{-- Assorbe autofill login (username/password salvati) così non finiscono nei campi reali --}}
+                        <div class="position-absolute opacity-0 overflow-hidden" style="height:0;width:0;" aria-hidden="true" tabindex="-1">
+                            <input type="text" name="reg_trap_user" autocomplete="username" tabindex="-1">
+                            <input type="password" name="reg_trap_pass" autocomplete="current-password" tabindex="-1">
+                        </div>
                         <div class="row">
                             <div class="col-6">
                                 <div class="mb-3">
                                     <label for="name" class="form-label">Nome *</label>
                                     <input type="text" class="form-control @error('name') is-invalid @enderror"
-                                           id="name" name="name" value="{{ old('name') }}" required>
+                                           id="name" name="name" value="{{ old('name') }}" required autocomplete="given-name">
                                     @error('name')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -49,7 +54,7 @@
                                 <div class="mb-3">
                                     <label for="cognome" class="form-label">Cognome * [ ]</label>
                                     <input type="text" class="form-control @error('cognome') is-invalid @enderror"
-                                           id="cognome" name="cognome" value="{{ old('cognome') }}" required>
+                                           id="cognome" name="cognome" value="{{ old('cognome') }}" required autocomplete="family-name">
                                     @error('cognome')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -64,7 +69,7 @@
                                            class="form-control @error('datanascita') is-invalid @enderror"
                                            id="datanascita" name="datanascita"
                                            value="{{ old('datanascita') }}"
-                                           required>
+                                           required autocomplete="bday">
                                     @error('datanascita')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -73,7 +78,7 @@
                             <div class="col-6">
                                 <div class="mb-3">
                                     <label for="sesso" class="form-label">Sesso *</label>
-                                    <select class="form-select @error('sesso') is-invalid @enderror" id="sesso" name="sesso" required>
+                                    <select class="form-select @error('sesso') is-invalid @enderror" id="sesso" name="sesso" required autocomplete="off">
                                         <option value="">Seleziona...</option>
                                         <option value="m" {{ old('sesso') === 'm' ? 'selected' : '' }}>Uomo</option>
                                         <option value="f" {{ old('sesso') === 'f' ? 'selected' : '' }}>Donna</option>
@@ -89,7 +94,7 @@
                                 <div class="mb-3">
                                     <label for="residenza" class="form-label">Residenza</label>
                                     <input type="text" class="form-control @error('residenza') is-invalid @enderror"
-                                           id="residenza" name="residenza" value="{{ old('residenza') }}">
+                                           id="residenza" name="residenza" value="{{ old('residenza') }}" autocomplete="address-level2">
                                     @error('residenza')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -103,7 +108,7 @@
                                            id="telefono" name="telefono"
                                            value="{{ old('telefono') }}"
                                            placeholder="Es. 3331234567"
-                                           required>
+                                           required autocomplete="tel">
                                     @error('telefono')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -124,8 +129,10 @@
                         <div class="mb-3">
                             <label for="description" class="form-label">Descrizione</label>
                             <textarea class="form-control @error('description') is-invalid @enderror"
-                                      id="description" name="description" rows="4"
-                                      placeholder="Scrivi qualcosa su di te...">{{ old('description') }}</textarea>
+                                      id="description" name="description" rows="5"
+                                      placeholder="Scrivi qualcosa su di te (testo semplice, senza formattazione)..."
+                                      autocomplete="off">{{ old('description') }}</textarea>
+                            <small class="text-muted">Campo di testo normale: nessun editor visuale.</small>
                             @error('description')
                             <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -135,7 +142,7 @@
                                 <div class="mb-3">
                                     <label for="nickname" class="form-label">Nickname *</label>
                                     <input type="text" class="form-control @error('nickname') is-invalid @enderror"
-                                           id="nickname" name="nickname" value="{{ old('nickname') }}" required>
+                                           id="nickname" name="nickname" value="{{ old('nickname') }}" required autocomplete="nickname">
                                     @error('nickname')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -145,7 +152,7 @@
                                 <div class="mb-3">
                                     <label for="email" class="form-label">Email * [ ]</label>
                                     <input type="email" class="form-control @error('email') is-invalid @enderror"
-                                           id="email" name="email" value="{{ old('email') }}" required>
+                                           id="email" name="email" value="{{ old('email') }}" required autocomplete="email">
                                     @error('email')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -156,7 +163,7 @@
                         <div class="mb-3">
                             <label for="password" class="form-label">Password * [ ]</label>
                             <input type="password" class="form-control @error('password') is-invalid @enderror"
-                                   id="password" name="password" required>
+                                   id="password" name="password" required autocomplete="new-password">
                             @error('password')
                             <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -164,7 +171,7 @@
                         <div class="mb-3">
                             <label for="password_confirmation" class="form-label">Conferma Password * [ ]</label>
                             <input type="password" class="form-control"
-                                   id="password_confirmation" name="password_confirmation" required>
+                                   id="password_confirmation" name="password_confirmation" required autocomplete="new-password">
                         </div>
                         <div class="mb-3">
                             <div class="p-2 rounded border border-warning bg-warning bg-opacity-10">
@@ -222,7 +229,3 @@
         </div>
     </div>
 @endsection
-
-@push('scripts')
-    @include('partials.ckeditor4-description', ['height' => 280])
-@endpush

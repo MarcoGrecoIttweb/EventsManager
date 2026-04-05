@@ -2,11 +2,62 @@
 
 @section('title', 'Excursio - Community di amici a Milano')
 
+@php
+    // Ordine e didascalie come nel vecchio sito (html.it / xfade); solo file presenti in public/slide
+    $slideCatalog = [
+        ['file' => 'foto1.jpg', 'alt' => 'Terra'],
+        ['file' => 'foto2.jpg', 'alt' => 'Fuoco'],
+        ['file' => 'foto3.jpg', 'alt' => 'Aria'],
+        ['file' => 'foto4.jpg', 'alt' => 'Acqua'],
+        ['file' => 'foto5.jpg', 'alt' => 'Cielo'],
+        ['file' => 'foto7.jpg', 'alt' => 'Aria'],
+        ['file' => 'foto8.jpg', 'alt' => 'Acqua'],
+        ['file' => 'foto9.jpg', 'alt' => 'Cielo'],
+        ['file' => 'foto10.jpg', 'alt' => 'Cielo'],
+        ['file' => 'foto11.jpg', 'alt' => 'Cielo'],
+        ['file' => 'foto13.jpg', 'alt' => 'Aria'],
+        ['file' => 'foto14.jpg', 'alt' => 'Acqua'],
+        ['file' => 'foto15.jpg', 'alt' => 'Cielo'],
+        ['file' => 'foto16.jpg', 'alt' => 'Cielo'],
+        ['file' => 'foto17.jpg', 'alt' => 'Aria'],
+        ['file' => 'foto18.jpg', 'alt' => 'Acqua'],
+        ['file' => 'foto19.jpg', 'alt' => 'Cielo'],
+        ['file' => 'foto20.jpg', 'alt' => 'Cielo'],
+    ];
+    $slideDir = public_path('slide');
+    $slideImages = [];
+    foreach ($slideCatalog as $row) {
+        if (is_file($slideDir . DIRECTORY_SEPARATOR . $row['file'])) {
+            $slideImages[] = $row;
+        }
+    }
+@endphp
+
 @section('content')
     {{-- Hero --}}
     <div class="hero-section mb-4">
         <img src="{{ asset('upload_immagini/hero.jpg') }}" alt="Excursio" class="hero-img">
     </div>
+
+    @if(count($slideImages) > 0)
+        <div class="home-slideshow-wrap mb-4 mx-auto" style="max-width:1200px;">
+            <div class="home-slideshow"
+                 id="homeSlideshow"
+                 data-interval="5500"
+                 role="img"
+                 aria-label="Slideshow fotografico Excursio">
+                @foreach($slideImages as $idx => $row)
+                    <img src="{{ asset('slide/' . $row['file']) }}"
+                         alt="{{ $row['alt'] }}"
+                         class="home-slideshow__img{{ $idx === 0 ? ' is-active' : '' }}"
+                         @if($idx > 0) loading="lazy" @endif>
+                @endforeach
+            </div>
+            <p class="home-slideshow-caption text-center small text-muted mt-2 mb-0">
+                <i class="fas fa-images"></i> Galleria fotografica
+            </p>
+        </div>
+    @endif
 
     <div class="container">
         <div class="text-center mb-4">
@@ -55,11 +106,11 @@
 
                             {{-- Thumbnail Image --}}
                             @if($event->cover_image_url)
-                                <div class="position-relative">
+                                <div class="position-relative bg-light" style="height: 200px; display:flex; align-items:center; justify-content:center; overflow:hidden;">
                                     <img src="{{ $event->cover_image_url }}"
                                          alt="{{ $event->title }}"
                                          class="card-img-top"
-                                         style="height: 200px; object-fit: cover; width: 100%;">
+                                         style="max-height: 100%; max-width: 100%; width:auto; height:auto; object-fit: contain;">
                                     @if($event->isFull())
                                         <div class="position-absolute top-0 start-0 m-2">
                                             <span class="badge bg-danger">
@@ -94,9 +145,13 @@
                                         @endif
                                     </span>
                                 </div>
-                                <p class="card-text">
+                                <p class="card-text mb-2">
                                     <i class="fas fa-map-marker-alt"></i>
                                     <strong>{{ $event->city }}</strong>
+                                    <span class="text-muted small ms-2">
+                                        <strong>Org.</strong>
+                                        {{ $event->user->nickname ?? $event->user->nome ?? '—' }}
+                                    </span>
                                 </p>
                                 <div class="card-text text-muted small event-preview">
                                     {{ $event->getHomepagePreview() }}
@@ -157,42 +212,49 @@
             font-family: Algerian, "Algerian", serif;
             letter-spacing: 0.5px;
         }
+        /* Immagine hero.jpg nascosta (il blocco resta nel DOM per eventuali riattivazioni) */
         .hero-section {
-            position: relative;
-            width: 70%;
+            display: none !important;
+        }
+
+        /* Slideshow dissolvenza sotto hero */
+        .home-slideshow-wrap {
+            width: 100%;
+            max-width: 1200px;
             margin: 0 auto;
+        }
+        .home-slideshow {
+            position: relative;
+            width: 100%;
+            min-height: 200px;
             border-radius: 6px;
             overflow: hidden;
             border: 3px solid #f5c400;
             box-shadow: 0 0 0 2px #000;
-            background: #000;
+            /* Sfondo dietro letterboxing (immagine intera con contain) */
+            background: #1a1a1a;
         }
-        .hero-img {
+        .home-slideshow__img {
+            position: absolute;
+            inset: 0;
             width: 100%;
-            height: auto;
-            display: block;
+            height: 100%;
+            object-fit: contain;
+            object-position: center;
+            opacity: 0;
+            transition: opacity 1.35s ease-in-out;
+            pointer-events: none;
         }
-
+        .home-slideshow__img.is-active {
+            opacity: 1;
+            z-index: 1;
+        }
         @media (max-width: 767.98px) {
-            .hero-section {
+            .home-slideshow-wrap {
                 width: 100%;
-                max-width: 100%;
-            }
-
-            .hero-img {
-                max-height: 200px;
-                height: 200px;
-                object-fit: cover;
-                object-position: center;
             }
         }
 
-        @media (max-width: 374.98px) {
-            .hero-img {
-                max-height: 160px;
-                height: 160px;
-            }
-        }
         .hero-overlay {
             position: absolute;
             inset: 0;
@@ -286,3 +348,63 @@
         }
     </style>
 @endsection
+
+@push('scripts')
+    @if(isset($slideImages) && count($slideImages) > 0)
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                var root = document.getElementById('homeSlideshow');
+                if (!root) return;
+                var imgs = root.querySelectorAll('.home-slideshow__img');
+                if (!imgs.length) return;
+
+                function updateSlideshowHeight() {
+                    var w = root.clientWidth;
+                    if (w <= 0) return;
+                    var maxH = 0;
+                    for (var i = 0; i < imgs.length; i++) {
+                        var im = imgs[i];
+                        if (im.naturalWidth > 0 && im.naturalHeight > 0) {
+                            var h = (im.naturalHeight / im.naturalWidth) * w;
+                            if (h > maxH) maxH = h;
+                        }
+                    }
+                    if (maxH > 0) {
+                        root.style.height = Math.ceil(maxH) + 'px';
+                    }
+                }
+
+                var resizeTimer;
+                window.addEventListener('resize', function () {
+                    clearTimeout(resizeTimer);
+                    resizeTimer = setTimeout(updateSlideshowHeight, 120);
+                });
+
+                var loaded = 0;
+                function onImgReady() {
+                    loaded++;
+                    updateSlideshowHeight();
+                    if (loaded === imgs.length && imgs.length > 1) {
+                        var ms = parseInt(root.getAttribute('data-interval'), 10) || 5500;
+                        var idx = 0;
+                        setInterval(function () {
+                            imgs[idx].classList.remove('is-active');
+                            idx = (idx + 1) % imgs.length;
+                            imgs[idx].classList.add('is-active');
+                        }, ms);
+                    }
+                }
+
+                for (var j = 0; j < imgs.length; j++) {
+                    var img = imgs[j];
+                    if (img.complete && img.naturalWidth > 0) {
+                        onImgReady();
+                    } else {
+                        img.addEventListener('load', onImgReady, { once: true });
+                        img.addEventListener('error', onImgReady, { once: true });
+                    }
+                }
+            });
+        </script>
+    @endif
+@endpush

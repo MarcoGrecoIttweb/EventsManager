@@ -11,10 +11,17 @@
             </div>
             <div class="col-md-4 text-end">
                 @auth
-                    @if(auth()->user()->isAdmin())
-                        <a href="{{ route('admin.events.create') }}" class="btn btn-success">
-                            <i class="fas fa-plus"></i> Crea Evento
-                        </a>
+                    @php $me = auth()->user(); @endphp
+                    @if($me->canManageEvents())
+                        @if($me->isAdmin())
+                            <a href="{{ route('admin.events.create') }}" class="btn btn-success mb-2">
+                                <i class="fas fa-plus"></i> Crea Evento
+                            </a>
+                        @else
+                            <a href="{{ route('manage.events.create') }}" class="btn btn-success mb-2">
+                                <i class="fas fa-plus"></i> Crea Evento
+                            </a>
+                        @endif
                     @endif
                 @endauth
             </div>

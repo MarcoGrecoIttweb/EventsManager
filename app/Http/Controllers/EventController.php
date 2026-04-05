@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Event;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
+use App\Models\User;
 
 class EventController extends Controller
 {
@@ -80,6 +82,8 @@ class EventController extends Controller
 
         Auth::user()->events()->attach($event->getKey(), ['amici' => 0]);
 
+        $this->notifyAdminsEventSubscriptionChange($event, Auth::user(), 'iscritto');
+
         return back()->with('success', 'Iscrizione effettuata con successo');
     }
 
@@ -91,7 +95,54 @@ class EventController extends Controller
 
         Auth::user()->events()->detach($event->getKey());
 
+        $this->notifyAdminsEventSubscriptionChange($event, Auth::user(), 'cancellato');
+
         return back()->with('success', 'Iscrizione annullata con successo');
+    }
+
+    private function notifyAdminsEventSubscriptionChange(Event $event, User $actor, string $action): void
+    {
+        try {
+            $adminId = (int) env('ADMIN_NOTIFY_ADMIN_ID', 0);
+            $adminUsername = trim((string) env('ADMIN_NOTIFY_ADMIN_USERNAME', ''));
+
+            $admin = User::query()
+                ->where('ruolo', 0)
+                ->when($adminId > 0, fn ($q) => $q->whereKey($adminId))
+                ->when($adminId <= 0 && $adminUsername !== '', fn ($q) => $q->where('username', $adminUsername))
+                ->when($adminId <= 0 && $adminUsername === '', fn ($q) => $q->where('username', 'scintilla'))
+                ->first();
+
+            $notifyEmail = trim((string) ($admin?->email ?? ''));
+            if ($notifyEmail === '') {
+                return;
+            }
+
+            $eventUrl = route('events.show', $event);
+            $when = optional($event->date)->timezone(config('app.timezone'))->format('d/m/Y H:i');
+            $actorLabel = trim(($actor->nome ?? '') . ' ' . ($actor->cognome ?? ''));
+            if ($actorLabel === '') {
+                $actorLabel = $actor->nickname ?? ('ID ' . $actor->getKey());
+            } else {
+                $actorLabel .= ' (' . ($actor->nickname ?? $actor->getKey()) . ')';
+            }
+
+            $subject = "Excursio - Evento: utente {$action}";
+            $body =
+                "Notifica iscrizioni evento\n\n" .
+                "Utente: {$actorLabel}\n" .
+                "Azione: {$action}\n" .
+                "Evento: {$event->title}\n" .
+                "Quando: {$when}\n" .
+                "Link evento: {$eventUrl}\n";
+
+            Mail::raw($body, function ($message) use ($notifyEmail, $subject) {
+                $message->to($notifyEmail)->subject($subject);
+            });
+        } catch (\Throwable $e) {
+            // Non bloccare il flusso di iscrizione/cancellazione se la mail fallisce.
+            \Log::warning('Notify admins subscription change failed: ' . $e->getMessage());
+        }
     }
 
     public function printParticipants(Event $event)

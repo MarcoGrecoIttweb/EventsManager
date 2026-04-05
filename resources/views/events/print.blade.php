@@ -43,6 +43,7 @@
         .print-table th {
             vertical-align: middle;
             font-size: 0.875rem;
+            white-space: nowrap;
         }
 
         .guest-row-print td {
@@ -54,6 +55,10 @@
         .col-phone,
         .col-registered {
             display: none;
+        }
+
+        .col-registered {
+            white-space: nowrap;
         }
 
         body.show-email .col-email,
@@ -133,7 +138,7 @@
                     <label class="form-check-label" for="opt-email">Email</label>
                 </div>
                 <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="opt-phone" data-col="phone">
+                    <input class="form-check-input" type="checkbox" id="opt-phone" data-col="phone" checked>
                     <label class="form-check-label" for="opt-phone">Telefono</label>
                 </div>
                 <div class="form-check">
@@ -147,7 +152,12 @@
     <div class="print-doc container-fluid" style="max-width: 1100px;">
         <header class="mb-3">
             <h1>{{ $event->title }}</h1>
-            <div class="print-meta">
+            @php
+                $postiPrenotati = $event->participants_count;
+                $postiTotali = $event->max_participants ? (int) $event->max_participants : null;
+                $postiLiberi = $postiTotali !== null ? max(0, $postiTotali - $postiPrenotati) : null;
+            @endphp
+            <div class="print-meta d-flex flex-wrap gap-3">
                 @if($event->italian_event_date)
                     <div><strong>Data evento:</strong> {{ $event->italian_event_date }}</div>
                 @endif
@@ -160,31 +170,9 @@
                 @if($event->user)
                     <div><strong>Organizzatore:</strong> {{ $event->user->nickname }}</div>
                 @endif
-                @php
-                    $postiPrenotati = $event->participants_count;
-                    $postiTotali = $event->max_participants ? (int) $event->max_participants : null;
-                    $postiLiberi = $postiTotali !== null ? max(0, $postiTotali - $postiPrenotati) : null;
-                @endphp
-                <div>
-                    <strong>Posti totali:</strong>
-                    @if($postiTotali !== null && $postiTotali > 0)
-                        {{ $postiTotali }}
-                    @else
-                        <span class="text-muted">Non indicato (posti illimitati)</span>
-                    @endif
-                </div>
                 <div>
                     <strong>Posti prenotati:</strong> {{ $postiPrenotati }}
                     <span class="text-muted">(comprende iscritti e ospiti)</span>
-                </div>
-                <div>
-                    <strong>Posti liberi:</strong>
-                    @if($postiLiberi !== null)
-                        {{ $postiLiberi }}
-                        <span class="text-muted">(ancora disponibili)</span>
-                    @else
-                        <span class="text-muted">—</span>
-                    @endif
                 </div>
             </div>
         </header>
@@ -196,12 +184,13 @@
                 <table class="table table-bordered table-sm print-table">
                     <thead>
                     <tr>
-                        <th scope="col" style="width:3rem;">#</th>
-                        <th scope="col">Partecipante</th>
-                        <th scope="col" style="width:5rem;">Ospiti</th>
-                        <th scope="col" class="col-email">Email</th>
-                        <th scope="col" class="col-phone">Telefono</th>
-                        <th scope="col" class="col-registered">Iscritto / data ospite</th>
+                        <th scope="col" style="width:1.8rem; text-align:center;">#</th>
+                        <th scope="col" style="width:10rem;">Partecipante</th>
+                        <th scope="col" class="col-phone" style="width:6.2rem;">Telefono</th>
+                        <th scope="col" style="width:2.8rem; text-align:center;">Ospiti</th>
+                        <th scope="col" class="col-email" style="width:10rem;">Email</th>
+                        <th scope="col" class="col-registered" style="width:7rem;">Data iscrizione</th>
+                        <th scope="col" style="width:14rem;">Note</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -225,9 +214,9 @@
                                     @endif
                                 @endif
                             </td>
+                            <td class="col-phone">{{ $p->telefono ?: '—' }}</td>
                             <td class="text-center">{{ $guestsCount }}</td>
                             <td class="col-email">{{ $p->email ?: '—' }}</td>
-                            <td class="col-phone">{{ $p->telefono ?: '—' }}</td>
                             <td class="col-registered">
                                 @if(!empty($p->pivot->data_iscrizione))
                                     {{ \Illuminate\Support\Carbon::parse($p->pivot->data_iscrizione)->format('d/m/Y H:i') }}
@@ -235,6 +224,7 @@
                                     —
                                 @endif
                             </td>
+                            <td></td>
                         </tr>
                         @for($g = 1; $g <= $guestsCount; $g++)
                             @php
@@ -252,9 +242,9 @@
                                         <span class="text-muted">Ospite — amico di {{ $p->nickname ?: 'utente #' . $p->getKey() }}</span>
                                     @endif
                                 </td>
+                                <td class="col-phone text-muted">—</td>
                                 <td class="text-center text-muted">—</td>
                                 <td class="col-email text-muted">—</td>
-                                <td class="col-phone text-muted">—</td>
                                 <td class="col-registered text-muted">
                                     @if($gAt !== '')
                                         {{ \Illuminate\Support\Carbon::parse($gAt)->format('d/m/Y H:i') }}
@@ -262,6 +252,7 @@
                                         —
                                     @endif
                                 </td>
+                                <td></td>
                             </tr>
                         @endfor
                     @endforeach

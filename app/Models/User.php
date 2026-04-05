@@ -118,7 +118,7 @@ class User extends Authenticatable
 
     public function getIsAdminAttribute()
     {
-        return $this->ruolo === 0;
+        return (int) $this->ruolo === 0;
     }
 
     public function getStatusAttribute()
@@ -246,12 +246,12 @@ class User extends Authenticatable
 
     public function isAdmin(): bool
     {
-        return $this->ruolo === 0;
+        return (int) $this->ruolo === 0;
     }
 
     public function isOrganizer(): bool
     {
-        return $this->ruolo === 1;
+        return (int) $this->ruolo === 1;
     }
 
     public function canManageEvents(): bool

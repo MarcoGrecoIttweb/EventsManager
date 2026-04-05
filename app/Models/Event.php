@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Facades\Storage;
 use App\Support\SafeRichText;
-use Illuminate\Support\Str;
+use App\Support\StrLimit;
 
 class Event extends Model
 {
@@ -185,6 +185,84 @@ class Event extends Model
         return number_format($this->costo, 2, ',', '.') . ' €';
     }
 
+    /**
+     * Link pubblico album foto (salvato in url_galleria). Solo URL http/https validi.
+     */
+    public function getGoogleAlbumUrlAttribute(): ?string
+    {
+        $raw = trim((string) ($this->attributes['url_galleria'] ?? ''));
+        if ($raw === '') {
+            return null;
+        }
+        if (! filter_var($raw, FILTER_VALIDATE_URL)) {
+            return null;
+        }
+        $lower = strtolower($raw);
+        if (strpos($lower, 'https://') !== 0 && strpos($lower, 'http://') !== 0) {
+            return null;
+        }
+
+        return $raw;
+    }
+
+    /**
+     * Query testuale per Google Maps (geocoding).
+     * Con indirizzo solo se $withExactAddress (es. utente autenticato).
+     */
+    public function googleMapsQuery(bool $withExactAddress = false): ?string
+    {
+        $bits = [];
+        $dove = trim((string) ($this->dove ?? ''));
+        if ($dove !== '') {
+            $bits[] = $dove;
+        }
+        if ($withExactAddress) {
+            $street = trim(preg_replace('/\s+/', ' ', trim((string) ($this->via ?? '')) . ' ' . trim((string) ($this->civico ?? ''))));
+            if ($street !== '') {
+                $bits[] = $street;
+            }
+        }
+        $city = trim((string) ($this->citta ?? ''));
+        if ($city !== '') {
+            $bits[] = $city;
+        }
+        if ($bits === []) {
+            return null;
+        }
+        $bits[] = 'Italia';
+
+        return implode(', ', $bits);
+    }
+
+    /**
+     * URL per iframe embed. Con GOOGLE_MAPS_API_KEY: Embed API ufficiale.
+     * Senza chiave: iframe classico (può essere limitato da Google).
+     */
+    public function googleMapsEmbedUrl(bool $withExactAddress = false): ?string
+    {
+        $q = $this->googleMapsQuery($withExactAddress);
+        if ($q === null) {
+            return null;
+        }
+        $encoded = rawurlencode($q);
+        $key = config('services.google_maps.api_key');
+        if (! empty($key)) {
+            return 'https://www.google.com/maps/embed/v1/place?key=' . urlencode($key) . '&q=' . $encoded;
+        }
+
+        return 'https://maps.google.com/maps?q=' . $encoded . '&output=embed&hl=it';
+    }
+
+    public function googleMapsExternalUrl(bool $withExactAddress = false): ?string
+    {
+        $q = $this->googleMapsQuery($withExactAddress);
+        if ($q === null) {
+            return null;
+        }
+
+        return 'https://www.google.com/maps/search/?api=1&query=' . rawurlencode($q);
+    }
+
     // ─── Relationships ────────────────────────────────────────────
 
     public function user(): BelongsTo
@@ -304,10 +382,20 @@ class Event extends Model
         return SafeRichText::sanitize($this->descrizione, false);
     }
 
+    public function getSafeDescriptionNoImagesAttribute(): string
+    {
+        $html = $this->safe_description;
+        if ($html === '') {
+            return '';
+        }
+        // Rimuove solo i tag <img ...> (mantiene il resto della formattazione).
+        return preg_replace('/<img\b[^>]*>/i', '', $html) ?: '';
+    }
+
     public function getShortPreviewAttribute(): string
     {
         if (!empty($this->incipit)) {
-            return Str::limit(trim($this->incipit), 150);
+            return StrLimit::limit(trim($this->incipit), 150);
         }
         return $this->getHomepagePreview(150);
     }
@@ -315,7 +403,7 @@ class Event extends Model
     public function getHomepagePreview($length = 200): string
     {
         if (!empty($this->incipit)) {
-            return Str::limit(trim($this->incipit), $length);
+            return StrLimit::limit(trim($this->incipit), $length);
         }
 
         if (empty($this->descrizione)) {
@@ -327,7 +415,7 @@ class Event extends Model
         $plainText = preg_replace('/\s+/', ' ', $plainText);
         $plainText = trim($plainText);
 
-        return Str::limit($plainText, $length);
+        return StrLimit::limit($plainText, $length);
     }
 
     public function getCoverImageUrlAttribute(): ?string

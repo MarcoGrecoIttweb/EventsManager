@@ -60,21 +60,6 @@
             border-radius: 4px;
             padding-left: 2px;
         }
-        /* Immagine presentazione sidebar: cornice gialla + bordo nero */
-        .sidebar-presentazione {
-            border: 3px solid #f5c400;
-            box-shadow: 0 0 0 2px #000;
-            border-radius: 6px;
-            overflow: hidden;
-            line-height: 0;
-            background: #000;
-        }
-        .sidebar-presentazione-img {
-            width: 100%;
-            height: auto;
-            display: block;
-            vertical-align: top;
-        }
         @media (max-width: 767.98px) {
             /* Smartphone: sidebar non sticky, niente colonna “fissa” sullo sfondo */
             .sidebar-left {
@@ -84,17 +69,17 @@
             }
         }
 
-        /* Elenco eventi (card griglia): bordo blu + anello bianco — mobile e desktop */
+        /* Elenco eventi (card griglia): bordo cyan/azzurro + anello bianco — mobile e desktop */
         .card.event-box {
-            border: 3px solid #0d6efd !important;
-            box-shadow: 0 0 0 2px #fff, 0 0.125rem 0.25rem rgba(0, 0, 0, 0.08) !important;
+            border: 3px solid #0dcaf0 !important;
+            box-shadow: 0 0 0 2px #fff, 0 0.125rem 0.35rem rgba(13, 202, 240, 0.2) !important;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
         .card.event-box:hover {
             transform: translateY(-2px);
-            box-shadow: 0 0 0 2px #fff, 0 4px 15px rgba(0, 0, 0, 0.12) !important;
+            box-shadow: 0 0 0 2px #fff, 0 4px 18px rgba(13, 202, 240, 0.25) !important;
         }
-        /* Evento al completo: bordo rosso (override del bordo blu) */
+        /* Evento al completo: bordo rosso (override del bordo cyan) */
         .card.event-box.event-box--full {
             border-color: #dc3545 !important;
         }
@@ -115,7 +100,7 @@
         }
         /* Navbar mobile: hamburger a sinistra, menu a tutta larghezza sotto */
         @media (max-width: 991.98px) {
-            .excursio-navbar > .container {
+            .excursio-navbar > .container-fluid {
                 flex-wrap: wrap;
                 justify-content: flex-start;
             }
@@ -124,29 +109,163 @@
                 width: 100% !important;
             }
         }
+
+        /* Desktop: una sola riga, uso di tutta la larghezza (niente “buco” centrale) */
+        @media (min-width: 992px) {
+            .excursio-navbar > .container-fluid {
+                display: flex;
+                flex-wrap: nowrap;
+                align-items: center;
+                max-width: 100%;
+            }
+            .excursio-navbar .navbar-collapse {
+                flex-grow: 1;
+                flex-wrap: nowrap !important;
+                min-width: 0;
+                overflow: visible;
+            }
+            .excursio-navbar .navbar-collapse.show,
+            .excursio-navbar .navbar-collapse.collapsing {
+                flex-wrap: nowrap !important;
+            }
+            .excursio-navbar__main-nav {
+                flex-direction: row !important;
+                flex-wrap: nowrap !important;
+                flex: 1 1 auto;
+                justify-content: space-between;
+                align-items: center;
+                min-width: 0;
+                gap: 0.15rem;
+            }
+            .excursio-navbar__main-nav .nav-link {
+                padding-left: 0.35rem;
+                padding-right: 0.35rem;
+                font-size: 0.8rem;
+                white-space: nowrap;
+            }
+            .excursio-navbar__user-nav {
+                flex-direction: row !important;
+                flex-wrap: nowrap !important;
+                flex: 0 0 auto;
+                margin-left: 0.5rem;
+                padding-left: 0.65rem;
+                border-left: 1px solid rgba(255, 255, 255, 0.25);
+                align-items: center;
+            }
+            .excursio-navbar__user-nav .nav-link {
+                padding-left: 0.45rem;
+                padding-right: 0.45rem;
+                font-size: 0.8rem;
+                white-space: nowrap;
+            }
+            .excursio-navbar__user-nav .navbar-text {
+                font-size: 0.78rem;
+                white-space: nowrap;
+                max-width: 11rem;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+        }
+
+        /* Header + navbar sempre visibili in alto durante lo scroll */
+        .site-nav-sticky {
+            position: sticky;
+            top: 0;
+            z-index: 1030;
+            background: #fff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        }
+        .site-nav-sticky .excursio-navbar {
+            box-shadow: none;
+        }
+        /* Sidebar sotto l’header sticky (solo da md, dove la sidebar è sticky) */
+        @media (min-width: 768px) {
+            .sidebar-left {
+                top: 7.5rem;
+            }
+        }
     </style>
 </head>
 <body>
+<header class="site-nav-sticky">
 <div class="site-header text-center">
     <a href="{{ route('home') }}">
         <img src="{{ asset('upload_immagini/excursio.png') }}" alt="Excursio" class="site-header-logo">
     </a>
 </div>
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark excursio-navbar">
-    <div class="container">
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
-                aria-controls="navbarNav" aria-expanded="false" aria-label="Apri il menu">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        {{-- flex-column sotto lg: tutti i link in colonna (niente «Chi siamo…» affianco all’hamburger) --}}
-        <div class="collapse navbar-collapse flex-column flex-lg-row align-items-stretch align-items-lg-center" id="navbarNav">
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0 w-100 w-lg-auto">
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark excursio-navbar py-lg-1">
+    <div class="container-fluid px-3 px-xl-4 d-flex align-items-center flex-wrap flex-lg-nowrap">
+        <div class="d-flex align-items-center flex-shrink-0">
+            <button class="navbar-toggler me-2" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                    aria-controls="navbarNav" aria-expanded="false" aria-label="Apri il menu">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <a href="{{ route('home') }}" class="navbar-brand mb-0 text-white fw-semibold ms-1 py-1" title="Home">
+                <i class="fas fa-home me-1"></i><span class="d-none d-sm-inline">Home</span>
+            </a>
+        </div>
+        {{-- Desktop: una riga su tutta la larghezza; mobile: colonna --}}
+        <div class="collapse navbar-collapse flex-column flex-lg-row align-items-stretch align-items-lg-center flex-lg-grow-1" id="navbarNav">
+            <ul class="navbar-nav excursio-navbar__main-nav mb-2 mb-lg-0 w-100 w-lg-auto flex-lg-grow-1">
+                @guest
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('login') }}">
+                            <i class="fas fa-sign-in-alt"></i> Accedi
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('register') }}">
+                            <i class="fas fa-user-plus"></i> Registrati
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('home') }}">
+                            <i class="fas fa-home"></i> Homepage
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('chat.index') }}">
+                            <i class="fas fa-comments"></i> Salottino delle chat
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('mercatino.index') }}">
+                            <i class="fas fa-store"></i> Mercatino
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('home') }}#descrizione-eventi" title="Chi siamo e cosa facciamo">
+                            <i class="fas fa-info-circle"></i> Chi siamo e cosa facciamo
+                        </a>
+                    </li>
+                @else
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ route('home') }}">Home</a>
+                    <a class="nav-link" href="{{ route('home') }}">
+                        <i class="fas fa-home"></i> Homepage
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ route('chat.index') }}">
+                        <i class="fas fa-comments"></i> Salottino delle chat
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ route('mercatino.index') }}">
+                        <i class="fas fa-store"></i> Mercatino
+                    </a>
                 </li>
                 @auth
+                    @if(auth()->user()->isAdmin())
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ route('admin.users.index') }}">
+                                <i class="fas fa-users-cog"></i> Gestione utenti
+                            </a>
+                        </li>
+                    @endif
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('profile.show', auth()->user()) }}">Profilo</a>
+                        <a class="nav-link" href="{{ route('profile.show', auth()->user()) }}">
+                            <i class="fas fa-user-circle"></i> Profilo
+                        </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ route('events.past') }}">
@@ -180,53 +299,56 @@
                             <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
                                data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="fas fa-crown"></i> Admin
+                                @if(($adminPendingUsersCount ?? 0) > 0)
+                                    <span class="badge bg-danger rounded-pill ms-1" title="Iscrizioni in attesa di approvazione">{{ $adminPendingUsersCount }}</span>
+                                @endif
                             </a>
                             <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
                                 <li><a class="dropdown-item" href="{{ route('admin.dashboard') }}">Dashboard</a></li>
                                 <li><a class="dropdown-item" href="{{ route('admin.events.index') }}">Gestione Eventi</a></li>
-                                <li><a class="dropdown-item" href="{{ route('admin.users.index') }}">Gestione Utenti</a></li>
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center justify-content-between gap-2 {{ ($adminPendingUsersCount ?? 0) > 0 ? 'fw-semibold text-dark' : '' }}"
+                                       href="{{ ($adminPendingUsersCount ?? 0) > 0 ? route('admin.users.index', ['registrations' => 'pending']) : route('admin.users.index') }}">
+                                        <span>Gestione Utenti</span>
+                                        @if(($adminPendingUsersCount ?? 0) > 0)
+                                            <span class="badge bg-warning text-dark">{{ $adminPendingUsersCount }} in attesa</span>
+                                        @endif
+                                    </a>
+                                </li>
                                 <li><a class="dropdown-item" href="{{ route('admin.users.gallery') }}">Admin. Immagini utenti</a></li>
                                 <li><a class="dropdown-item" href="{{ route('admin.groups.index') }}">Gestione Gruppi</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="{{ route('admin.newsletter.create') }}">Newsletter</a></li>
                                 <li><a class="dropdown-item" href="{{ route('admin.newsletter.stats') }}">Statistiche Newsletter</a></li>
+                                <li><a class="dropdown-item" href="{{ route('admin.mail-test') }}">Test invio email</a></li>
                             </ul>
                         </li>
                     @endif
                 @endauth
+                @endguest
             </ul>
-            <ul class="navbar-nav ms-lg-auto w-100 w-lg-auto">
-                @guest
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ route('login') }}">Login</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ route('register') }}">Registrati</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ route('home') }}#descrizione-eventi" title="Chi siamo e cosa facciamo">
-                            <i class="fas fa-info-circle"></i> Chi siamo e cosa facciamo
-                        </a>
-                    </li>
-                @else
-                    @auth
+            <ul class="navbar-nav excursio-navbar__user-nav w-100 flex-lg-shrink-0">
+                @auth
                         <li class="nav-item d-flex align-items-center me-2">
                             <span class="navbar-text text-white-50 small">
+                                <i class="fas fa-smile-beam me-1"></i>
                                 Benvenuto <strong class="text-white">{{ auth()->user()->username }}</strong>
                             </span>
                         </li>
                         <li class="nav-item">
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
-                                <button type="submit" class="nav-link btn btn-link">Logout</button>
+                                <button type="submit" class="nav-link btn btn-link">
+                                    <i class="fas fa-sign-out-alt"></i> Esci
+                                </button>
                             </form>
                         </li>
-                    @endauth
-                @endguest
+                @endauth
             </ul>
         </div>
     </div>
 </nav>
+</header>
 
 <div class="container-fluid mt-4">
     @php $hideSidebar = View::hasSection('no_sidebar'); @endphp
@@ -235,15 +357,6 @@
         {{-- Sidebar sinistra (nascosta nelle pagine auth) --}}
         @if(!$hideSidebar)
         <div class="col-md-2 sidebar-left">
-            @if(request()->routeIs('home', 'events.index'))
-                {{-- Solo da md in su: su smartphone la hero in pagina ha la stessa immagine con cornice giallo/nero --}}
-                <div class="sidebar-presentazione mb-3 d-none d-md-block" title="Excursio">
-                    <img src="{{ asset('upload_immagini/hero.jpg') }}"
-                         alt="Excursio — presentazione"
-                         class="sidebar-presentazione-img"
-                         loading="lazy">
-                </div>
-            @endif
             @guest
                 {{-- Form login sidebar: nascosto su smartphone (login dalla navbar) --}}
                 <div class="card card-sidebar mb-3 d-none d-md-block">
@@ -281,6 +394,43 @@
                     </div>
                 </div>
             @endguest
+
+            {{-- Utenti online adesso: visibile per tutti, solo elenco non cliccabile --}}
+            <div class="card card-sidebar mb-3">
+                <div class="card-header py-2">
+                    <small class="fw-bold">
+                        <i class="fas fa-circle text-success me-1"></i> Utenti online adesso
+                    </small>
+                </div>
+                <div class="card-body p-2" style="max-height: 220px; overflow-y: auto;">
+                    @php
+                        try {
+                            $onlineUsers = \Illuminate\Support\Facades\DB::table('utentionline')
+                                ->join('utente', 'utentionline.id_utente', '=', 'utente.userID')
+                                ->where('utente.abilitato', 1)
+                                ->orderByDesc('utentionline.time')
+                                ->limit(30)
+                                ->get(['utente.username as nickname']);
+                        } catch (\Illuminate\Database\QueryException $e) {
+                            $onlineUsers = collect();
+                        }
+                    @endphp
+                    @if($onlineUsers->isEmpty())
+                        <small class="text-muted">Nessun utente online in questo momento.</small>
+                    @else
+                        <ul class="list-unstyled mb-0">
+                            @foreach($onlineUsers as $online)
+                                <li class="d-flex align-items-center online-user-row py-1">
+                                    <span class="online-dot"></span>
+                                    <span class="small">
+                                        {{ $online->nickname }}
+                                    </span>
+                                </li>
+                            @endforeach
+                        </ul>
+                    @endif
+                </div>
+            </div>
         </div>
         @endif
 
@@ -301,6 +451,30 @@
                 </div>
             @endif
 
+            @auth
+                @if(auth()->user()->isAdmin() && ($adminPendingUsersCount ?? 0) > 0)
+                    <div class="alert alert-warning border-0 shadow-sm mb-3 d-flex flex-wrap align-items-center justify-content-between gap-3 admin-pending-reg-alert" role="alert">
+                        <div class="d-flex align-items-start gap-2">
+                            <span class="fs-4 text-warning"><i class="fas fa-user-clock" aria-hidden="true"></i></span>
+                            <div>
+                                <strong>Nuove iscrizioni da approvare</strong>
+                                <div class="small mb-0">
+                                    Ci sono <strong>{{ $adminPendingUsersCount }}</strong>
+                                    {{ $adminPendingUsersCount === 1 ? 'utente in attesa' : 'utenti in attesa' }} di abilitazione.
+                                    Apri la gestione utenti per approvare o rifiutare le richieste.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-flex flex-wrap gap-2">
+                            <a href="{{ route('admin.users.index', ['registrations' => 'pending']) }}" class="btn btn-dark btn-sm">
+                                <i class="fas fa-list me-1"></i> Vedi solo in attesa
+                            </a>
+                            <a href="{{ route('admin.users.index') }}" class="btn btn-outline-secondary btn-sm">Lista completa</a>
+                        </div>
+                    </div>
+                @endif
+            @endauth
+
             @yield('content')
 
         </div>
@@ -309,7 +483,7 @@
 
 <footer class="bg-dark text-white text-center py-4 mt-5">
     <div class="container">
-        <p>&copy; 2024 Excursio. Tutti i diritti riservati.</p>
+        <p>&copy; 2026 Excursio. Tutti i diritti riservati.</p>
     </div>
 </footer>
 
@@ -317,6 +491,20 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    // Auto-close navbar collapse after clicking a real link (mobile)
+    var navCollapse = document.getElementById('navbarNav');
+    if (navCollapse) {
+        navCollapse.querySelectorAll('a.nav-link:not(.dropdown-toggle), a.dropdown-item').forEach(function (link) {
+            link.addEventListener('click', function () {
+                var bsCollapse = bootstrap.Collapse.getInstance(navCollapse);
+                if (bsCollapse && window.innerWidth < 992) {
+                    bsCollapse.hide();
+                }
+            });
+        });
+    }
+
+    // Aggiungi pulsante mostra/nascondi per tutti i campi password
     document.querySelectorAll('input[type="password"]').forEach(function (input) {
         // Wrappa l'input in un input-group se non lo è già
         var parent = input.parentElement;

@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Comment;
 use App\Models\Event;
+use App\Models\User;
 use App\Support\SafeRichText;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 
 class CommentController extends Controller
 {
@@ -23,7 +25,8 @@ class CommentController extends Controller
         }
 
         $request->validate([
-            'content' => 'required|string|min:5|max:2000',
+            // Con CKEditor il contenuto include markup HTML, quindi 2000 caratteri risultano spesso troppo pochi.
+            'content' => 'required|string|min:5|max:10000',
         ]);
 
         try {
@@ -34,6 +37,8 @@ class CommentController extends Controller
                 'id_evento' => $event->getKey(),
                 'id_utente' => Auth::id(),
             ]);
+
+            $this->notifyAdminCommentChange($event, Auth::user(), $comment, 'aggiunto');
 
             return redirect()->route('events.show', $event)
                 ->with('success', 'Commento aggiunto con successo!')
@@ -51,7 +56,7 @@ class CommentController extends Controller
             return redirect()->route('login');
         }
 
-        if (Auth::id() !== $comment->id_utente) {
+        if (!$this->userCanEditComment($comment)) {
             return back()->with('error', 'Non autorizzato a modificare questo commento.');
         }
 
@@ -64,12 +69,13 @@ class CommentController extends Controller
             return redirect()->route('login');
         }
 
-        if (Auth::id() !== $comment->id_utente) {
+        if (!$this->userCanEditComment($comment)) {
             return back()->with('error', 'Non autorizzato a modificare questo commento.');
         }
 
         $request->validate([
-            'content' => 'required|string|min:5|max:2000',
+            // Con CKEditor il contenuto include markup HTML, quindi 2000 caratteri risultano spesso troppo pochi.
+            'content' => 'required|string|min:5|max:10000',
         ]);
 
         try {
@@ -102,6 +108,8 @@ class CommentController extends Controller
 
         try {
             $event = $comment->event;
+            $actor = Auth::user();
+            $this->notifyAdminCommentChange($event, $actor, $comment, 'eliminato');
             $comment->delete();
             return redirect()->route('events.show', $event)
                 ->with('success', 'Commento eliminato con successo!');
@@ -111,8 +119,73 @@ class CommentController extends Controller
         }
     }
 
+    /**
+     * Autore del commento o amministratore.
+     */
+    private function userCanEditComment(Comment $comment): bool
+    {
+        $user = Auth::user();
+        if (! $user) {
+            return false;
+        }
+
+        return (int) $user->getKey() === (int) $comment->id_utente || $user->isAdmin();
+    }
+
     private function sanitizeHtml(string $content): string
     {
         return SafeRichText::sanitize($content, true);
+    }
+
+    private function notifyAdminCommentChange(Event $event, User $actor, Comment $comment, string $action): void
+    {
+        try {
+            $adminId = (int) env('ADMIN_NOTIFY_ADMIN_ID', 0);
+            $admin = User::query()
+                ->where('ruolo', 0)
+                ->when($adminId > 0, fn ($q) => $q->whereKey($adminId))
+                ->when($adminId <= 0, fn ($q) => $q->where('username', 'scintilla'))
+                ->first();
+
+            $notifyEmail = trim((string) ($admin?->email ?? ''));
+            if ($notifyEmail === '') {
+                return;
+            }
+
+            $eventUrl = route('events.show', $event);
+            $commentAnchor = $eventUrl . '#comment-' . $comment->getKey();
+
+            $when = optional($event->date)->timezone(config('app.timezone'))->format('d/m/Y H:i');
+
+            $actorLabel = trim(($actor->nome ?? '') . ' ' . ($actor->cognome ?? ''));
+            if ($actorLabel === '') {
+                $actorLabel = $actor->nickname ?? ('ID ' . $actor->getKey());
+            } else {
+                $actorLabel .= ' (' . ($actor->nickname ?? $actor->getKey()) . ')';
+            }
+
+            $testoCommento = trim(html_entity_decode(strip_tags($comment->content), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+            if ($testoCommento === '') {
+                $testoCommento = '(vuoto o solo formattazione)';
+            }
+
+            $subject = "Excursio - Commento {$action} (evento)";
+            $body =
+                "Notifica commenti evento\n\n" .
+                "Utente: {$actorLabel}\n" .
+                "Azione: {$action}\n" .
+                "Evento: {$event->title}\n" .
+                "Quando evento: {$when}\n" .
+                "ID commento: {$comment->getKey()}\n" .
+                "Link commento: {$commentAnchor}\n\n" .
+                "Testo del commento:\n" .
+                $testoCommento . "\n";
+
+            Mail::raw($body, function ($message) use ($notifyEmail, $subject) {
+                $message->to($notifyEmail)->subject($subject);
+            });
+        } catch (\Throwable $e) {
+            \Log::warning('Notify admin comment change failed: ' . $e->getMessage());
+        }
     }
 }

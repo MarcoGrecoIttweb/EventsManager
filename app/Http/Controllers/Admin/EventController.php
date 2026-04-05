@@ -36,6 +36,10 @@ class EventController extends Controller
 
     public function store(Request $request)
     {
+        $request->merge([
+            'google_album_url' => ($g = trim((string) $request->input('google_album_url', ''))) !== '' ? $g : null,
+        ]);
+
         $validated = $request->validate([
             'title' => 'required|string|max:120',
             'incipit' => 'nullable|string|max:500',
@@ -52,9 +56,13 @@ class EventController extends Controller
             'max_guests_per_user' => 'nullable|integer|min:1|max:10',
             'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,heic,heif|max:4096',
             'gallery_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,heic,heif|max:10240',
+            'google_album_url' => 'nullable|string|max:2048|url',
         ]);
 
         $allowGuests = $request->has('allow_guests');
+
+        // Forza il titolo evento in MAIUSCOLO
+        $validated['title'] = mb_strtoupper($validated['title'], 'UTF-8');
 
         // Create event with legacy column names
         $event = Event::create([
@@ -72,7 +80,7 @@ class EventController extends Controller
             'pubblicato' => 1,
             'elenco_visibile' => $request->has('elenco_visibile') ? 1 : 0,
             'sondaggio' => '',
-            'url_galleria' => '',
+            'url_galleria' => (string) ($validated['google_album_url'] ?? ''),
             'datascadenza' => $validated['deadline'] ?? $validated['date'],
             'allow_guests' => $allowGuests,
             'max_guests_per_user' => $allowGuests ? ($validated['max_guests_per_user'] ?? 3) : 0,
@@ -174,6 +182,10 @@ class EventController extends Controller
             'before_immagine' => $event->immagine,
         ];
 
+        $request->merge([
+            'google_album_url' => ($g = trim((string) $request->input('google_album_url', ''))) !== '' ? $g : null,
+        ]);
+
         $validated = $request->validate([
             'title' => 'required|string|max:120',
             'incipit' => 'nullable|string|max:500',
@@ -189,6 +201,7 @@ class EventController extends Controller
             'allow_guests' => 'sometimes|boolean',
             'max_guests_per_user' => 'nullable|integer|min:1|max:10',
             'cover_image_selected' => 'nullable|in:0,1',
+            'google_album_url' => 'nullable|string|max:2048|url',
         ]);
 
         if ($request->hasFile('cover_image')) {
@@ -208,6 +221,9 @@ class EventController extends Controller
 
         $wasPastEvent = $event->is_past_event;
 
+        // Forza il titolo evento in MAIUSCOLO
+        $validated['title'] = mb_strtoupper($validated['title'], 'UTF-8');
+
         // Map to legacy columns
         $updateData = [
             'nome' => $validated['title'],
@@ -226,6 +242,7 @@ class EventController extends Controller
             'pubblicato' => $isActive ? 1 : 0,
             'allow_guests' => $allowGuests,
             'max_guests_per_user' => $allowGuests ? ($validated['max_guests_per_user'] ?? 3) : 0,
+            'url_galleria' => (string) ($validated['google_album_url'] ?? ''),
         ];
 
         // Handle cover image removal

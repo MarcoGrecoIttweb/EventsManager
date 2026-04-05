@@ -6,6 +6,20 @@
     <div class="container-fluid">
         <h1 class="display-4 mb-4"><i class="fas fa-tachometer-alt"></i> Dashboard Admin</h1>
 
+        @if($pendingUsers > 0)
+            <div class="alert alert-danger alert-dismissible fade show border-0 shadow" role="alert">
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Chiudi"></button>
+                <h5 class="alert-heading"><i class="fas fa-bell me-2"></i>Attenzione: iscrizioni in sospeso</h5>
+                <p class="mb-2">
+                    {{ $pendingUsers === 1 ? 'È presente 1 nuova iscrizione' : "Sono presenti {$pendingUsers} nuove iscrizioni" }}
+                    in attesa della tua approvazione prima che possano accedere al sito.
+                </p>
+                <a href="{{ route('admin.users.index', ['registrations' => 'pending']) }}" class="btn btn-light btn-sm text-danger fw-semibold">
+                    <i class="fas fa-user-check me-1"></i> Vai alle iscrizioni in attesa
+                </a>
+            </div>
+        @endif
+
         <div class="row">
             <div class="col-md-4">
                 <div class="card bg-primary text-white">

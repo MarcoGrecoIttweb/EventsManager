@@ -1,204 +1,302 @@
 @extends('layouts.app')
 
+@section('title', 'Crea Nuovo Evento - Organizzatore')
+
 @section('content')
-<div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Crea Evento</h1>
-        <a href="{{ route('manage.events.index') }}" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left"></i> Torna alla lista
-        </a>
-    </div>
-
-    @if($errors->any())
-        <div class="alert alert-danger">
-            <ul class="mb-0">
-                @foreach($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
-
-    <form action="{{ route('manage.events.store') }}" method="POST" enctype="multipart/form-data">
-        @csrf
-
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">Dettagli Evento</h5>
-            </div>
-            <div class="card-body">
-                {{-- Titolo --}}
-                <div class="mb-3">
-                    <label for="title" class="form-label">Titolo <span class="text-danger">*</span></label>
-                    <input type="text" name="title" id="title" class="form-control @error('title') is-invalid @enderror" value="{{ old('title') }}" maxlength="120" required>
-                    @error('title')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                {{-- Data --}}
-                <div class="mb-3">
-                    <label for="date" class="form-label">Data e Ora <span class="text-danger">*</span></label>
-                    <input type="datetime-local" name="date" id="date" class="form-control @error('date') is-invalid @enderror" value="{{ old('date') }}" required>
-                    @error('date')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                {{-- Città --}}
-                <div class="mb-3">
-                    <label for="city" class="form-label">Città <span class="text-danger">*</span></label>
-                    <input type="text" name="city" id="city" class="form-control @error('city') is-invalid @enderror" value="{{ old('city') }}" maxlength="15" required>
-                    @error('city')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                {{-- Luogo --}}
-                <div class="mb-3">
-                    <label for="venue" class="form-label">Nome Locale/Luogo</label>
-                    <input type="text" name="venue" id="venue" class="form-control @error('venue') is-invalid @enderror" value="{{ old('venue') }}" maxlength="50">
-                    @error('venue')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                {{-- Indirizzo --}}
-                <div class="mb-3">
-                    <label for="address" class="form-label">Indirizzo <span class="text-danger">*</span></label>
-                    <input type="text" name="address" id="address" class="form-control @error('address') is-invalid @enderror" value="{{ old('address') }}" maxlength="50" required>
-                    @error('address')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                {{-- Costo --}}
-                <div class="mb-3">
-                    <label for="cost" class="form-label">Costo (&euro;)</label>
-                    <input type="number" name="cost" id="cost" class="form-control @error('cost') is-invalid @enderror" value="{{ old('cost') }}" step="0.01" min="0">
-                    @error('cost')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="deadline" class="form-label">Scadenza Iscrizioni</label>
-                            <input type="datetime-local" name="deadline" id="deadline" class="form-control @error('deadline') is-invalid @enderror" value="{{ old('deadline') }}">
-                            <small class="form-text text-muted">Lascia vuoto per nessuna scadenza</small>
-                            @error('deadline')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
+    <div class="container-fluid">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h4 class="mb-0">
+                            <i class="fas fa-plus"></i> Crea Nuovo Evento
+                        </h4>
                     </div>
-                    <div class="col-md-6">
-                        <div class="mb-3 pt-4">
-                            <div class="form-check form-switch">
-                                <input type="checkbox" class="form-check-input" id="elenco_visibile" name="elenco_visibile" value="1"
-                                    {{ old('elenco_visibile', true) ? 'checked' : '' }}>
-                                <label class="form-check-label" for="elenco_visibile">
-                                    Elenco partecipanti visibile
-                                </label>
+                    <div class="card-body">
+                        @if($errors->any())
+                            <div class="alert alert-danger">
+                                <strong>Errore caricamento:</strong>
+                                <ul class="mb-0">
+                                    @foreach($errors->all() as $error)
+                                        <li>{{ $error }}</li>
+                                    @endforeach
+                                </ul>
                             </div>
-                        </div>
+                        @endif
+
+                        <form action="{{ route('manage.events.store') }}" method="POST" enctype="multipart/form-data">
+                            @csrf
+
+                            <div class="mb-3">
+                                <label for="title" class="form-label text-primary-emphasis">Titolo Evento *</label>
+                                <input type="text" class="form-control border border-2 border-primary @error('title') is-invalid @enderror"
+                                       id="title" name="title" value="{{ old('title') }}" required>
+                                @error('title')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="row">
+                                <div class="col-6 col-md-6">
+                                    <div class="mb-3">
+                                        <label for="date" class="form-label text-primary-emphasis">Data Evento *</label>
+                                        <input type="datetime-local" class="form-control border border-2 border-primary @error('date') is-invalid @enderror"
+                                               id="date" name="date" value="{{ old('date') }}" required>
+                                        @error('date')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-6">
+                                    <div class="mb-3">
+                                        <label for="city" class="form-label text-primary-emphasis">Città *</label>
+                                        <input type="text" class="form-control border border-2 border-primary @error('city') is-invalid @enderror"
+                                               id="city" name="city" value="{{ old('city') }}" required>
+                                        @error('city')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="address" class="form-label text-primary-emphasis">Indirizzo *</label>
+                                        <input type="text" class="form-control border border-2 border-primary @error('address') is-invalid @enderror"
+                                               id="address" name="address" value="{{ old('address') }}" required>
+                                        @error('address')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="venue" class="form-label text-primary-emphasis">Nome locale</label>
+                                        <input type="text" class="form-control border border-2 border-primary @error('venue') is-invalid @enderror"
+                                               id="venue" name="venue" value="{{ old('venue') }}" placeholder="es. Ristorante Da Mario">
+                                        @error('venue')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="cost" class="form-label text-primary-emphasis">Costo (€)</label>
+                                        <input type="number" step="0.01" min="0" class="form-control border border-2 border-primary @error('cost') is-invalid @enderror"
+                                               id="cost" name="cost" value="{{ old('cost') }}" placeholder="0.00">
+                                        <small class="form-text text-muted">Lascia vuoto se gratuito</small>
+                                        @error('cost')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="deadline" class="form-label text-primary-emphasis">Scadenza Iscrizioni</label>
+                                        <input type="datetime-local" class="form-control border border-2 border-primary @error('deadline') is-invalid @enderror"
+                                               id="deadline" name="deadline" value="{{ old('deadline') }}">
+                                        <small class="form-text text-muted">Lascia vuoto per nessuna scadenza</small>
+                                        @error('deadline')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="max_participants" class="form-label text-primary-emphasis">Max partecipanti</label>
+                                        <input type="number" class="form-control border border-2 border-primary @error('max_participants') is-invalid @enderror"
+                                               id="max_participants" name="max_participants"
+                                               value="{{ old('max_participants') }}" min="1">
+                                        <small class="form-text text-muted">Lascia vuoto per illimitato</small>
+                                        @error('max_participants')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Immagine copertina (sotto Costo) + Gallery affiancata --}}
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="cover_image" class="form-label text-primary-emphasis">Immagine Cope.</label>
+                                        <input type="file" class="form-control border border-2 border-primary @error('cover_image') is-invalid @enderror"
+                                               id="cover_image" name="cover_image" accept="image/*">
+                                        @error('cover_image')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                        <small class="form-text text-muted">
+                                            Immagine principale dell'evento (max 2MB)
+                                        </small>
+                                    </div>
+                                </div>
+                                <div class="col-md-8">
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <div class="mb-3">
+                                                <label for="gallery_images" class="form-label text-primary-emphasis">Immagini Gallery</label>
+                                                <input type="file" class="form-control border border-2 border-primary @error('gallery_images') is-invalid @enderror"
+                                                       id="gallery_images" name="gallery_images[]" multiple accept="image/*">
+                                                @error('gallery_images')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                                @enderror
+                                                <small class="form-text text-muted">
+                                                    Puoi selezionare multiple immagini per la gallery (max 5MB per immagine)
+                                                </small>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div id="imagePreviews" class="row mb-3" style="display: none;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="google_album_url" class="form-label text-primary-emphasis">Link album Google Foto</label>
+                                <input type="url"
+                                       inputmode="url"
+                                       autocomplete="off"
+                                       class="form-control border border-2 border-primary @error('google_album_url') is-invalid @enderror"
+                                       id="google_album_url"
+                                       name="google_album_url"
+                                       value="{{ old('google_album_url') }}"
+                                       placeholder="https://photos.app.goo.gl/... oppure https://photos.google.com/...">
+                                <small class="form-text text-muted">
+                                    Opzionale. Comparirà sopra ai commenti nella pagina pubblica dell’evento.
+                                </small>
+                                @error('google_album_url')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            {{-- Elenco partecipanti + Partecipanti & Ospiti (sotto copertina) --}}
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3 pt-2">
+                                        <div class="form-check form-switch">
+                                            <input type="checkbox" class="form-check-input" id="elenco_visibile" name="elenco_visibile" value="1"
+                                                {{ old('elenco_visibile', true) ? 'checked' : '' }}>
+                                            <label class="form-check-label text-primary-emphasis" for="elenco_visibile">
+                                                Elenco partecipanti visibile
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3 pt-2">
+                                        <label class="form-label text-primary-emphasis d-block">Partecipanti &amp; Ospiti</label>
+                                        <div class="form-check form-switch">
+                                            <input type="checkbox" class="form-check-input" id="allow_guests" name="allow_guests" value="1"
+                                                {{ old('allow_guests') ? 'checked' : '' }}>
+                                            <label class="form-check-label" for="allow_guests">
+                                                Permetti ospiti
+                                            </label>
+                                        </div>
+                                        <div id="max_guests_container" style="display: none;" class="mt-2">
+                                            <label for="max_guests_per_user" class="form-label text-primary-emphasis mb-1">Max ospiti per partecipante</label>
+                                            <input type="number" class="form-control border border-2 border-primary @error('max_guests_per_user') is-invalid @enderror"
+                                                   id="max_guests_per_user" name="max_guests_per_user"
+                                                   value="{{ old('max_guests_per_user', 3) }}" min="1" max="10">
+                                            @error('max_guests_per_user')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="incipit" class="form-label text-primary-emphasis">Riassunto</label>
+                                <textarea class="form-control border border-2 border-primary @error('incipit') is-invalid @enderror"
+                                          id="incipit" name="incipit" rows="2" maxlength="500"
+                                          placeholder="Breve testo di anteprima mostrato nelle liste (max 500 caratteri). Se vuoto viene usata la descrizione.">{{ old('incipit') }}</textarea>
+                                @error('incipit')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="description" class="form-label text-primary-emphasis">Descrizione *</label>
+                                <textarea class="form-control @error('description') is-invalid @enderror"
+                                          id="description" name="description" rows="8">{{ old('description') }}</textarea>
+                                @error('description')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                <small class="form-text text-muted">
+                                    Utilizza l'editor per formattare la descrizione dell'evento.
+                                </small>
+                            </div>
+
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <a href="{{ route('manage.events.index') }}" class="btn btn-secondary me-md-2">
+                                    <i class="fas fa-times"></i> Annulla
+                                </a>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-save"></i> Crea Evento
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
-
-                {{-- Descrizione --}}
-                <div class="mb-3">
-                    <label for="incipit" class="form-label">Incipit / Riassunto</label>
-                    <textarea name="incipit" id="incipit" class="form-control @error('incipit') is-invalid @enderror" rows="2" maxlength="500"
-                              placeholder="Breve testo di anteprima mostrato nelle liste (max 500 caratteri). Se vuoto viene usata la descrizione.">{{ old('incipit') }}</textarea>
-                    @error('incipit')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-                <div class="mb-3">
-                    <label for="description" class="form-label">Descrizione <span class="text-danger">*</span></label>
-                    <textarea name="description" id="description" class="form-control @error('description') is-invalid @enderror" rows="10">{{ old('description') }}</textarea>
-                    @error('description')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
             </div>
         </div>
+    </div>
+@endsection
 
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">Partecipanti e Ospiti</h5>
-            </div>
-            <div class="card-body">
-                {{-- Max Partecipanti --}}
-                <div class="mb-3">
-                    <label for="max_participants" class="form-label">Numero massimo partecipanti</label>
-                    <input type="number" name="max_participants" id="max_participants" class="form-control @error('max_participants') is-invalid @enderror" value="{{ old('max_participants') }}" min="1">
-                    <div class="form-text">Lascia vuoto per partecipanti illimitati.</div>
-                    @error('max_participants')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
+@section('scripts')
+    @include('partials.ckeditor4-description', ['height' => 400])
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Toggle per gli ospiti
+            const allowGuestsCheckbox = document.getElementById('allow_guests');
+            const maxGuestsContainer = document.getElementById('max_guests_container');
 
-                {{-- Consenti Ospiti --}}
-                <div class="mb-3">
-                    <div class="form-check form-switch">
-                        <input type="checkbox" name="allow_guests" id="allow_guests" class="form-check-input" value="1" {{ old('allow_guests') ? 'checked' : '' }}>
-                        <label for="allow_guests" class="form-check-label">Consenti ospiti</label>
-                    </div>
-                    @error('allow_guests')
-                        <div class="text-danger small">{{ $message }}</div>
-                    @enderror
-                </div>
+            function toggleMaxGuests() {
+                maxGuestsContainer.style.display = allowGuestsCheckbox.checked ? 'block' : 'none';
+            }
 
-                {{-- Max Ospiti per Utente --}}
-                <div class="mb-3" id="max_guests_wrapper" style="{{ old('allow_guests') ? '' : 'display: none;' }}">
-                    <label for="max_guests_per_user" class="form-label">Numero massimo ospiti per utente</label>
-                    <input type="number" name="max_guests_per_user" id="max_guests_per_user" class="form-control @error('max_guests_per_user') is-invalid @enderror" value="{{ old('max_guests_per_user') }}" min="1">
-                    @error('max_guests_per_user')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-            </div>
-        </div>
+            allowGuestsCheckbox.addEventListener('change', toggleMaxGuests);
+            toggleMaxGuests();
 
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">Immagine di Copertina</h5>
-            </div>
-            <div class="card-body">
-                <div class="mb-3">
-                    <label for="cover_image" class="form-label">Immagine di copertina</label>
-                    <input type="file" name="cover_image" id="cover_image" class="form-control @error('cover_image') is-invalid @enderror" accept="image/*">
-                    <div class="form-text">Formati accettati: JPG, PNG, GIF, WebP. Dimensione massima consigliata: 2MB.</div>
-                    @error('cover_image')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-            </div>
-        </div>
+            // Anteprima immagini
+            const imageInput = document.getElementById('gallery_images');
+            const previewContainer = document.getElementById('imagePreviews');
 
-        <div class="d-flex justify-content-end gap-2 mb-4">
-            <a href="{{ route('manage.events.index') }}" class="btn btn-outline-secondary">Annulla</a>
-            <button type="submit" class="btn btn-primary">
-                <i class="bi bi-check-lg"></i> Crea Evento
-            </button>
-        </div>
-    </form>
-</div>
+            if (imageInput) {
+                imageInput.addEventListener('change', function() {
+                    previewContainer.innerHTML = '';
+                    previewContainer.style.display = 'none';
 
-@include('partials.ckeditor4-description', ['height' => 400])
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        // Toggle ospiti
-        const allowGuestsCheckbox = document.getElementById('allow_guests');
-        const maxGuestsWrapper = document.getElementById('max_guests_wrapper');
+                    if (this.files.length > 0) {
+                        previewContainer.style.display = 'flex';
 
-        allowGuestsCheckbox.addEventListener('change', function () {
-            maxGuestsWrapper.style.display = this.checked ? '' : 'none';
-            if (!this.checked) {
-                document.getElementById('max_guests_per_user').value = '';
+                        Array.from(this.files).forEach((file) => {
+                            if (file.type.startsWith('image/')) {
+                                const reader = new FileReader();
+                                reader.onload = function(e) {
+                                    const col = document.createElement('div');
+                                    col.className = 'col-md-3 mb-3';
+                                    col.innerHTML = `
+                                <div class="card">
+                                    <img src="${e.target.result}" class="card-img-top" style="height: 150px; object-fit: cover;">
+                                    <div class="card-body">
+                                        <small class="text-muted">${file.name}</small>
+                                    </div>
+                                </div>
+                            `;
+                                    previewContainer.appendChild(col);
+                                };
+                                reader.readAsDataURL(file);
+                            }
+                        });
+                    }
+                });
             }
         });
-    });
-</script>
+    </script>
 @endsection

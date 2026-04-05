@@ -26,7 +26,9 @@ class UserPolicy
 
     public function update(User $authenticatedUser, User $user): bool
     {
-        return $authenticatedUser->getKey() === $user->getKey() || $authenticatedUser->isAdmin();
+        // Modifica profilo: consentita solo al proprietario (admin escluso).
+        // Gli admin hanno azioni dedicate (es. reset password) via rotte/middleware specifici.
+        return $authenticatedUser->getKey() === $user->getKey();
     }
 
     public function delete(User $authenticatedUser, User $user): bool

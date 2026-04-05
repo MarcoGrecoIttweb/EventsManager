@@ -44,10 +44,10 @@
                             @endif
                         </td>
                         <td>
-                            @if($event->pubblicato)
-                                <span class="badge bg-success">Pubblicato</span>
+                            @if(!$event->pubblicato)
+                                <span class="badge bg-secondary">Disattivato</span>
                             @else
-                                <span class="badge bg-secondary">Bozza</span>
+                                <span class="badge bg-success">Pubblicato</span>
                             @endif
                             @if($event->isFull())
                                 <span class="badge bg-danger">Completo</span>

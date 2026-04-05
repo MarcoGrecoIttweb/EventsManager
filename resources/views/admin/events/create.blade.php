@@ -16,56 +16,55 @@
                         <form action="{{ route('admin.events.store') }}" method="POST" enctype="multipart/form-data">
                             @csrf
 
+                            <div class="mb-3">
+                                <label for="title" class="form-label text-primary-emphasis">Titolo Evento *</label>
+                                <input type="text" class="form-control border border-2 border-primary @error('title') is-invalid @enderror"
+                                       id="title" name="title" value="{{ old('title') }}" required>
+                                @error('title')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
                             <div class="row">
-                                <div class="col-md-6">
+                                <div class="col-6 col-md-6">
                                     <div class="mb-3">
-                                        <label for="title" class="form-label">Titolo Evento *</label>
-                                        <input type="text" class="form-control @error('title') is-invalid @enderror"
-                                               id="title" name="title" value="{{ old('title') }}" required>
-                                        @error('title')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="date" class="form-label">Data e Ora *</label>
-                                        <input type="datetime-local" class="form-control @error('date') is-invalid @enderror"
+                                        <label for="date" class="form-label text-primary-emphasis">Data Evento *</label>
+                                        <input type="datetime-local" class="form-control border border-2 border-primary @error('date') is-invalid @enderror"
                                                id="date" name="date" value="{{ old('date') }}" required>
                                         @error('date')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
                                 </div>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-md-4">
+                                <div class="col-6 col-md-6">
                                     <div class="mb-3">
-                                        <label for="city" class="form-label">Città *</label>
-                                        <input type="text" class="form-control @error('city') is-invalid @enderror"
+                                        <label for="city" class="form-label text-primary-emphasis">Città *</label>
+                                        <input type="text" class="form-control border border-2 border-primary @error('city') is-invalid @enderror"
                                                id="city" name="city" value="{{ old('city') }}" required>
                                         @error('city')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
                                 </div>
-                                <div class="col-md-4">
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
                                     <div class="mb-3">
-                                        <label for="venue" class="form-label">Nome Locale/Luogo</label>
-                                        <input type="text" class="form-control @error('venue') is-invalid @enderror"
-                                               id="venue" name="venue" value="{{ old('venue') }}" placeholder="es. Ristorante Da Mario">
-                                        @error('venue')
+                                        <label for="address" class="form-label text-primary-emphasis">Indirizzo *</label>
+                                        <input type="text" class="form-control border border-2 border-primary @error('address') is-invalid @enderror"
+                                               id="address" name="address" value="{{ old('address') }}" required>
+                                        @error('address')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-6">
                                     <div class="mb-3">
-                                        <label for="address" class="form-label">Indirizzo *</label>
-                                        <input type="text" class="form-control @error('address') is-invalid @enderror"
-                                               id="address" name="address" value="{{ old('address') }}" required>
-                                        @error('address')
+                                        <label for="venue" class="form-label text-primary-emphasis">Nome locale</label>
+                                        <input type="text" class="form-control border border-2 border-primary @error('venue') is-invalid @enderror"
+                                               id="venue" name="venue" value="{{ old('venue') }}" placeholder="es. Ristorante Da Mario">
+                                        @error('venue')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
@@ -75,8 +74,8 @@
                             <div class="row">
                                 <div class="col-md-4">
                                     <div class="mb-3">
-                                        <label for="cost" class="form-label">Costo (€)</label>
-                                        <input type="number" step="0.01" min="0" class="form-control @error('cost') is-invalid @enderror"
+                                        <label for="cost" class="form-label text-primary-emphasis">Costo (€)</label>
+                                        <input type="number" step="0.01" min="0" class="form-control border border-2 border-primary @error('cost') is-invalid @enderror"
                                                id="cost" name="cost" value="{{ old('cost') }}" placeholder="0.00">
                                         <small class="form-text text-muted">Lascia vuoto se gratuito</small>
                                         @error('cost')
@@ -86,8 +85,8 @@
                                 </div>
                                 <div class="col-md-4">
                                     <div class="mb-3">
-                                        <label for="deadline" class="form-label">Scadenza Iscrizioni</label>
-                                        <input type="datetime-local" class="form-control @error('deadline') is-invalid @enderror"
+                                        <label for="deadline" class="form-label text-primary-emphasis">Scadenza Iscrizioni</label>
+                                        <input type="datetime-local" class="form-control border border-2 border-primary @error('deadline') is-invalid @enderror"
                                                id="deadline" name="deadline" value="{{ old('deadline') }}">
                                         <small class="form-text text-muted">Lascia vuoto per nessuna scadenza</small>
                                         @error('deadline')
@@ -96,21 +95,113 @@
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="mb-3 pt-4">
-                                        <div class="form-check form-switch">
-                                            <input type="checkbox" class="form-check-input" id="elenco_visibile" name="elenco_visibile" value="1"
-                                                {{ old('elenco_visibile', true) ? 'checked' : '' }}>
-                                            <label class="form-check-label" for="elenco_visibile">
-                                                Elenco partecipanti visibile
-                                            </label>
+                                    <div class="mb-3">
+                                        <label for="max_participants" class="form-label text-primary-emphasis">Max partecipanti</label>
+                                        <input type="number" class="form-control border border-2 border-primary @error('max_participants') is-invalid @enderror"
+                                               id="max_participants" name="max_participants"
+                                               value="{{ old('max_participants') }}" min="1">
+                                        <small class="form-text text-muted">Lascia vuoto per illimitato</small>
+                                        @error('max_participants')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Immagine copertina (sotto Costo) + Gallery affiancata --}}
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="cover_image" class="form-label text-primary-emphasis">Immagine Cope.</label>
+                                        <input type="file" class="form-control border border-2 border-primary @error('cover_image') is-invalid @enderror"
+                                               id="cover_image" name="cover_image" accept="image/*">
+                                        @error('cover_image')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                        <small class="form-text text-muted">
+                                            Immagine principale dell'evento (max 2MB)
+                                        </small>
+                                    </div>
+                                </div>
+                                <div class="col-md-8">
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <div class="mb-3">
+                                                <label for="gallery_images" class="form-label text-primary-emphasis">Immagini Gallery</label>
+                                                <input type="file" class="form-control border border-2 border-primary @error('gallery_images') is-invalid @enderror"
+                                                       id="gallery_images" name="gallery_images[]" multiple accept="image/*">
+                                                @error('gallery_images')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                                @enderror
+                                                <small class="form-text text-muted">
+                                                    Puoi selezionare multiple immagini per la gallery (max 5MB per immagine)
+                                                </small>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div id="imagePreviews" class="row mb-3" style="display: none;"></div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
                             <div class="mb-3">
-                                <label for="incipit" class="form-label">Incipit / Riassunto</label>
-                                <textarea class="form-control @error('incipit') is-invalid @enderror"
+                                <label for="google_album_url" class="form-label text-primary-emphasis">Link album Google Foto</label>
+                                <input type="url"
+                                       inputmode="url"
+                                       autocomplete="off"
+                                       class="form-control border border-2 border-primary @error('google_album_url') is-invalid @enderror"
+                                       id="google_album_url"
+                                       name="google_album_url"
+                                       value="{{ old('google_album_url') }}"
+                                       placeholder="https://photos.app.goo.gl/... oppure https://photos.google.com/...">
+                                <small class="form-text text-muted">
+                                    Opzionale. Comparirà sopra ai commenti nella pagina pubblica dell’evento.
+                                </small>
+                                @error('google_album_url')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            {{-- Elenco partecipanti + Partecipanti & Ospiti (sotto copertina) --}}
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3 pt-2">
+                                        <div class="form-check form-switch">
+                                            <input type="checkbox" class="form-check-input" id="elenco_visibile" name="elenco_visibile" value="1"
+                                                {{ old('elenco_visibile', true) ? 'checked' : '' }}>
+                                            <label class="form-check-label text-primary-emphasis" for="elenco_visibile">
+                                                Elenco partecipanti visibile
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3 pt-2">
+                                        <label class="form-label text-primary-emphasis d-block">Partecipanti &amp; Ospiti</label>
+                                        <div class="form-check form-switch">
+                                            <input type="checkbox" class="form-check-input" id="allow_guests" name="allow_guests" value="1"
+                                                {{ old('allow_guests') ? 'checked' : '' }}>
+                                            <label class="form-check-label" for="allow_guests">
+                                                Permetti ospiti
+                                            </label>
+                                        </div>
+                                        <div id="max_guests_container" style="display: none;" class="mt-2">
+                                            <label for="max_guests_per_user" class="form-label text-primary-emphasis mb-1">Max ospiti per partecipante</label>
+                                            <input type="number" class="form-control border border-2 border-primary @error('max_guests_per_user') is-invalid @enderror"
+                                                   id="max_guests_per_user" name="max_guests_per_user"
+                                                   value="{{ old('max_guests_per_user', 3) }}" min="1" max="10">
+                                            @error('max_guests_per_user')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="incipit" class="form-label text-primary-emphasis">Riassunto</label>
+                                <textarea class="form-control border border-2 border-primary @error('incipit') is-invalid @enderror"
                                           id="incipit" name="incipit" rows="2" maxlength="500"
                                           placeholder="Breve testo di anteprima mostrato nelle liste (max 500 caratteri). Se vuoto viene usata la descrizione.">{{ old('incipit') }}</textarea>
                                 @error('incipit')
@@ -119,7 +210,7 @@
                             </div>
 
                             <div class="mb-3">
-                                <label for="description" class="form-label">Descrizione *</label>
+                                <label for="description" class="form-label text-primary-emphasis">Descrizione *</label>
                                 <textarea class="form-control @error('description') is-invalid @enderror"
                                           id="description" name="description" rows="8">{{ old('description') }}</textarea>
                                 @error('description')
@@ -129,71 +220,6 @@
                                     Utilizza l'editor per formattare la descrizione dell'evento.
                                 </small>
                             </div>
-
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <div class="mb-3">
-                                        <label for="max_participants" class="form-label">Numero Massimo Partecipanti</label>
-                                        <input type="number" class="form-control @error('max_participants') is-invalid @enderror"
-                                               id="max_participants" name="max_participants"
-                                               value="{{ old('max_participants') }}" min="1">
-                                        <small class="form-text text-muted">Lascia vuoto per illimitato</small>
-                                        @error('max_participants')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="mb-3">
-                                        <div class="form-check form-switch">
-                                            <input type="checkbox" class="form-check-input" id="allow_guests" name="allow_guests" value="1"
-                                                {{ old('allow_guests') ? 'checked' : '' }}>
-                                            <label class="form-check-label" for="allow_guests">
-                                                Permetti ospiti
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="mb-3" id="max_guests_container" style="display: none;">
-                                        <label for="max_guests_per_user" class="form-label">Max ospiti per partecipante</label>
-                                        <input type="number" class="form-control @error('max_guests_per_user') is-invalid @enderror"
-                                               id="max_guests_per_user" name="max_guests_per_user"
-                                               value="{{ old('max_guests_per_user', 3) }}" min="1" max="10">
-                                        @error('max_guests_per_user')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
-                                    </div>
-                                </div>
-                            </div>
-
-                            {{-- Cover Image --}}
-                            <div class="mb-3">
-                                <label for="cover_image" class="form-label">Immagine Copertina</label>
-                                <input type="file" class="form-control @error('cover_image') is-invalid @enderror"
-                                       id="cover_image" name="cover_image" accept="image/*">
-                                @error('cover_image')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                                <small class="form-text text-muted">
-                                    Immagine principale dell'evento (max 2MB)
-                                </small>
-                            </div>
-
-                            {{-- Gallery Images --}}
-                            <div class="mb-3">
-                                <label for="gallery_images" class="form-label">Immagini Gallery</label>
-                                <input type="file" class="form-control @error('gallery_images') is-invalid @enderror"
-                                       id="gallery_images" name="gallery_images[]" multiple accept="image/*">
-                                @error('gallery_images')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                                <small class="form-text text-muted">
-                                    Puoi selezionare multiple immagini per la gallery (max 5MB per immagine)
-                                </small>
-                            </div>
-
-                            <div id="imagePreviews" class="row mb-3" style="display: none;"></div>
 
                             <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                                 <a href="{{ route('admin.events.index') }}" class="btn btn-secondary me-md-2">
