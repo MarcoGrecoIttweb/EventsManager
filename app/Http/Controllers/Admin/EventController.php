@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class EventController extends Controller
 {
@@ -59,10 +60,7 @@ class EventController extends Controller
             'google_album_url' => 'nullable|string|max:2048|url',
         ]);
 
-        $allowGuests = $request->has('allow_guests');
-
-        // Forza il titolo evento in MAIUSCOLO
-        $validated['title'] = mb_strtoupper($validated['title'], 'UTF-8');
+        $allowGuests = $request->boolean('allow_guests');
 
         // Create event with legacy column names
         $event = Event::create([
@@ -86,6 +84,8 @@ class EventController extends Controller
             'max_guests_per_user' => $allowGuests ? ($validated['max_guests_per_user'] ?? 3) : 0,
         ]);
 
+        $event->enrollOrganizerAsParticipant();
+
         // Handle cover image
         if ($request->hasFile('cover_image')) {
             $coverResult = $this->imageService->uploadCoverImage(
@@ -103,7 +103,7 @@ class EventController extends Controller
             $this->processGalleryImages($request->file('gallery_images'), $event);
         }
 
-        return redirect()->route('admin.events.index')
+        return redirect()->route('home')
             ->with('success', 'Evento creato con successo!');
     }
 
@@ -130,7 +130,7 @@ class EventController extends Controller
         try {
             $newEvent = DB::transaction(function () use ($event) {
                 return Event::create([
-                    'nome' => $event->nome . ' (copia)',
+                    'nome' => Str::upper($event->nome) . ' (copia)',
                     'incipit' => $event->incipit,
                     'descrizione' => $event->descrizione,
                     'dataevento' => $event->dataevento,
@@ -142,7 +142,11 @@ class EventController extends Controller
                     'numeromax' => $event->numeromax,
                     'id_organizzatore' => $event->id_organizzatore,
                     'pubblicato' => $event->pubblicato,
-                    'elenco_visibile' => $event->elenco_visibile ? 1 : 0,
+                    'elenco_visibile' => (function () use ($event) {
+                        $raw = $event->getAttributes()['elenco_visibile'] ?? null;
+
+                        return ($raw === null || (int) $raw === 1) ? 1 : 0;
+                    })(),
                     'sondaggio' => $event->sondaggio ?? '',
                     'url_galleria' => $event->url_galleria ?? '',
                     'datascadenza' => $event->datascadenza,
@@ -156,6 +160,8 @@ class EventController extends Controller
                 ->back()
                 ->with('error', 'Impossibile duplicare l\'evento: ' . $e->getMessage());
         }
+
+        $newEvent->enrollOrganizerAsParticipant();
 
         $this->duplicateEventCoverFiles($event, $newEvent);
         $this->duplicateEventGalleryFiles($event, $newEvent);
@@ -216,17 +222,15 @@ class EventController extends Controller
             ]);
         }
 
-        $allowGuests = $request->has('allow_guests');
+        $allowGuests = $request->boolean('allow_guests');
         $isActive = $request->has('is_active');
 
         $wasPastEvent = $event->is_past_event;
-
-        // Forza il titolo evento in MAIUSCOLO
-        $validated['title'] = mb_strtoupper($validated['title'], 'UTF-8');
+        $newDate = \Carbon\Carbon::parse($validated['date']);
 
         // Map to legacy columns
         $updateData = [
-            'nome' => $validated['title'],
+            'nome' => Str::upper($validated['title']),
             'incipit' => $validated['incipit'] ?? null,
             'descrizione' => $validated['description'],
             'dataevento' => $validated['date'],
@@ -282,10 +286,13 @@ class EventController extends Controller
             $this->processGalleryImages($request->file('gallery_images'), $event);
         }
 
-        $newDate = \Carbon\Carbon::parse($validated['date']);
-
-        // Evento concluso → nuova data futura: torna in homepage (pubblicato) e iscrizioni non restano chiuse da vecchia scadenza
-        if ($wasPastEvent && $newDate->gt(now())) {
+        // Homepage: pubblicato=1 e dataevento > adesso (scope upcoming).
+        // Ripubblica se la nuova data è futura e: "Evento attivo" ON, oppure era concluso e ripassato al futuro,
+        // oppure la data/ora è stata spostata in avanti (posticipato) rispetto a prima.
+        $oldMoment = $event->dataevento ? $event->date->copy() : null;
+        $datePostponed = $oldMoment && $newDate->gt($oldMoment);
+        $republishOnHome = $newDate->gt(now()) && ($isActive || $wasPastEvent || $datePostponed);
+        if ($republishOnHome) {
             $updateData['pubblicato'] = 1;
             try {
                 $deadlineAt = \Carbon\Carbon::parse($updateData['datascadenza']);
@@ -307,7 +314,7 @@ class EventController extends Controller
         }
 
         $successMessage = 'Evento aggiornato con successo!';
-        if ($wasPastEvent && $newDate->gt(now())) {
+        if ($republishOnHome) {
             $successMessage = 'Evento aggiornato: la nuova data è futura, l\'evento è di nuovo pubblicato e visibile in homepage (Prossimi eventi).';
         }
         if ($request->hasFile('cover_image') && !empty($updateData['immagine'])) {

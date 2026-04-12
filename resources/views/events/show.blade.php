@@ -19,21 +19,9 @@
     @endphp
     <div class="container">
         <div class="mb-3">
-            @auth
-                @if(auth()->user()->isAdmin())
-                    <a href="{{ route('admin.events.index') }}" class="btn btn-outline-secondary btn-sm">
-                        <i class="fas fa-arrow-left"></i> Torna alla lista
-                    </a>
-                @else
-                    <a href="{{ url()->previous() }}" class="btn btn-outline-secondary btn-sm">
-                        <i class="fas fa-arrow-left"></i> Torna alla lista
-                    </a>
-                @endif
-            @else
-                <a href="{{ url()->previous() }}" class="btn btn-outline-secondary btn-sm">
-                    <i class="fas fa-arrow-left"></i> Torna alla lista
-                </a>
-            @endauth
+            <a href="{{ route('home') }}" class="btn btn-outline-primary btn-sm">
+                <i class="fas fa-arrow-left"></i> Torna alla home
+            </a>
         </div>
         <div class="row">
             <div class="col-md-8">
@@ -70,7 +58,7 @@
                     </div>
                     {{-- Cover Image --}}
                     @if($event->cover_image_url)
-                        <div class="mb-4 event-cover-frame rounded shadow overflow-hidden">
+                        <div class="mb-1 event-cover-frame rounded shadow overflow-hidden">
                             <img
                                 src="{{ $event->cover_image_url }}"
                                 alt="{{ $event->title }}"
@@ -145,19 +133,120 @@
                                 $postiTotali = $event->max_participants ? (int) $event->max_participants : null;
                                 $postiLiberi = $postiTotali !== null ? max(0, $postiTotali - $iscrittiCount) : null;
                             @endphp
-                            <div class="mb-2 d-flex align-items-center gap-2 flex-wrap">
-                                <h5 class="mb-0">
+                            <div class="mb-2 event-organizer-strip">
+                                <div class="event-meta-organizer-box event-organizer-strip__cell">
                                     <i class="fas fa-user-circle"></i>
-                                    <span>Organizzatore</span>
-                                </h5>
-                                <span class="mb-0 text-primary fw-semibold">
-                                    {{ $event->user->nickname ?? $event->user->nome ?? '—' }}
-                                </span>
+                                    <span class="event-meta-organizer-line">
+                                        <span class="fw-semibold">Organizzatore</span>
+                                        <span class="fw-semibold ms-1">{{ $event->user->nickname ?? $event->user->nome ?? '—' }}</span>
+                                    </span>
+                                </div>
+                                <div class="event-organizer-actions event-organizer-strip__cell">
+                                    @auth
+                                        @auth
+                                            @auth
+                                                @if(auth()->user()->isApproved())
+                                                    @if($userParticipating)
+                                                        @php
+                                                            $currentUserGuestsCount = 0;
+                                                            $currentUserParticipation = $event->participants()->where('utente.userID', auth()->id())->first();
+                                                            if ($currentUserParticipation) {
+                                                                $currentUserGuestsCount = $currentUserParticipation->pivot->amici ?? 0;
+                                                            }
+                                                        @endphp
+                                                        <div class="d-flex flex-column align-items-end gap-1">
+                                                            <div class="d-flex flex-nowrap gap-2 align-items-stretch event-participation-btns">
+                                                                <button type="button" class="btn btn-success btn-sm" disabled aria-disabled="true">
+                                                                    <i class="fas fa-check-circle"></i> Partecipo
+                                                                </button>
+                                                                <form action="{{ route('events.cancel', $event) }}" method="POST" class="mb-0 d-flex align-items-stretch">
+                                                                    @csrf
+                                                                    <button type="submit" class="btn btn-danger btn-sm w-100 h-100">
+                                                                        <i class="fas fa-times"></i> Toglimi
+                                                                    </button>
+                                                                </form>
+                                                            </div>
+                                                            @if($event->allow_guests)
+                                                                <form action="{{ route('events.add-guest', $event) }}" method="POST" class="mb-0">
+                                                                    @csrf
+                                                                    <button type="submit" class="btn btn-outline-success btn-sm">
+                                                                        <i class="fas fa-user-plus"></i> Porta un amico
+                                                                    </button>
+                                                                </form>
+                                                            @endif
+                                                            @if($currentUserGuestsCount > 0)
+                                                                <small class="text-muted">
+                                                                    Porti con te {{ $currentUserGuestsCount }} ospite{{ $currentUserGuestsCount > 1 ? 'i' : '' }}
+                                                                </small>
+                                                            @endif
+                                                        </div>
+                                                    @else
+                                                        @php
+                                                            $cannotJoin = $event->isFull() || !$event->isRegistrationOpen();
+                                                            $joinLabel = !$event->isRegistrationOpen() ? 'Iscrizioni chiuse' : ($event->isFull() ? 'Evento al completo' : 'Iscrivimi all\'evento');
+                                                            $joinIcon = $cannotJoin ? 'lock' : 'check';
+                                                        @endphp
+                                                        <div class="d-flex flex-wrap align-items-center gap-2 w-100">
+                                                            <form action="{{ route('events.participate', $event) }}" method="POST" class="mb-0 flex-grow-1 w-100">
+                                                                @csrf
+                                                                <button type="submit" class="btn btn-sm w-100 event-btn-participate-map-height event-btn-iscrivimi-all-evento btn-iscrivimi-state-{{ $cannotJoin ? 'off' : 'on' }}"
+                                                                    {{ $cannotJoin ? 'disabled' : '' }}>
+                                                                    <i class="fas fa-{{ $joinIcon }}"></i>
+                                                                    {{ $joinLabel }}
+                                                                </button>
+                                                            </form>
+                                                            @if($event->isFull())
+                                                                <span class="small text-warning mb-0"><i class="fas fa-users-slash"></i> Posti esauriti</span>
+                                                            @endif
+                                                        </div>
+                                                    @endif
+                                                @endif
+                                            @else
+                                                <div class="small text-end">
+                                                    <strong>Vuoi iscriverti?</strong>
+                                                    <a href="{{ route('login') }}" class="btn btn-primary btn-sm ms-1">Accedi</a>
+                                                    @if($event->isFull())
+                                                        <span class="d-block text-warning mt-1"><i class="fas fa-exclamation-triangle"></i> Evento al completo</span>
+                                                    @endif
+                                                </div>
+                                            @endauth
+                                        @else
+                                            <div class="small text-end">
+                                                <strong>Vuoi iscriverti?</strong>
+                                                <a href="{{ route('login') }}" class="btn btn-primary btn-sm ms-1">Accedi</a>
+                                                @if($event->isFull())
+                                                    <span class="d-block text-warning mt-1"><i class="fas fa-exclamation-triangle"></i> Evento al completo</span>
+                                                @endif
+                                            </div>
+                                        @endauth
+                                    @else
+                                        <a href="{{ route('login') }}" class="btn btn-primary btn-sm event-btn-participate-map-height w-100">Accedi per iscriverti</a>
+                                    @endauth
+                                </div>
                             </div>
-                            <div class="event-meta-stack mb-3">
+
+                            <div class="event-meta-stack mb-1">
                                 <div class="event-meta-date-box">
                                     <i class="fas fa-calendar"></i>
-                                    <span>{{ $event->italian_event_date ?? $event->date->format('d/m/Y H:i') }}</span>
+                                    <span class="event-meta-date-line">
+                                        <span class="fw-semibold">Data Evento</span>
+                                        <span class="ms-1">{{ $event->italian_event_date ?? $event->date->format('d/m/Y H:i') }}</span>
+                                    </span>
+                                </div>
+                                <div class="event-meta-localita-inline-box">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    <span class="event-meta-localita-inline-text">
+                                        <span><span class="fw-semibold">Città</span> {{ $event->city ?? '—' }}</span>
+                                        <span class="event-meta-localita-sep" aria-hidden="true">,</span>
+                                        <span class="event-meta-localita-addr-part">
+                                            <span class="fw-semibold">Indirizzo</span>
+                                            @auth
+                                                {{ $event->address ?: '—' }}
+                                            @else
+                                                <a href="{{ route('login') }}" class="event-meta-localita-login-link">Accedi</a> per l’indirizzo
+                                            @endauth
+                                        </span>
+                                    </span>
                                 </div>
                                 <div class="event-meta-posti-box">
                                     <i class="fas fa-users"></i>
@@ -175,100 +264,82 @@
                             </div>
 
                             @if($event->formatted_cost)
-                                <div class="mb-3">
+                                <div class="mb-1">
                                     <span class="badge bg-success fs-6">
                                         <i class="fas fa-euro-sign"></i> {{ $event->formatted_cost }}
                                     </span>
                                 </div>
                             @endif
 
-                            @if($event->deadline)
-                                <div class="mb-3">
-                                    <span class="badge bg-{{ $event->isRegistrationOpen() ? 'info' : 'danger' }} fs-6">
+                            @php
+                                $mapWithAddress = auth()->check();
+                                $mapSrc = $event->googleMapsEmbedUrl($mapWithAddress);
+                                $mapOpen = $event->googleMapsExternalUrl($mapWithAddress);
+                            @endphp
+
+                            <div class="mb-2 event-iscrizione-mappa-row d-flex align-items-stretch gap-2">
+                                @if($event->deadline)
+                                    <div class="event-registration-deadline-box rounded flex-shrink-0">
                                         <i class="fas fa-clock"></i>
-                                        Iscrizioni {{ $event->isRegistrationOpen() ? 'entro il' : 'chiuse il' }}
+                                        Iscrizioni {{ $event->isRegistrationOpen() ? 'Entro' : 'chiuse il' }}
                                         {{ $event->deadline->format('d/m/Y H:i') }}
-                                    </span>
-                                </div>
-                            @endif
-
-                            <div class="mb-3">
-                                <h5><i class="fas fa-map-marker-alt"></i> Località</h5>
-                                @if($event->dove)
-                                    <p class="mb-1"><strong>Luogo:</strong> {{ $event->dove }}</p>
-                                @endif
-                                <p class="mb-1"><strong>Città:</strong> {{ $event->city }}</p>
-                                @auth
-                                    <p class="mb-0"><strong>Indirizzo:</strong> {{ $event->address }}</p>
-                                @else
-                                    <p class="text-muted">
-                                        <a href="{{ route('login') }}">Accedi</a> per vedere l'indirizzo completo
-                                    </p>
-                                @endauth
-
-                                @php
-                                    $mapWithAddress = auth()->check();
-                                    $mapSrc = $event->googleMapsEmbedUrl($mapWithAddress);
-                                    $mapOpen = $event->googleMapsExternalUrl($mapWithAddress);
-                                @endphp
-                                @if($mapSrc)
-                                    <div class="mt-3">
-                                        <button type="button"
-                                                class="btn btn-outline-primary btn-sm"
-                                                data-bs-toggle="collapse"
-                                                data-bs-target="#eventMapCollapse"
-                                                aria-expanded="false"
-                                                aria-controls="eventMapCollapse"
-                                                id="btnEventMapToggle">
-                                            <i class="fas fa-map"></i> <span class="event-map-toggle-label">Mostra mappa</span>
-                                        </button>
-                                        <div class="collapse mt-2" id="eventMapCollapse">
-                                            <p class="small text-muted mb-2">
-                                                <i class="fas fa-map"></i> Google Maps
-                                                @if(!$mapWithAddress)
-                                                    <span class="d-block mt-1">Posizione approssimativa: effettua l’accesso per includere l’indirizzo nella ricerca.</span>
-                                                @endif
-                                            </p>
-                                            <div class="ratio ratio-16x9 rounded overflow-hidden border shadow-sm">
-                                                <iframe
-                                                    id="eventMapIframe"
-                                                    data-src="{{ $mapSrc }}"
-                                                    src="about:blank"
-                                                    style="border:0;"
-                                                    allowfullscreen=""
-                                                    loading="lazy"
-                                                    referrerpolicy="no-referrer-when-downgrade"
-                                                    title="Mappa: {{ $event->title }}"
-                                                ></iframe>
-                                            </div>
-                                            @if($mapOpen)
-                                                <a href="{{ $mapOpen }}" class="btn btn-outline-secondary btn-sm mt-2" target="_blank" rel="noopener noreferrer">
-                                                    <i class="fas fa-external-link-alt"></i> Apri in Google Maps
-                                                </a>
-                                            @endif
-                                        </div>
                                     </div>
-                                    <script>
-                                        document.addEventListener('DOMContentLoaded', function () {
-                                            var col = document.getElementById('eventMapCollapse');
-                                            var iframe = document.getElementById('eventMapIframe');
-                                            var btn = document.getElementById('btnEventMapToggle');
-                                            var label = btn ? btn.querySelector('.event-map-toggle-label') : null;
-                                            if (col) {
-                                                col.addEventListener('shown.bs.collapse', function () {
-                                                    if (iframe && iframe.dataset.src && (!iframe.src || iframe.src === 'about:blank')) {
-                                                        iframe.src = iframe.dataset.src;
-                                                    }
-                                                    if (label) label.textContent = 'Nascondi mappa';
-                                                });
-                                                col.addEventListener('hidden.bs.collapse', function () {
-                                                    if (label) label.textContent = 'Mostra mappa';
-                                                });
-                                            }
-                                        });
-                                    </script>
+                                @endif
+                                @if($mapSrc)
+                                    <button type="button"
+                                            class="btn btn-event-map-paired event-map-btn-fill"
+                                            data-bs-toggle="collapse"
+                                            data-bs-target="#eventMapCollapse"
+                                            aria-expanded="false"
+                                            aria-controls="eventMapCollapse"
+                                            id="btnEventMapToggle">
+                                        <i class="fas fa-map"></i> Mappa
+                                    </button>
+                                @else
+                                    <span class="text-muted small flex-shrink-0">Mappa non disponibile</span>
                                 @endif
                             </div>
+
+                            @if($mapSrc)
+                                <div class="collapse mb-3" id="eventMapCollapse">
+                                    <p class="small text-muted mb-2">
+                                        <i class="fas fa-map"></i> Google Maps
+                                        @if(!$mapWithAddress)
+                                            <span class="d-block mt-1">Posizione approssimativa: effettua l’accesso per includere l’indirizzo nella ricerca.</span>
+                                        @endif
+                                    </p>
+                                    <div class="ratio ratio-16x9 rounded overflow-hidden border shadow-sm">
+                                        <iframe
+                                            id="eventMapIframe"
+                                            data-src="{{ $mapSrc }}"
+                                            src="about:blank"
+                                            style="border:0;"
+                                            allowfullscreen=""
+                                            loading="lazy"
+                                            referrerpolicy="no-referrer-when-downgrade"
+                                            title="Mappa: {{ $event->title }}"
+                                        ></iframe>
+                                    </div>
+                                    @if($mapOpen)
+                                        <a href="{{ $mapOpen }}" class="btn btn-outline-secondary btn-sm event-localita-btn-compact mt-2" target="_blank" rel="noopener noreferrer">
+                                            <i class="fas fa-external-link-alt"></i> Apri in Google Maps
+                                        </a>
+                                    @endif
+                                </div>
+                                <script>
+                                    document.addEventListener('DOMContentLoaded', function () {
+                                        var col = document.getElementById('eventMapCollapse');
+                                        var iframe = document.getElementById('eventMapIframe');
+                                        if (col) {
+                                            col.addEventListener('shown.bs.collapse', function () {
+                                                if (iframe && iframe.dataset.src && (!iframe.src || iframe.src === 'about:blank')) {
+                                                    iframe.src = iframe.dataset.src;
+                                                }
+                                            });
+                                        }
+                                    });
+                                </script>
+                            @endif
 
                             <div class="mb-4">
                                 <h5><i class="fas fa-info-circle"></i> Dettagli</h5>
@@ -277,111 +348,6 @@
                                 </div>
                             </div>
                         </div>
-
-                        @auth
-                            @auth
-                                @auth
-                                    @if(auth()->user()->isApproved())
-                                        <div class="d-grid gap-2 d-md-flex">
-                                            @if($userParticipating)
-                                                @php
-                                                    // Calcola il numero di ospiti dell'utente corrente
-                                                    $currentUserGuestsCount = 0;
-                                                    $currentUserParticipation = $event->participants()->where('utente.userID', auth()->id())->first();
-                                                    if ($currentUserParticipation) {
-                                                        $currentUserGuestsCount = $currentUserParticipation->pivot->amici ?? 0;
-                                                    }
-                                                @endphp
-
-                                                <div class="d-flex flex-column gap-2">
-                                                    <div class="d-flex flex-nowrap gap-2 align-items-stretch event-participation-btns">
-                                                        <button type="button" class="btn btn-success" disabled aria-disabled="true">
-                                                            <i class="fas fa-check-circle"></i> Partecipo
-                                                        </button>
-                                                        <form action="{{ route('events.cancel', $event) }}" method="POST" class="mb-0 d-flex align-items-stretch">
-                                                            @csrf
-                                                            <button type="submit" class="btn btn-danger w-100 h-100">
-                                                                <i class="fas fa-times"></i> Toglimi
-                                                            </button>
-                                                        </form>
-                                                    </div>
-                                                    @if($event->allow_guests)
-                                                        <form action="{{ route('events.add-guest', $event) }}" method="POST" class="mb-0">
-                                                            @csrf
-                                                            <button type="submit" class="btn btn-outline-success btn-sm">
-                                                                <i class="fas fa-user-plus"></i> Porta un amico
-                                                            </button>
-                                                        </form>
-                                                    @endif
-                                                    @if($currentUserGuestsCount > 0)
-                                                        <small class="text-muted d-block">
-                                                            Porti con te {{ $currentUserGuestsCount }} ospite{{ $currentUserGuestsCount > 1 ? 'i' : '' }}
-                                                        </small>
-                                                    @endif
-                                                </div>
-                                            @else
-                                                @php
-                                                    $cannotJoin = $event->isFull() || !$event->isRegistrationOpen();
-                                                    $joinLabel = !$event->isRegistrationOpen() ? 'Iscrizioni chiuse' : ($event->isFull() ? 'Evento al completo' : 'Partecipa all\'evento');
-                                                    $joinIcon = $cannotJoin ? 'lock' : 'check';
-                                                @endphp
-                                                <form action="{{ route('events.participate', $event) }}" method="POST">
-                                                    @csrf
-                                                    <button type="submit" class="btn btn-{{ $cannotJoin ? 'secondary' : 'success' }} btn-lg"
-                                                        {{ $cannotJoin ? 'disabled' : '' }}>
-                                                        <i class="fas fa-{{ $joinIcon }}"></i>
-                                                        {{ $joinLabel }}
-                                                    </button>
-                                                </form>
-
-                                                @if($event->isFull())
-                                                    <div class="alert alert-warning ms-3 mb-0 py-2 d-flex align-items-center">
-                                                        <i class="fas fa-users-slash fa-lg me-2"></i>
-                                                        <div>
-                                                            <strong>Posti esauriti</strong>
-                                                            <br><small>Tutti i {{ $event->max_participants }} posti sono occupati</small>
-                                                        </div>
-                                                    </div>
-                                                @endif
-                                            @endif
-                                        </div>
-                                    @endif
-                                @else
-                                    <div class="alert alert-info">
-                                        <div class="d-flex align-items-center">
-                                            <i class="fas fa-info-circle fa-lg me-3"></i>
-                                            <div>
-                                                <strong>Vuoi partecipare?</strong>
-                                                <a href="{{ route('login') }}" class="btn btn-primary btn-sm ms-2">Accedi</a>
-                                                per iscriverti a questo evento
-                                                @if($event->isFull())
-                                                    <br><small class="text-warning"><i class="fas fa-exclamation-triangle"></i> Attenzione: l'evento è al completo</small>
-                                                @endif
-                                            </div>
-                                        </div>
-                                    </div>
-                                @endauth
-                            @else
-                                <div class="alert alert-info">
-                                    <div class="d-flex align-items-center">
-                                        <i class="fas fa-info-circle fa-lg me-3"></i>
-                                        <div>
-                                            <strong>Vuoi partecipare?</strong>
-                                            <a href="{{ route('login') }}" class="btn btn-primary btn-sm ms-2">Accedi</a>
-                                            per iscriverti a questo evento
-                                            @if($event->isFull())
-                                                <br><small class="text-warning"><i class="fas fa-exclamation-triangle"></i> Attenzione: l'evento è al completo</small>
-                                            @endif
-                                        </div>
-                                    </div>
-                                </div>
-                            @endauth
-                            @else
-                            <div class="alert alert-info">
-                                <a href="{{ route('login') }}" class="btn btn-primary">Accedi</a>
-                                per partecipare a questo evento
-                            </div>
-                        @endauth
                     </div>
                 </div>
 
@@ -413,20 +379,27 @@
                     </div>
                 @endif
 
-                <!-- Sezione Commenti -->
-                @auth
-                    @if(auth()->user()->isApproved())
-                        <div class="card mt-4">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <h5 class="mb-0"><i class="fas fa-comments"></i> Commento</h5>
-                                <button class="btn btn-outline-primary btn-sm" type="button"
+            <!-- Forum evento: titolo (maiuscolo) + badge + pulsante Forum Commenti; sotto form collassabile e lista -->
+                <div class="card mt-4">
+                    <div class="card-header py-2 d-flex flex-nowrap align-items-center justify-content-between gap-2 gap-md-3">
+                        <h5 class="mb-0 text-truncate min-w-0 flex-grow-1">
+                            <i class="fas fa-comments"></i> FORUM DELL'EVENTO
+                            <span class="badge bg-primary">{{ $comments->count() }}</span>
+                        </h5>
+                        @auth
+                            @if(auth()->user()->isApproved())
+                                <button class="btn btn-success btn-sm flex-shrink-0 text-nowrap" type="button"
                                         data-bs-toggle="collapse" data-bs-target="#eventCommentCollapse"
                                         aria-expanded="false" aria-controls="eventCommentCollapse">
-                                    Scrivi un commento
+                                    <i class="fas fa-comment-dots me-1"></i> Forum Commenti
                                 </button>
-                            </div>
+                            @endif
+                        @endauth
+                    </div>
+                    @auth
+                        @if(auth()->user()->isApproved())
                             <div id="eventCommentCollapse" class="collapse">
-                                <div class="card-body">
+                                <div class="card-body border-bottom bg-light">
                                     <form action="{{ route('comments.store', $event) }}" method="POST" id="commentForm">
                                         @csrf
                                         <div class="mb-3">
@@ -434,7 +407,7 @@
                                             <textarea class="form-control" id="commentContent" name="content"
                                                       rows="5" placeholder="Scrivi il tuo commento..." required></textarea>
                                         </div>
-                                        <div class="d-flex justify-content-between align-items-center">
+                                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
                                             <small class="text-muted">
                                                 <i class="fas fa-info-circle"></i> Puoi usare la formattazione, inserire link e immagini.
                                             </small>
@@ -455,18 +428,8 @@
                                     </form>
                                 </div>
                             </div>
-                        </div>
-                @endif
-                @endauth
-
-            <!-- Lista Commenti -->
-                <div class="card mt-4">
-                    <div class="card-header">
-                        <h5 class="mb-0">
-                            <i class="fas fa-comments"></i> Appunti
-                            <span class="badge bg-primary">{{ $comments->count() }}</span>
-                        </h5>
-                    </div>
+                        @endif
+                    @endauth
                     <div class="card-body">
                         @if($comments->count() > 0)
                             @foreach($comments as $comment)
@@ -551,6 +514,21 @@
             </div>
 
             <div class="col-md-4">
+                <!-- Organizzatore: in alto sulla destra, sopra Partecipanti -->
+                <div class="card mb-3">
+                    <div class="card-header py-2">
+                        <h5 class="mb-0"><i class="fas fa-user"></i> Organizzatore</h5>
+                    </div>
+                    <div class="card-body py-2">
+                        <p class="mb-0">
+                            <i class="fas fa-user"></i>
+                            <a href="{{ route('profile.show', $event->user) }}?{{ $eventProfileBackQuery }}">
+                                {{ $event->user->nickname }}
+                            </a>
+                        </p>
+                    </div>
+                </div>
+
                 <!-- Partecipanti -->
                 <h5 class="mb-2">
                     <i class="fas fa-users"></i> Partecipanti
@@ -728,28 +706,12 @@
                         {{-- Informazioni ospiti (solo se si vuole riattivare un testo esplicativo) --}}
                     </div>
                 </div>
-
-                <!-- Informazioni Organizzatore -->
-                <div class="card mt-4">
-                    <div class="card-header">
-                        <h5 class="mb-0"><i class="fas fa-user"></i> Organizzatore</h5>
-                    </div>
-                    <div class="card-body">
-                        <p class="mb-0">
-                            <i class="fas fa-user"></i>
-                            <a href="{{ route('profile.show', $event->user) }}?{{ $eventProfileBackQuery }}">
-                                {{ $event->user->nickname }}
-                            </a>
-                        </p>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
 @endsection
 @section('scripts')
     @parent
-    @include('partials.ckeditor4-description', ['field' => 'commentContent', 'height' => 200])
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Scroll al commento se specificato
@@ -799,28 +761,99 @@
         .event-meta-stack {
             display: flex;
             flex-direction: column;
-            gap: 0.5rem;
+            gap: 0.28rem;
             max-width: 100%;
         }
 
+        .event-meta-organizer-box,
         .event-meta-date-box,
         .event-meta-posti-box {
             display: flex;
-            align-items: flex-start;
+            align-items: center;
             gap: 0.35rem;
             width: 100%;
             box-sizing: border-box;
             border-radius: 0.375rem;
-            padding: 0.65rem 0.9rem;
-            font-size: 1rem;
-            line-height: 1.45;
+            padding: 0.38rem 0.65rem;
+            font-size: 0.95rem;
+            line-height: 1.2;
             border: 2px solid #000;
         }
 
+        /* Box Organizzatore: sfondo grigio, testo verde */
+        .event-meta-organizer-box {
+            background-color: #dee2e6;
+            color: #198754;
+        }
+        .event-meta-organizer-box .fas {
+            color: #198754;
+        }
+
+        /* Due colonne uguali, allineate allo stack meta sotto (stesso gap) */
+        .event-organizer-strip {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            gap: 0.28rem;
+            align-items: stretch;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .event-organizer-strip__cell {
+            min-width: 0;
+        }
+        .event-organizer-actions {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.35rem;
+            width: 100%;
+        }
+
+        /* Iscrivimi: sfondo verde, testo bianco, bordo blu */
+        .btn.event-btn-iscrivimi-all-evento {
+            border: 2px solid #0d6efd !important;
+            font-weight: 600;
+        }
+        .btn.event-btn-iscrivimi-all-evento.btn-iscrivimi-state-on {
+            background-color: #198754 !important;
+            color: #fff !important;
+        }
+        .btn.event-btn-iscrivimi-all-evento.btn-iscrivimi-state-on:hover {
+            background-color: #157347 !important;
+            color: #fff !important;
+            border-color: #0d6efd !important;
+        }
+        .btn.event-btn-iscrivimi-all-evento.btn-iscrivimi-state-off:disabled {
+            background-color: #adb5bd !important;
+            color: #fff !important;
+            border: 2px solid #0d6efd !important;
+            opacity: 1;
+        }
+
+        .event-meta-organizer-line {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 0.25rem 0.5rem;
+        }
+
+        .event-meta-organizer-box > i,
         .event-meta-date-box > i,
-        .event-meta-posti-box > i {
-            margin-top: 0.15rem;
+        .event-meta-posti-box > i,
+        .event-meta-localita-inline-box > i {
+            margin-top: 0;
             flex-shrink: 0;
+        }
+
+        .event-meta-date-line {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 0.25rem 0.5rem;
         }
 
         .event-meta-posti-line {
@@ -832,6 +865,48 @@
             background-color: #0d6efd;
             color: #fff;
         }
+        .event-meta-date-box .fas {
+            color: #fff;
+        }
+
+        .event-meta-localita-inline-box {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            width: 100%;
+            box-sizing: border-box;
+            border-radius: 0.375rem;
+            padding: 0.38rem 0.65rem;
+            font-size: 0.95rem;
+            line-height: 1.2;
+            border: 2px solid #000;
+            background-color: #0d6efd;
+            color: #fff;
+        }
+        .event-meta-localita-inline-text {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 0.2rem 0.45rem;
+            flex: 1;
+            min-width: 0;
+        }
+        .event-meta-localita-sep {
+            opacity: 0.9;
+            user-select: none;
+        }
+        .event-meta-localita-addr-part {
+            min-width: 0;
+            word-break: break-word;
+        }
+        .event-meta-localita-inline-box .fas {
+            color: #fff;
+            flex-shrink: 0;
+        }
+        .event-meta-localita-login-link {
+            color: #fff;
+            text-decoration: underline;
+        }
 
         .event-meta-posti-box {
             background-color: #dee2e6;
@@ -839,7 +914,7 @@
         }
 
         .event-meta-posti-box strong {
-            color: #1a1d20;
+            color: #212529;
         }
 
         .event-meta-posti-box > i {
@@ -847,36 +922,121 @@
         }
 
         .event-meta-label-iscritti {
-            color: #e0113c;
+            color: #dc3545;
             font-weight: 700;
-            text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
+            text-shadow: none;
         }
 
         .event-meta-label-liberi {
-            color: #008f4a;
+            color: #198754;
             font-weight: 700;
-            text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
+            text-shadow: none;
         }
 
         .event-meta-label-totali {
-            color: #e65100;
+            color: #fd7e14;
             font-weight: 700;
-            text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
+            text-shadow: none;
         }
 
         .event-meta-posti-hint {
-            color: #495057;
+            color: #6c757d;
             font-weight: normal;
         }
 
         .event-meta-posti-sep {
-            color: #6c757d;
+            color: #adb5bd;
+        }
+
+        .event-iscrizione-mappa-row {
+            flex-wrap: nowrap;
+        }
+        .event-iscrizione-mappa-row .btn.btn-event-map-paired.event-map-btn-fill {
+            flex: 1 1 auto;
+            min-width: 6rem;
+            justify-content: center;
+        }
+        @media (max-width: 575.98px) {
+            .event-iscrizione-mappa-row {
+                flex-wrap: wrap;
+            }
+            .event-iscrizione-mappa-row .btn.btn-event-map-paired.event-map-btn-fill {
+                flex: 1 1 100%;
+                min-width: 0;
+            }
+        }
+
+        .event-registration-deadline-box {
+            background-color: #198754;
+            color: #fff;
+            border: 2px solid #0d6efd;
+            box-shadow: none;
+            padding: 0.38rem 0.65rem;
+            font-size: 0.95rem;
+            line-height: 1.2;
+            min-height: 0;
+            box-sizing: border-box;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            border-radius: 0.375rem;
+        }
+        .event-registration-deadline-box .fas {
+            opacity: 0.95;
+        }
+
+        .btn.btn-event-map-paired {
+            background-color: #dc3545;
+            color: #fff;
+            border: 2px solid #0d6efd;
+            box-shadow: none;
+            padding: 0.38rem 0.65rem;
+            font-size: 0.95rem;
+            line-height: 1.2;
+            min-height: 0;
+            box-sizing: border-box;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            border-radius: 0.375rem;
+        }
+        .btn.btn-event-map-paired .fas {
+            opacity: 0.95;
+        }
+        .btn.btn-event-map-paired:hover,
+        .btn.btn-event-map-paired:focus {
+            background-color: #bb2d3b;
+            color: #fff;
+            border-color: #0d6efd;
+        }
+        .btn.btn-event-map-paired:focus-visible {
+            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.45);
+        }
+
+        .event-localita-btn-compact {
+            padding: 0.1rem 0.45rem;
+            font-size: 0.75rem;
+            line-height: 1.15;
+            min-height: 1.65rem;
+            border-radius: 0.25rem;
         }
 
         .event-participation-btns > .btn,
         .event-participation-btns > form {
             flex: 1 1 0;
             min-width: 0;
+        }
+
+        /* Stessa altezza del pulsante Mappa (btn-sm) per Partecipa e Forum Commenta */
+        .event-btn-participate-map-height {
+            padding: 0.25rem 0.5rem !important;
+            font-size: 0.875rem !important;
+            line-height: 1.5 !important;
+            min-height: 2.125rem;
+            box-sizing: border-box;
+            display: inline-flex !important;
+            align-items: center;
+            justify-content: center;
         }
 
         .highlight-comment {

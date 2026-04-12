@@ -14,13 +14,15 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
-        $query = User::withCount('events')
-            ->orderBy('ruolo') // admin/organizzatore/utente insieme, ordinati
-            ->orderBy('abilitato')
-            ->orderBy('iscrittodal', 'desc');
+        $query = User::withCount('events');
 
         if ($request->query('registrations') === 'pending') {
-            $query->where('abilitato', 0)->where('ruolo', '!=', 0);
+            $query->where('abilitato', 0)->where('ruolo', '!=', 0)
+                ->orderBy('userID');
+        } else {
+            $query->orderBy('ruolo')
+                ->orderBy('abilitato')
+                ->orderBy('iscrittodal', 'desc');
         }
 
         $users = $query->get();

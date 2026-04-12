@@ -94,10 +94,11 @@
         @endguest
 
         @if($events->count() > 0)
-            <div class="row">
+            {{-- Elenco verticale: una card sotto l’altra (larghezza piena nel container) --}}
+            <div class="row justify-content-center">
                 @foreach($events as $event)
-                    <div class="col-md-6 col-lg-4 mb-4">
-                        <div class="card event-box h-100 {{ $event->isFull() ? 'event-box--full' : '' }}">
+                    <div class="col-12 mb-4">
+                        <div class="card event-box {{ $event->isFull() ? 'event-box--full' : '' }}">
                             @if($event->isFull())
                                 <div class="card-header bg-danger text-white text-center py-2">
                                     <small><i class="fas fa-exclamation-triangle"></i> <strong>EVENTO AL COMPLETO</strong></small>

@@ -16,3 +16,6 @@ yarn-error.log
 /.vscode
 /.ddev
 /.ddev/
+
+# Chiavi SSH, script e file solo per deploy in produzione (cartella locale)
+/deploy/

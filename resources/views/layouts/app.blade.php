@@ -12,7 +12,6 @@
         .site-header {
             background: #fff;
             padding: 6px 0;
-            border-bottom: 1px solid #dee2e6;
         }
         .site-header-logo {
             max-height: 100px;
@@ -98,8 +97,8 @@
             border-color: #63d87f;
             color: #0f5132;
         }
-        /* Navbar mobile: hamburger a sinistra, menu a tutta larghezza sotto */
-        @media (max-width: 991.98px) {
+        /* Solo smartphone: menu sotto logo/hamburger (colonna). Da tablet (md) tutto inline sulla barra nera. */
+        @media (max-width: 767.98px) {
             .excursio-navbar > .container-fluid {
                 flex-wrap: wrap;
                 justify-content: flex-start;
@@ -110,13 +109,18 @@
             }
         }
 
-        /* Desktop: una sola riga, uso di tutta la larghezza (niente “buco” centrale) */
-        @media (min-width: 992px) {
+        /* Tablet e desktop: una sola riga sulla barra — link in fila + zona utente; scroll orizzontale se serve */
+        @media (min-width: 768px) {
             .excursio-navbar > .container-fluid {
                 display: flex;
                 flex-wrap: nowrap;
                 align-items: center;
                 max-width: 100%;
+            }
+            .excursio-navbar #navbarNav {
+                flex-direction: row !important;
+                flex-wrap: nowrap !important;
+                align-items: center !important;
             }
             .excursio-navbar .navbar-collapse {
                 flex-grow: 1;
@@ -128,43 +132,70 @@
             .excursio-navbar .navbar-collapse.collapsing {
                 flex-wrap: nowrap !important;
             }
+            .excursio-navbar .navbar-nav {
+                flex-direction: row !important;
+            }
             .excursio-navbar__main-nav {
                 flex-direction: row !important;
                 flex-wrap: nowrap !important;
                 flex: 1 1 auto;
-                justify-content: space-between;
+                justify-content: flex-start;
                 align-items: center;
                 min-width: 0;
-                gap: 0.15rem;
+                gap: 0.25rem 0.65rem;
+                overflow-x: auto;
+                overflow-y: visible;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: thin;
             }
             .excursio-navbar__main-nav .nav-link {
-                padding-left: 0.35rem;
-                padding-right: 0.35rem;
-                font-size: 0.8rem;
+                padding-left: 0.5rem;
+                padding-right: 0.5rem;
+                font-size: 0.95rem;
                 white-space: nowrap;
+            }
+            .excursio-navbar__main-nav .dropdown-toggle {
+                font-size: 0.95rem;
             }
             .excursio-navbar__user-nav {
                 flex-direction: row !important;
                 flex-wrap: nowrap !important;
                 flex: 0 0 auto;
+                width: auto !important;
+                max-width: none;
                 margin-left: 0.5rem;
-                padding-left: 0.65rem;
+                padding-left: 0.75rem;
                 border-left: 1px solid rgba(255, 255, 255, 0.25);
                 align-items: center;
             }
             .excursio-navbar__user-nav .nav-link {
-                padding-left: 0.45rem;
-                padding-right: 0.45rem;
-                font-size: 0.8rem;
+                padding-left: 0.5rem;
+                padding-right: 0.5rem;
+                font-size: 0.95rem;
                 white-space: nowrap;
             }
             .excursio-navbar__user-nav .navbar-text {
-                font-size: 0.78rem;
+                font-size: 0.9rem;
                 white-space: nowrap;
-                max-width: 11rem;
+                max-width: min(18rem, 28vw);
                 overflow: hidden;
                 text-overflow: ellipsis;
             }
+            .excursio-navbar__main-nav .navbar-text {
+                font-size: 0.9rem;
+                white-space: nowrap;
+                max-width: min(18rem, 28vw);
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+        }
+        /* Niente striscia/bordo chiaro sotto i link della barra nera */
+        .excursio-navbar,
+        .excursio-navbar .nav-link,
+        .excursio-navbar .navbar-brand,
+        .excursio-navbar .btn-link {
+            border-bottom: 0 !important;
+            box-shadow: none !important;
         }
 
         /* Header + navbar sempre visibili in alto durante lo scroll */
@@ -184,6 +215,30 @@
                 top: 7.5rem;
             }
         }
+
+        /* Banner admin: nuove iscrizioni — allineato alla larghezza del contenuto (come box azzurro gestione utenti) */
+        .admin-pending-reg-alert {
+            border: 2px solid #b8860b !important;
+            border-radius: 14px;
+            box-shadow: none !important;
+            width: calc(100% - 1.5rem);
+            max-width: 100%;
+            margin-left: auto;
+            margin-right: auto;
+            padding: 10px 12px;
+            background-color: rgba(255, 243, 205, 0.95) !important;
+        }
+        @media (max-width: 767.98px) {
+            .admin-pending-reg-alert {
+                padding: 8px 10px;
+            }
+        }
+        .admin-pending-reg-actions-box {
+            border: 1px solid #9a7209;
+            border-radius: 10px;
+            background: rgba(184, 134, 11, 0.14);
+            padding: 8px 10px;
+        }
     </style>
 </head>
 <body>
@@ -193,8 +248,8 @@
         <img src="{{ asset('upload_immagini/excursio.png') }}" alt="Excursio" class="site-header-logo">
     </a>
 </div>
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark excursio-navbar py-lg-1">
-    <div class="container-fluid px-3 px-xl-4 d-flex align-items-center flex-wrap flex-lg-nowrap">
+<nav class="navbar navbar-expand-md navbar-dark bg-dark excursio-navbar py-md-1">
+    <div class="container-fluid px-3 px-xl-4 d-flex align-items-center flex-wrap flex-md-nowrap">
         <div class="d-flex align-items-center flex-shrink-0">
             <button class="navbar-toggler me-2" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
                     aria-controls="navbarNav" aria-expanded="false" aria-label="Apri il menu">
@@ -204,9 +259,9 @@
                 <i class="fas fa-home me-1"></i><span class="d-none d-sm-inline">Home</span>
             </a>
         </div>
-        {{-- Desktop: una riga su tutta la larghezza; mobile: colonna --}}
-        <div class="collapse navbar-collapse flex-column flex-lg-row align-items-stretch align-items-lg-center flex-lg-grow-1" id="navbarNav">
-            <ul class="navbar-nav excursio-navbar__main-nav mb-2 mb-lg-0 w-100 w-lg-auto flex-lg-grow-1">
+        {{-- Desktop: una sola riga (main + user); mobile: colonna --}}
+        <div class="collapse navbar-collapse flex-column flex-md-row flex-md-nowrap align-items-stretch align-items-md-center flex-md-grow-1 min-w-0" id="navbarNav">
+            <ul class="navbar-nav excursio-navbar__main-nav mb-2 mb-md-0 w-100 w-md-auto flex-md-grow-1 min-w-0">
                 @guest
                     <li class="nav-item">
                         <a class="nav-link" href="{{ route('login') }}">
@@ -216,11 +271,6 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{{ route('register') }}">
                             <i class="fas fa-user-plus"></i> Registrati
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ route('home') }}">
-                            <i class="fas fa-home"></i> Homepage
                         </a>
                     </li>
                     <li class="nav-item">
@@ -239,10 +289,11 @@
                         </a>
                     </li>
                 @else
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ route('home') }}">
-                        <i class="fas fa-home"></i> Homepage
-                    </a>
+                <li class="nav-item d-flex align-items-center me-1 me-md-2">
+                    <span class="navbar-text text-white-50 small">
+                        <i class="fas fa-smile-beam me-1"></i>
+                        Benvenuto <strong class="text-white">{{ auth()->user()->username }}</strong>
+                    </span>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="{{ route('chat.index') }}">
@@ -327,14 +378,8 @@
                 @endauth
                 @endguest
             </ul>
-            <ul class="navbar-nav excursio-navbar__user-nav w-100 flex-lg-shrink-0">
+            <ul class="navbar-nav excursio-navbar__user-nav w-100 w-md-auto flex-md-shrink-0 flex-md-nowrap">
                 @auth
-                        <li class="nav-item d-flex align-items-center me-2">
-                            <span class="navbar-text text-white-50 small">
-                                <i class="fas fa-smile-beam me-1"></i>
-                                Benvenuto <strong class="text-white">{{ auth()->user()->username }}</strong>
-                            </span>
-                        </li>
                         <li class="nav-item">
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
@@ -395,11 +440,11 @@
                 </div>
             @endguest
 
-            {{-- Utenti online adesso: visibile per tutti, solo elenco non cliccabile --}}
+            {{-- Utenti online: visibile per tutti, solo elenco non cliccabile --}}
             <div class="card card-sidebar mb-3">
                 <div class="card-header py-2">
                     <small class="fw-bold">
-                        <i class="fas fa-circle text-success me-1"></i> Utenti online adesso
+                        <i class="fas fa-circle text-success me-1"></i> Utenti online
                     </small>
                 </div>
                 <div class="card-body p-2" style="max-height: 220px; overflow-y: auto;">
@@ -431,6 +476,38 @@
                     @endif
                 </div>
             </div>
+
+            @auth
+                @php
+                    try {
+                        $mySubscribedEvents = auth()->user()->participatingEvents()->limit(30)->get();
+                    } catch (\Throwable $e) {
+                        $mySubscribedEvents = collect();
+                    }
+                @endphp
+                <div class="card card-sidebar mb-3">
+                    <div class="card-header py-2">
+                        <small class="fw-bold">
+                            <i class="fas fa-calendar-check text-info me-1"></i> Eventi attivi
+                        </small>
+                    </div>
+                    <div class="card-body p-2" style="max-height: 220px; overflow-y: auto;">
+                        @if($mySubscribedEvents->isEmpty())
+                            <small class="text-muted">Non risulti iscritto a eventi futuri pubblicati.</small>
+                        @else
+                            <ul class="list-unstyled mb-0">
+                                @foreach($mySubscribedEvents as $subEvent)
+                                    <li class="small py-1">
+                                        <a href="{{ route('events.show', $subEvent) }}" class="text-decoration-none">
+                                            {{ $subEvent->title }}
+                                        </a>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        @endif
+                    </div>
+                </div>
+            @endauth
         </div>
         @endif
 
@@ -453,9 +530,9 @@
 
             @auth
                 @if(auth()->user()->isAdmin() && ($adminPendingUsersCount ?? 0) > 0)
-                    <div class="alert alert-warning border-0 shadow-sm mb-3 d-flex flex-wrap align-items-center justify-content-between gap-3 admin-pending-reg-alert" role="alert">
-                        <div class="d-flex align-items-start gap-2">
-                            <span class="fs-4 text-warning"><i class="fas fa-user-clock" aria-hidden="true"></i></span>
+                    <div class="alert alert-warning mb-3 d-flex flex-wrap align-items-center justify-content-between gap-3 admin-pending-reg-alert" role="alert">
+                        <div class="d-flex align-items-start gap-2 flex-grow-1 min-w-0">
+                            <span class="fs-4 text-warning flex-shrink-0"><i class="fas fa-user-clock" aria-hidden="true"></i></span>
                             <div>
                                 <strong>Nuove iscrizioni da approvare</strong>
                                 <div class="small mb-0">
@@ -465,7 +542,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="d-flex flex-wrap gap-2">
+                        <div class="admin-pending-reg-actions-box d-flex flex-wrap gap-2 flex-shrink-0">
                             <a href="{{ route('admin.users.index', ['registrations' => 'pending']) }}" class="btn btn-dark btn-sm">
                                 <i class="fas fa-list me-1"></i> Vedi solo in attesa
                             </a>

@@ -7,25 +7,34 @@
     <div class="container-fluid">
         <div class="row">
             <div class="col-md-12">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h1 class="display-5 admin-users-page-title">
-                        <i class="fas fa-users-cog admin-users-page-title-icon"></i>
-                        <span class="admin-users-page-title-text">Gestione Utenti</span>
-                    </h1>
-                    <div class="d-flex gap-2">
-                        <a href="{{ route('admin.users.logins') }}" class="btn btn-primary btn-sm">
-                            <i class="fas fa-sign-in-alt"></i> Ingressi giornalieri utenti ult. 10 gg.
-                        </a>
-                        <a href="{{ route('admin.dashboard') }}" class="btn btn-secondary btn-sm">
-                            <i class="fas fa-home"></i> Home
-                        </a>
-                    </div>
-                </div>
-
                 @if(request('registrations') === 'pending')
-                    <div class="alert alert-warning d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
-                        <span><i class="fas fa-filter me-1"></i> Stai visualizzando <strong>solo le iscrizioni in attesa</strong> di approvazione.</span>
-                        <a href="{{ route('admin.users.index') }}" class="btn btn-sm btn-outline-dark">Mostra tutti gli utenti</a>
+                    <div class="mb-3 w-100">
+                        <div class="admin-users-pending-title-box">
+                            <h1 class="display-5 admin-users-page-title admin-users-pending-heading mb-0 d-flex flex-wrap align-items-baseline gap-2 gap-md-3">
+                                <span class="d-inline-flex align-items-center flex-wrap">
+                                    <i class="fas fa-users-cog admin-users-page-title-icon"></i>
+                                    <span class="admin-users-page-title-text">Gestione Utenti Sospesi</span>
+                                </span>
+                                <span class="small admin-users-pending-subtitle fw-normal">
+                                    Stai visualizzando Solo la lista degli utenti sospesi
+                                </span>
+                            </h1>
+                        </div>
+                    </div>
+                @else
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h1 class="display-5 admin-users-page-title">
+                            <i class="fas fa-users-cog admin-users-page-title-icon"></i>
+                            <span class="admin-users-page-title-text">Gestione Utenti</span>
+                        </h1>
+                        <div class="d-flex gap-2">
+                            <a href="{{ route('admin.users.logins') }}" class="btn btn-primary btn-sm">
+                                <i class="fas fa-sign-in-alt"></i> Ingressi giornalieri utenti ult. 10 gg.
+                            </a>
+                            <a href="{{ route('admin.dashboard') }}" class="btn btn-secondary btn-sm">
+                                <i class="fas fa-home"></i> Home
+                            </a>
+                        </div>
                     </div>
                 @endif
 
@@ -241,7 +250,7 @@
                                                 @elseif($user->status === 'approved')
                                                     <span class="badge bg-success">Attivo</span>
                                                 @else
-                                                    <span class="badge bg-danger">Bannato</span>
+                                                    <span class="badge bg-secondary">Bannato</span>
                                                 @endif
                                             </td>
                                             <td>
@@ -261,36 +270,44 @@
                                                 <span class="admin-date-small">{{ $user->ultimo_accesso ? $user->ultimo_accesso->format('d/m/Y') : '—' }}</span>
                                             </td>
                                             <td>
-                                                <div class="btn-group" role="group">
+                                                {{-- Identificazione Attivo/Sospeso/Bannato (pulsanti) + azioni sulla stessa riga --}}
+                                                <div class="d-inline-flex align-items-center flex-wrap gap-1 admin-users-azioni-inline">
                                                     @if($user->status === 'pending')
-                                                        <form action="{{ route('admin.users.approve', $user) }}" method="POST" class="d-inline">
-                                                            @csrf
-                                                            <button type="submit" class="btn btn-success btn-sm" title="Approva">
-                                                                <i class="fas fa-check"></i>
-                                                            </button>
-                                                        </form>
+                                                        <button type="button" class="btn btn-danger btn-sm py-0 px-2" disabled title="Stato account">Sospeso</button>
+                                                        @if(!$user->isAdmin())
+                                                            <form action="{{ route('admin.users.approve', $user) }}" method="POST" class="d-inline m-0">
+                                                                @csrf
+                                                                <button type="submit" class="btn btn-success btn-sm py-0" title="Approva e rendi attivo">
+                                                                    <i class="fas fa-check me-1"></i> Attiva
+                                                                </button>
+                                                            </form>
+                                                        @endif
+                                                    @elseif($user->status === 'approved')
+                                                        <button type="button" class="btn btn-success btn-sm py-0 px-2" disabled title="Stato account">Attivo</button>
+                                                    @else
+                                                        <button type="button" class="btn btn-secondary btn-sm py-0 px-2" disabled title="Stato account">Bannato</button>
                                                     @endif
 
                                                     @if($user->status !== 'banned')
-                                                        <form action="{{ route('admin.users.ban', $user) }}" method="POST" class="d-inline">
+                                                        <form action="{{ route('admin.users.ban', $user) }}" method="POST" class="d-inline m-0">
                                                             @csrf
-                                                            <button type="submit" class="btn btn-danger btn-sm" title="Banna">
+                                                            <button type="submit" class="btn btn-danger btn-sm py-0" title="Banna">
                                                                 <i class="fas fa-ban"></i>
                                                             </button>
                                                         </form>
                                                     @else
-                                                        <form action="{{ route('admin.users.unban', $user) }}" method="POST" class="d-inline">
+                                                        <form action="{{ route('admin.users.unban', $user) }}" method="POST" class="d-inline m-0">
                                                             @csrf
-                                                            <button type="submit" class="btn btn-warning btn-sm" title="Sbanna">
+                                                            <button type="submit" class="btn btn-warning btn-sm py-0" title="Sbanna">
                                                                 <i class="fas fa-unlock"></i>
                                                             </button>
                                                         </form>
                                                     @endif
 
-                                                    <form action="{{ route('admin.users.destroy', $user) }}" method="POST" class="d-inline">
+                                                    <form action="{{ route('admin.users.destroy', $user) }}" method="POST" class="d-inline m-0">
                                                         @csrf
                                                         @method('DELETE')
-                                                        <button type="submit" class="btn btn-outline-danger btn-sm"
+                                                        <button type="submit" class="btn btn-outline-danger btn-sm py-0"
                                                                 onclick="return confirm('Sei sicuro di voler eliminare questo utente?')"
                                                                 title="Elimina">
                                                             <i class="fas fa-trash"></i>
@@ -317,6 +334,33 @@
     </div>
 
     <style>
+        /* Vista ?registrations=pending: titolo + sottotitolo marrone in box azzurro (come concordato) */
+        .admin-users-pending-title-box {
+            width: 100%;
+            border: 2px solid #0dcaf0;
+            border-radius: 12px;
+            background: rgba(13, 202, 240, 0.1);
+            padding: 10px 12px;
+        }
+        @media (max-width: 767.98px) {
+            .admin-users-pending-title-box {
+                padding: 8px 10px;
+            }
+        }
+        .admin-users-pending-heading,
+        .admin-users-pending-heading .admin-users-page-title-text,
+        .admin-users-pending-heading .admin-users-page-title-icon,
+        .admin-users-pending-subtitle {
+            color: #8B4513;
+        }
+
+        .admin-users-azioni-inline {
+            max-width: 100%;
+        }
+        .admin-users-azioni-inline .btn:disabled {
+            opacity: 1;
+        }
+
         .admin-users-page-title-icon {
             margin-right: 0.5rem;
         }
