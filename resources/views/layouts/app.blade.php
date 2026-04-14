@@ -46,6 +46,20 @@
         .card-sidebar .card-header {
             background: #f8f9fa;
         }
+        /* Sidebar: box "Utenti online" e "Eventi attivi" in verde */
+        .card-sidebar.sidebar-box--green {
+            border: 2px solid #198754 !important;
+        }
+        .card-sidebar.sidebar-box--green .card-header {
+            background: rgba(25, 135, 84, 0.12) !important;
+            border-bottom: 1px solid rgba(25, 135, 84, 0.35) !important;
+        }
+        .card-sidebar.sidebar-box--green .card-header small {
+            color: #145c36;
+        }
+        .card-sidebar.sidebar-box--green .card-header i {
+            color: #198754 !important;
+        }
         .online-dot {
             width: 8px;
             height: 8px;
@@ -97,97 +111,26 @@
             border-color: #63d87f;
             color: #0f5132;
         }
-        /* Solo smartphone: menu sotto logo/hamburger (colonna). Da tablet (md) tutto inline sulla barra nera. */
-        @media (max-width: 767.98px) {
-            .excursio-navbar > .container-fluid {
-                flex-wrap: wrap;
-                justify-content: flex-start;
-            }
-            .excursio-navbar .navbar-collapse {
-                flex-basis: 100%;
-                width: 100% !important;
-            }
+        /* Menu sempre hamburger: voci in colonna sotto la riga toggler+brand (anche su tablet/desktop). */
+        .excursio-navbar > .container-fluid {
+            flex-wrap: wrap;
+            justify-content: flex-start;
         }
-
-        /* Tablet e desktop: una sola riga sulla barra — link in fila + zona utente; scroll orizzontale se serve */
-        @media (min-width: 768px) {
-            .excursio-navbar > .container-fluid {
-                display: flex;
-                flex-wrap: nowrap;
-                align-items: center;
-                max-width: 100%;
-            }
-            .excursio-navbar #navbarNav {
-                flex-direction: row !important;
-                flex-wrap: nowrap !important;
-                align-items: center !important;
-            }
-            .excursio-navbar .navbar-collapse {
-                flex-grow: 1;
-                flex-wrap: nowrap !important;
-                min-width: 0;
-                overflow: visible;
-            }
-            .excursio-navbar .navbar-collapse.show,
-            .excursio-navbar .navbar-collapse.collapsing {
-                flex-wrap: nowrap !important;
-            }
-            .excursio-navbar .navbar-nav {
-                flex-direction: row !important;
-            }
-            .excursio-navbar__main-nav {
-                flex-direction: row !important;
-                flex-wrap: nowrap !important;
-                flex: 1 1 auto;
-                justify-content: flex-start;
-                align-items: center;
-                min-width: 0;
-                gap: 0.25rem 0.65rem;
-                overflow-x: auto;
-                overflow-y: visible;
-                -webkit-overflow-scrolling: touch;
-                scrollbar-width: thin;
-            }
-            .excursio-navbar__main-nav .nav-link {
-                padding-left: 0.5rem;
-                padding-right: 0.5rem;
-                font-size: 0.95rem;
-                white-space: nowrap;
-            }
-            .excursio-navbar__main-nav .dropdown-toggle {
-                font-size: 0.95rem;
-            }
-            .excursio-navbar__user-nav {
-                flex-direction: row !important;
-                flex-wrap: nowrap !important;
-                flex: 0 0 auto;
-                width: auto !important;
-                max-width: none;
-                margin-left: 0.5rem;
-                padding-left: 0.75rem;
-                border-left: 1px solid rgba(255, 255, 255, 0.25);
-                align-items: center;
-            }
-            .excursio-navbar__user-nav .nav-link {
-                padding-left: 0.5rem;
-                padding-right: 0.5rem;
-                font-size: 0.95rem;
-                white-space: nowrap;
-            }
-            .excursio-navbar__user-nav .navbar-text {
-                font-size: 0.9rem;
-                white-space: nowrap;
-                max-width: min(18rem, 28vw);
-                overflow: hidden;
-                text-overflow: ellipsis;
-            }
-            .excursio-navbar__main-nav .navbar-text {
-                font-size: 0.9rem;
-                white-space: nowrap;
-                max-width: min(18rem, 28vw);
-                overflow: hidden;
-                text-overflow: ellipsis;
-            }
+        .excursio-navbar .navbar-collapse {
+            flex-basis: 100%;
+            width: 100% !important;
+        }
+        .excursio-navbar__user-nav {
+            margin-top: 0.35rem;
+            padding-top: 0.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.25);
+        }
+        .excursio-navbar__main-nav .navbar-text,
+        .excursio-navbar__user-nav .navbar-text {
+            font-size: 0.9rem;
+            max-width: min(18rem, 85vw);
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         /* Niente striscia/bordo chiaro sotto i link della barra nera */
         .excursio-navbar,
@@ -248,8 +191,8 @@
         <img src="{{ asset('upload_immagini/excursio.png') }}" alt="Excursio" class="site-header-logo">
     </a>
 </div>
-<nav class="navbar navbar-expand-md navbar-dark bg-dark excursio-navbar py-md-1">
-    <div class="container-fluid px-3 px-xl-4 d-flex align-items-center flex-wrap flex-md-nowrap">
+<nav class="navbar navbar-dark bg-dark excursio-navbar py-1">
+    <div class="container-fluid px-3 px-xl-4 d-flex align-items-center flex-wrap">
         <div class="d-flex align-items-center flex-shrink-0">
             <button class="navbar-toggler me-2" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
                     aria-controls="navbarNav" aria-expanded="false" aria-label="Apri il menu">
@@ -259,9 +202,8 @@
                 <i class="fas fa-home me-1"></i><span class="d-none d-sm-inline">Home</span>
             </a>
         </div>
-        {{-- Desktop: una sola riga (main + user); mobile: colonna --}}
-        <div class="collapse navbar-collapse flex-column flex-md-row flex-md-nowrap align-items-stretch align-items-md-center flex-md-grow-1 min-w-0" id="navbarNav">
-            <ul class="navbar-nav excursio-navbar__main-nav mb-2 mb-md-0 w-100 w-md-auto flex-md-grow-1 min-w-0">
+        <div class="collapse navbar-collapse flex-column align-items-stretch" id="navbarNav">
+            <ul class="navbar-nav excursio-navbar__main-nav mb-2 w-100">
                 @guest
                     <li class="nav-item">
                         <a class="nav-link" href="{{ route('login') }}">
@@ -378,18 +320,18 @@
                 @endauth
                 @endguest
             </ul>
-            <ul class="navbar-nav excursio-navbar__user-nav w-100 w-md-auto flex-md-shrink-0 flex-md-nowrap">
-                @auth
-                        <li class="nav-item">
-                            <form method="POST" action="{{ route('logout') }}">
-                                @csrf
-                                <button type="submit" class="nav-link btn btn-link">
-                                    <i class="fas fa-sign-out-alt"></i> Esci
-                                </button>
-                            </form>
-                        </li>
-                @endauth
+            @auth
+            <ul class="navbar-nav excursio-navbar__user-nav w-100">
+                <li class="nav-item">
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" class="nav-link btn btn-link">
+                            <i class="fas fa-sign-out-alt"></i> Esci
+                        </button>
+                    </form>
+                </li>
             </ul>
+            @endauth
         </div>
     </div>
 </nav>
@@ -441,7 +383,7 @@
             @endguest
 
             {{-- Utenti online: visibile per tutti, solo elenco non cliccabile --}}
-            <div class="card card-sidebar mb-3">
+            <div class="card card-sidebar sidebar-box--green mb-3">
                 <div class="card-header py-2">
                     <small class="fw-bold">
                         <i class="fas fa-circle text-success me-1"></i> Utenti online
@@ -485,7 +427,7 @@
                         $mySubscribedEvents = collect();
                     }
                 @endphp
-                <div class="card card-sidebar mb-3">
+                <div class="card card-sidebar sidebar-box--green mb-3">
                     <div class="card-header py-2">
                         <small class="fw-bold">
                             <i class="fas fa-calendar-check text-info me-1"></i> Eventi attivi
@@ -568,13 +510,13 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    // Auto-close navbar collapse after clicking a real link (mobile)
+    // Chiudi il menu hamburger dopo click su link (non sui toggle dei dropdown)
     var navCollapse = document.getElementById('navbarNav');
     if (navCollapse) {
-        navCollapse.querySelectorAll('a.nav-link:not(.dropdown-toggle), a.dropdown-item').forEach(function (link) {
+        navCollapse.querySelectorAll('a.nav-link:not(.dropdown-toggle), a.dropdown-item, button.nav-link').forEach(function (link) {
             link.addEventListener('click', function () {
                 var bsCollapse = bootstrap.Collapse.getInstance(navCollapse);
-                if (bsCollapse && window.innerWidth < 992) {
+                if (bsCollapse) {
                     bsCollapse.hide();
                 }
             });

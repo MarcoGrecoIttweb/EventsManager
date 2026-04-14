@@ -94,90 +94,92 @@
         @endguest
 
         @if($events->count() > 0)
-            {{-- Elenco verticale: una card sotto l’altra (larghezza piena nel container) --}}
-            <div class="row justify-content-center">
+            {{-- PC: 2 card per riga, stessa altezza; immagine a sinistra, contenuto a destra --}}
+            <div class="row g-4 align-items-stretch">
                 @foreach($events as $event)
-                    <div class="col-12 mb-4">
-                        <div class="card event-box {{ $event->isFull() ? 'event-box--full' : '' }}">
+                    <div class="col-12 col-lg-6 d-flex">
+                        <div class="card h-100 w-100 event-box {{ $event->isFull() ? 'event-box--full' : '' }}">
                             @if($event->isFull())
                                 <div class="card-header bg-danger text-white text-center py-2">
                                     <small><i class="fas fa-exclamation-triangle"></i> <strong>EVENTO AL COMPLETO</strong></small>
                                 </div>
                             @endif
 
-                            {{-- Thumbnail Image --}}
-                            @if($event->cover_image_url)
-                                <div class="position-relative bg-light" style="height: 200px; display:flex; align-items:center; justify-content:center; overflow:hidden;">
-                                    <img src="{{ $event->cover_image_url }}"
-                                         alt="{{ $event->title }}"
-                                         class="card-img-top"
-                                         style="max-height: 100%; max-width: 100%; width:auto; height:auto; object-fit: contain;">
-                                    @if($event->isFull())
-                                        <div class="position-absolute top-0 start-0 m-2">
-                                            <span class="badge bg-danger">
-                                                <i class="fas fa-lock"></i> Completo
-                                            </span>
+                            <div class="row g-0 h-100">
+                                <div class="col-md-4">
+                                    @if($event->cover_image_url)
+                                        <div class="event-thumb-box position-relative bg-light h-100">
+                                            <img src="{{ $event->cover_image_url }}"
+                                                 alt="{{ $event->title }}"
+                                                 class="event-thumb-box__img">
+                                            @if($event->isFull())
+                                                <div class="position-absolute top-0 start-0 m-2">
+                                                    <span class="badge bg-danger">
+                                                        <i class="fas fa-lock"></i> Completo
+                                                    </span>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    @else
+                                        <div class="event-thumb-box bg-light d-flex align-items-center justify-content-center h-100">
+                                            <div class="text-center text-muted">
+                                                <i class="fas fa-calendar-alt fa-3x mb-2"></i>
+                                                <p class="mb-0 small">Nessuna immagine</p>
+                                            </div>
                                         </div>
                                     @endif
                                 </div>
-                            @else
-                                {{-- Placeholder se non c'è immagine --}}
-                                <div class="card-img-top bg-light d-flex align-items-center justify-content-center"
-                                     style="height: 200px;">
-                                    <div class="text-center text-muted">
-                                        <i class="fas fa-calendar-alt fa-3x mb-2"></i>
-                                        <p class="mb-0 small">Nessuna immagine</p>
-                                    </div>
-                                </div>
-                            @endif
+                                <div class="col-md-8 d-flex flex-column h-100">
+                                    <div class="card-body">
+                                        <h5 class="card-title {{ $event->isFull() ? 'text-muted' : '' }}">{{ $event->title }}</h5>
+                                        <div class="mb-3 d-flex flex-wrap gap-2 event-meta-badges">
+                                            <span class="badge bg-primary event-meta-badges__badge">
+                                                <i class="fas fa-calendar"></i>
+                                                {{ $event->italian_event_date ?? ($event->date ? $event->date->format('d/m/Y H:i') : '') }}
+                                            </span>
+                                            <span class="badge bg-{{ $event->isFull() ? 'danger' : 'secondary' }} event-meta-badges__badge">
+                                                <i class="fas fa-users"></i>
+                                                {{ $event->participants_count }}
+                                                @if($event->max_participants)
+                                                    / {{ $event->max_participants }}
+                                                @endif
+                                            </span>
+                                        </div>
+                                        <p class="card-text mb-2">
+                                            <i class="fas fa-map-marker-alt"></i>
+                                            <strong>{{ $event->city }}</strong>
+                                            <span class="text-muted small ms-2">
+                                                <strong>Org.</strong>
+                                                {{ $event->user->nickname ?? $event->user->nome ?? '—' }}
+                                            </span>
+                                        </p>
+                                        <div class="card-text text-muted small event-preview">
+                                            {{ $event->getHomepagePreview(100) }}
+                                        </div>
 
-                            <div class="card-body">
-                                <h5 class="card-title {{ $event->isFull() ? 'text-muted' : '' }}">{{ $event->title }}</h5>
-                                <div class="mb-3">
-                                    <span class="badge bg-primary">
-                                        <i class="fas fa-calendar"></i>
-                                        {{ $event->italian_event_date ?? ($event->date ? $event->date->format('d/m/Y H:i') : '') }}
-                                    </span>
-                                    <span class="badge bg-{{ $event->isFull() ? 'danger' : 'secondary' }} ms-1">
-                                        <i class="fas fa-users"></i>
-                                        {{ $event->participants_count }}
-                                        @if($event->max_participants)
-                                            / {{ $event->max_participants }}
+                                        @if($event->isFull())
+                                            <div class="alert alert-warning alert-sm mb-0 py-2 mt-2">
+                                                <small>
+                                                    <i class="fas fa-info-circle"></i>
+                                                    <strong>Evento al completo</strong> - Non è più possibile iscriversi
+                                                </small>
+                                            </div>
                                         @endif
-                                    </span>
-                                </div>
-                                <p class="card-text mb-2">
-                                    <i class="fas fa-map-marker-alt"></i>
-                                    <strong>{{ $event->city }}</strong>
-                                    <span class="text-muted small ms-2">
-                                        <strong>Org.</strong>
-                                        {{ $event->user->nickname ?? $event->user->nome ?? '—' }}
-                                    </span>
-                                </p>
-                                <div class="card-text text-muted small event-preview">
-                                    {{ $event->getHomepagePreview() }}
-                                </div>
-
-                                @if($event->isFull())
-                                    <div class="alert alert-warning alert-sm mb-0 py-2 mt-2">
-                                        <small>
-                                            <i class="fas fa-info-circle"></i>
-                                            <strong>Evento al completo</strong> - Non è più possibile iscriversi
-                                        </small>
                                     </div>
-                                @endif
-                            </div>
-                            <div class="card-footer bg-transparent">
-                                @auth
-                                    <a href="{{ route('events.show', $event) }}" class="btn btn-{{ $event->isFull() ? 'outline-secondary' : 'primary' }} w-100">
-                                        <i class="fas fa-eye"></i>
-                                        {{ $event->isFull() ? 'Visualizza (Completo)' : 'Dettagli Evento' }}
-                                    </a>
-                                @else
-                                    <a href="{{ route('login') }}" class="btn btn-guest-details w-100">
-                                        <i class="fas fa-lock"></i> Accedi per vedere i dettagli
-                                    </a>
-                                @endauth
+
+                                    <div class="card-footer bg-transparent mt-auto">
+                                        @auth
+                                            <a href="{{ route('events.show', $event) }}" class="btn btn-{{ $event->isFull() ? 'outline-secondary' : 'primary' }} w-100">
+                                                <i class="fas fa-eye"></i>
+                                                {{ $event->isFull() ? 'Visualizza (Completo)' : 'Dettagli Evento' }}
+                                            </a>
+                                        @else
+                                            <a href="{{ route('login') }}" class="btn btn-guest-details w-100">
+                                                <i class="fas fa-lock"></i> Accedi per vedere i dettagli
+                                            </a>
+                                        @endauth
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -324,12 +326,43 @@
         .intro-actions {
             margin-top: 1rem;
         }
-        .event-preview {
+        /* Anteprima: max 3 righe + puntini (altezza contenuta, card uniformi) */
+        .event-box .event-preview {
             line-height: 1.4;
+            font-size: 0.875rem;
             display: -webkit-box;
             -webkit-line-clamp: 3;
             -webkit-box-orient: vertical;
             overflow: hidden;
+            text-overflow: ellipsis;
+            word-break: break-word;
+            max-height: calc(1.4em * 3);
+        }
+
+        /* Card eventi (home): box immagine che riempie senza spazi */
+        .event-thumb-box {
+            min-height: 220px;
+            overflow: hidden;
+        }
+        .event-thumb-box__img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        @media (max-width: 767.98px) {
+            .event-thumb-box {
+                min-height: 200px;
+            }
+        }
+
+        .event-meta-badges__badge {
+            font-size: 0.95rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.6rem;
+        }
+        .event-meta-badges__badge i {
+            margin-right: 0.35rem;
         }
 
         .alert-sm {

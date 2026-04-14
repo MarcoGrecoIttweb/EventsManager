@@ -25,7 +25,7 @@
         </div>
         <div class="row">
             <div class="col-md-8">
-                <div class="card">
+                <div class="card event-main-card">
                     <div class="card-header">
                         <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
                             <h2 class="mb-0">{{ $event->title }}</h2>
@@ -33,11 +33,11 @@
                                 <div class="d-flex flex-wrap gap-2">
                                     @if(auth()->user()->isAdmin() || auth()->id() === $event->id_organizzatore)
                                         @if(auth()->user()->isAdmin())
-                                            <a href="{{ route('admin.events.edit', $event) }}" class="btn btn-warning btn-sm">
+                                            <a href="{{ route('admin.events.edit', $event) }}" class="btn btn-warning btn-sm btn-border-brown">
                                                 <i class="fas fa-edit"></i> Modifica evento
                                             </a>
                                         @else
-                                            <a href="{{ route('manage.events.edit', $event) }}" class="btn btn-warning btn-sm">
+                                            <a href="{{ route('manage.events.edit', $event) }}" class="btn btn-warning btn-sm btn-border-brown">
                                                 <i class="fas fa-edit"></i> Modifica evento
                                             </a>
                                         @endif
@@ -116,7 +116,7 @@
                                 </div>
                                 @auth
                                     @if(auth()->user()->isAdmin())
-                                        <a href="{{ route('admin.events.edit', $event) }}" class="btn btn-warning btn-sm flex-shrink-0">
+                                        <a href="{{ route('admin.events.edit', $event) }}" class="btn btn-warning btn-sm flex-shrink-0 btn-border-brown">
                                             <i class="fas fa-edit"></i> Modifica evento
                                         </a>
                                         <span class="small text-muted d-none d-md-inline">Imposta una nuova data futura per ripristinarlo tra i prossimi eventi.</span>
@@ -134,91 +134,60 @@
                                 $postiLiberi = $postiTotali !== null ? max(0, $postiTotali - $iscrittiCount) : null;
                             @endphp
                             <div class="mb-2 event-organizer-strip">
-                                <div class="event-meta-organizer-box event-organizer-strip__cell">
-                                    <i class="fas fa-user-circle"></i>
-                                    <span class="event-meta-organizer-line">
-                                        <span class="fw-semibold">Organizzatore</span>
-                                        <span class="fw-semibold ms-1">{{ $event->user->nickname ?? $event->user->nome ?? '—' }}</span>
-                                    </span>
-                                </div>
                                 <div class="event-organizer-actions event-organizer-strip__cell">
                                     @auth
-                                        @auth
-                                            @auth
-                                                @if(auth()->user()->isApproved())
-                                                    @if($userParticipating)
-                                                        @php
-                                                            $currentUserGuestsCount = 0;
-                                                            $currentUserParticipation = $event->participants()->where('utente.userID', auth()->id())->first();
-                                                            if ($currentUserParticipation) {
-                                                                $currentUserGuestsCount = $currentUserParticipation->pivot->amici ?? 0;
-                                                            }
-                                                        @endphp
-                                                        <div class="d-flex flex-column align-items-end gap-1">
-                                                            <div class="d-flex flex-nowrap gap-2 align-items-stretch event-participation-btns">
-                                                                <button type="button" class="btn btn-success btn-sm" disabled aria-disabled="true">
-                                                                    <i class="fas fa-check-circle"></i> Partecipo
-                                                                </button>
-                                                                <form action="{{ route('events.cancel', $event) }}" method="POST" class="mb-0 d-flex align-items-stretch">
-                                                                    @csrf
-                                                                    <button type="submit" class="btn btn-danger btn-sm w-100 h-100">
-                                                                        <i class="fas fa-times"></i> Toglimi
-                                                                    </button>
-                                                                </form>
-                                                            </div>
-                                                            @if($event->allow_guests)
-                                                                <form action="{{ route('events.add-guest', $event) }}" method="POST" class="mb-0">
-                                                                    @csrf
-                                                                    <button type="submit" class="btn btn-outline-success btn-sm">
-                                                                        <i class="fas fa-user-plus"></i> Porta un amico
-                                                                    </button>
-                                                                </form>
-                                                            @endif
-                                                            @if($currentUserGuestsCount > 0)
-                                                                <small class="text-muted">
-                                                                    Porti con te {{ $currentUserGuestsCount }} ospite{{ $currentUserGuestsCount > 1 ? 'i' : '' }}
-                                                                </small>
-                                                            @endif
-                                                        </div>
-                                                    @else
-                                                        @php
-                                                            $cannotJoin = $event->isFull() || !$event->isRegistrationOpen();
-                                                            $joinLabel = !$event->isRegistrationOpen() ? 'Iscrizioni chiuse' : ($event->isFull() ? 'Evento al completo' : 'Iscrivimi all\'evento');
-                                                            $joinIcon = $cannotJoin ? 'lock' : 'check';
-                                                        @endphp
-                                                        <div class="d-flex flex-wrap align-items-center gap-2 w-100">
-                                                            <form action="{{ route('events.participate', $event) }}" method="POST" class="mb-0 flex-grow-1 w-100">
-                                                                @csrf
-                                                                <button type="submit" class="btn btn-sm w-100 event-btn-participate-map-height event-btn-iscrivimi-all-evento btn-iscrivimi-state-{{ $cannotJoin ? 'off' : 'on' }}"
-                                                                    {{ $cannotJoin ? 'disabled' : '' }}>
-                                                                    <i class="fas fa-{{ $joinIcon }}"></i>
-                                                                    {{ $joinLabel }}
-                                                                </button>
-                                                            </form>
-                                                            @if($event->isFull())
-                                                                <span class="small text-warning mb-0"><i class="fas fa-users-slash"></i> Posti esauriti</span>
-                                                            @endif
-                                                        </div>
-                                                    @endif
-                                                @endif
-                                            @else
-                                                <div class="small text-end">
-                                                    <strong>Vuoi iscriverti?</strong>
-                                                    <a href="{{ route('login') }}" class="btn btn-primary btn-sm ms-1">Accedi</a>
-                                                    @if($event->isFull())
-                                                        <span class="d-block text-warning mt-1"><i class="fas fa-exclamation-triangle"></i> Evento al completo</span>
+                                        @if(auth()->user()->isApproved())
+                                            @if($userParticipating)
+                                                @php
+                                                    $currentUserGuestsCount = 0;
+                                                    $currentUserParticipation = $event->participants()->where('utente.userID', auth()->id())->first();
+                                                    if ($currentUserParticipation) {
+                                                        $currentUserGuestsCount = $currentUserParticipation->pivot->amici ?? 0;
+                                                    }
+                                                @endphp
+                                                <div class="d-flex flex-column align-items-end gap-1">
+                                                    <div class="d-flex flex-nowrap gap-2 align-items-stretch event-participation-btns">
+                                                        <form action="{{ route('events.cancel', $event) }}" method="POST" class="mb-0 d-flex align-items-stretch">
+                                                            @csrf
+                                                            <button type="submit" class="btn btn-danger btn-sm w-100 h-100 event-btn-participate-map-height btn-border-brown">
+                                                                <i class="fas fa-times"></i> Toglimi
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                    @if($currentUserGuestsCount > 0)
+                                                        <small class="text-muted">
+                                                            Porti con te {{ $currentUserGuestsCount }} ospite{{ $currentUserGuestsCount > 1 ? 'i' : '' }}
+                                                        </small>
                                                     @endif
                                                 </div>
-                                            @endauth
+                                            @else
+                                                @php
+                                                    $cannotJoin = $event->isFull() || !$event->isRegistrationOpen();
+                                                    $joinLabel = !$event->isRegistrationOpen() ? 'Iscrizioni chiuse' : ($event->isFull() ? 'Evento al completo' : 'Iscrivimi all\'evento');
+                                                    $joinIcon = $cannotJoin ? 'lock' : 'check';
+                                                @endphp
+                                                <div class="d-flex flex-wrap align-items-center gap-2 w-100">
+                                                    <form action="{{ route('events.participate', $event) }}" method="POST" class="mb-0 flex-grow-1 w-100">
+                                                        @csrf
+                                                        <button type="submit" class="btn btn-sm w-100 event-btn-participate-map-height event-btn-iscrivimi-all-evento btn-iscrivimi-state-{{ $cannotJoin ? 'off' : 'on' }}"
+                                                            {{ $cannotJoin ? 'disabled' : '' }}>
+                                                            <i class="fas fa-{{ $joinIcon }}"></i>
+                                                            {{ $joinLabel }}
+                                                        </button>
+                                                    </form>
+                                                    @if($event->isFull())
+                                                        <span class="small text-warning mb-0"><i class="fas fa-users-slash"></i> Posti esauriti</span>
+                                                    @endif
+                                                </div>
+                                            @endif
                                         @else
                                             <div class="small text-end">
-                                                <strong>Vuoi iscriverti?</strong>
-                                                <a href="{{ route('login') }}" class="btn btn-primary btn-sm ms-1">Accedi</a>
+                                                <span class="d-block text-muted mb-1"><i class="fas fa-hourglass-half"></i> Profilo in attesa di approvazione: non puoi ancora iscriverti agli eventi.</span>
                                                 @if($event->isFull())
                                                     <span class="d-block text-warning mt-1"><i class="fas fa-exclamation-triangle"></i> Evento al completo</span>
                                                 @endif
                                             </div>
-                                        @endauth
+                                        @endif
                                     @else
                                         <a href="{{ route('login') }}" class="btn btn-primary btn-sm event-btn-participate-map-height w-100">Accedi per iscriverti</a>
                                     @endauth
@@ -380,7 +349,7 @@
                 @endif
 
             <!-- Forum evento: titolo (maiuscolo) + badge + pulsante Forum Commenti; sotto form collassabile e lista -->
-                <div class="card mt-4">
+                <div class="card mt-4 event-forum-box">
                     <div class="card-header py-2 d-flex flex-nowrap align-items-center justify-content-between gap-2 gap-md-3">
                         <h5 class="mb-0 text-truncate min-w-0 flex-grow-1">
                             <i class="fas fa-comments"></i> FORUM DELL'EVENTO
@@ -391,7 +360,7 @@
                                 <button class="btn btn-success btn-sm flex-shrink-0 text-nowrap" type="button"
                                         data-bs-toggle="collapse" data-bs-target="#eventCommentCollapse"
                                         aria-expanded="false" aria-controls="eventCommentCollapse">
-                                    <i class="fas fa-comment-dots me-1"></i> Forum Commenti
+                                    <i class="fas fa-comment-dots me-1"></i> Inserisci Commento
                                 </button>
                             @endif
                         @endauth
@@ -515,8 +484,8 @@
 
             <div class="col-md-4">
                 <!-- Organizzatore: in alto sulla destra, sopra Partecipanti -->
-                <div class="card mb-3">
-                    <div class="card-header py-2">
+                <div class="card mb-3 event-organizer-box">
+                    <div class="card-header py-2 event-organizer-box__title">
                         <h5 class="mb-0"><i class="fas fa-user"></i> Organizzatore</h5>
                     </div>
                     <div class="card-body py-2">
@@ -530,6 +499,7 @@
                 </div>
 
                 <!-- Partecipanti -->
+                <div class="event-participants-box mb-3">
                 <h5 class="mb-2">
                     <i class="fas fa-users"></i> Partecipanti
                     <span class="badge rounded-pill bg-dark text-white"
@@ -674,15 +644,16 @@
                         @else
                             <p class="text-muted">Nessun partecipante ancora.</p>
                         @endif
+                </div>
 
                         {{-- Invita un amico --}}
                         @auth
                             @if($userParticipating && auth()->user()->friends()->count() > 0)
-                                <div class="mt-3 p-3 bg-light rounded">
+                                <div class="mt-3 p-3 bg-light rounded event-invite-box">
                                     <form action="{{ route('events.invite', $event) }}" method="POST"
                                           class="d-flex flex-wrap align-items-center gap-2 mb-0">
                                         @csrf
-                                        <h6 class="mb-0 text-nowrap flex-shrink-0">
+                                        <h6 class="mb-0 text-nowrap flex-shrink-0" title="Invia un invito a un tuo amico per partecipare a questo evento.">
                                             <i class="fas fa-envelope"></i> Invita un amico
                                         </h6>
                                         <select name="friend_id"
@@ -698,6 +669,14 @@
                                             <i class="fas fa-paper-plane"></i>
                                         </button>
                                     </form>
+                                    @if($event->allow_guests)
+                                        <form action="{{ route('events.add-guest', $event) }}" method="POST" class="mt-2 mb-0">
+                                            @csrf
+                                            <button type="submit" class="btn btn-success btn-sm w-100">
+                                                <i class="fas fa-user-plus"></i> Porta un amico
+                                            </button>
+                                        </form>
+                                    @endif
                                 </div>
                             @endif
                         @endauth
@@ -792,7 +771,7 @@
         /* Due colonne uguali, allineate allo stack meta sotto (stesso gap) */
         .event-organizer-strip {
             display: grid;
-            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            grid-template-columns: minmax(0, 1fr);
             gap: 0.28rem;
             align-items: stretch;
             width: 100%;
@@ -1112,6 +1091,41 @@
         .comment-content pre code {
             background: none;
             padding: 0;
+        }
+
+        /* Box richiesti: bordi blu + titoli con fondo grigio (Organizzatore) */
+        .event-main-card {
+            border: 2px solid #0d6efd !important;
+        }
+        .event-main-card > .card-header {
+            border-bottom: 1px solid rgba(13, 110, 253, 0.25);
+        }
+        .event-organizer-box {
+            border: 2px solid #0d6efd !important;
+        }
+        .event-organizer-box__title {
+            background: #dee2e6 !important;
+            border-bottom: 1px solid rgba(13, 110, 253, 0.35) !important;
+        }
+        .event-forum-box {
+            border: 2px solid #0d6efd !important;
+        }
+
+        /* Box "Invita un amico / Porta un amico": bordo marrone */
+        .event-invite-box {
+            border: 2px solid #8B4513;
+        }
+
+        /* Box "Partecipanti": verde */
+        .event-participants-box {
+            border: 2px solid #198754;
+            border-radius: 0.5rem;
+            padding: 0.6rem 0.75rem;
+        }
+
+        /* Bordo marrone (sfondo invariato) */
+        .btn.btn-border-brown {
+            border: 2px solid #8B4513 !important;
         }
     </style>
 @endsection
