@@ -98,7 +98,7 @@
                                         <div class="col-md-4 col-lg-3 mb-3">
                                             <a href="{{ Storage::disk('public')->url($image->path) }}" data-lightbox="event-gallery" data-title="{{ $event->title }}">
                                                 <img src="{{ Storage::disk('public')->url($image->path) }}" alt="{{ $event->title }}"
-                                                     class="img-fluid rounded shadow-sm" style="height: 200px; width: 100%; object-fit: cover;">
+                                                     class="img-fluid rounded shadow-sm event-gallery-thumb">
                                             </a>
                                         </div>
                                     @endforeach
@@ -1139,6 +1139,14 @@
             justify-content: center;
             font-weight: 800;
             letter-spacing: 0.06em;
+        }
+
+        /* Gallery: non tagliare le immagini nei thumbnail */
+        .event-gallery-thumb {
+            width: 100%;
+            height: 200px;
+            object-fit: contain;
+            background: #f8f9fa;
         }
 
         /* Altezza/padding come "Data evento" */
