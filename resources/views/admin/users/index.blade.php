@@ -22,18 +22,24 @@
                         </div>
                     </div>
                 @else
-                    <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div class="d-flex justify-content-start align-items-start mb-4 gap-3 flex-wrap">
                         <h1 class="display-5 admin-users-page-title">
                             <i class="fas fa-users-cog admin-users-page-title-icon"></i>
                             <span class="admin-users-page-title-text">Gestione Utenti</span>
                         </h1>
-                        <div class="d-flex gap-2">
-                            <a href="{{ route('admin.users.logins') }}" class="btn btn-primary btn-sm">
-                                <i class="fas fa-sign-in-alt"></i> Ingressi giornalieri utenti ult. 10 gg.
-                            </a>
-                            <a href="{{ route('admin.dashboard') }}" class="btn btn-secondary btn-sm">
-                                <i class="fas fa-home"></i> Home
-                            </a>
+                        <div class="admin-users-actions-box">
+                            <div class="d-flex flex-wrap gap-2 admin-users-actions-box__row">
+                                <a href="{{ route('admin.users.index', ['registrations' => 'pending']) }}" class="btn btn-dark btn-sm btn-border-brown">
+                                    <i class="fas fa-list me-1"></i> Vedi solo in attesa
+                                </a>
+                                <a href="{{ route('admin.users.index') }}" class="btn btn-outline-secondary btn-sm btn-border-brown">Vista completa</a>
+                                <a href="{{ route('admin.users.logins') }}" class="btn btn-primary btn-sm btn-border-brown">
+                                    <i class="fas fa-sign-in-alt"></i> Ingressi giornalieri utenti ult. 10 gg.
+                                </a>
+                                <a href="{{ route('home') }}" class="btn btn-secondary btn-sm btn-border-brown">
+                                    <i class="fas fa-home"></i> Home
+                                </a>
+                            </div>
                         </div>
                     </div>
                 @endif
@@ -149,24 +155,6 @@
                                             </button>
                                         </th>
                                         <th>
-                                            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-dark fw-semibold admin-sort" data-sort-key="stato" aria-label="Ordina per stato">
-                                                Stato
-                                                <span class="admin-sort-icons" aria-hidden="true">
-                                                    <i class="fas fa-sort-up"></i>
-                                                    <i class="fas fa-sort-down"></i>
-                                                </span>
-                                            </button>
-                                        </th>
-                                        <th>
-                                            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-dark fw-semibold admin-sort" data-sort-key="news" aria-label="Ordina per newsletter">
-                                                News
-                                                <span class="admin-sort-icons" aria-hidden="true">
-                                                    <i class="fas fa-sort-up"></i>
-                                                    <i class="fas fa-sort-down"></i>
-                                                </span>
-                                            </button>
-                                        </th>
-                                        <th>
                                             <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-dark fw-semibold admin-sort" data-sort-key="eventi" aria-label="Ordina per numero eventi">
                                                 Eventi
                                                 <span class="admin-sort-icons" aria-hidden="true">
@@ -193,12 +181,30 @@
                                                 </span>
                                             </button>
                                         </th>
+                                        <th>
+                                            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-dark fw-semibold admin-sort" data-sort-key="news" aria-label="Ordina per newsletter">
+                                                News
+                                                <span class="admin-sort-icons" aria-hidden="true">
+                                                    <i class="fas fa-sort-up"></i>
+                                                    <i class="fas fa-sort-down"></i>
+                                                </span>
+                                            </button>
+                                        </th>
+                                        <th>
+                                            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-dark fw-semibold admin-sort" data-sort-key="stato" aria-label="Ordina per stato">
+                                                Stato
+                                                <span class="admin-sort-icons" aria-hidden="true">
+                                                    <i class="fas fa-sort-up"></i>
+                                                    <i class="fas fa-sort-down"></i>
+                                                </span>
+                                            </button>
+                                        </th>
                                         <th>Azioni</th>
                                     </tr>
                                     </thead>
                                     <tbody>
                                     @foreach($users as $user)
-                                        <tr
+                                        <tr class="{{ $user->status === 'approved' ? 'admin-user-row admin-user-row--approved' : ($user->status === 'pending' ? 'admin-user-row admin-user-row--pending' : 'admin-user-row admin-user-row--banned') }}"
                                             data-user-nome="{{ strtolower(trim($user->nome ?? '')) }}"
                                             data-user-cognome="{{ strtolower(trim($user->cognome ?? '')) }}"
                                             data-user-nickname="{{ strtolower(trim($user->nickname ?? $user->username ?? '')) }}"
@@ -245,22 +251,6 @@
                                                 </form>
                                             </td>
                                             <td>
-                                                @if($user->status === 'pending')
-                                                    <span class="badge bg-danger">Sospeso</span>
-                                                @elseif($user->status === 'approved')
-                                                    <span class="badge bg-success">Attivo</span>
-                                                @else
-                                                    <span class="badge bg-secondary">Bannato</span>
-                                                @endif
-                                            </td>
-                                            <td>
-                                                @if($user->invia)
-                                                    <span class="badge bg-success">Sì</span>
-                                                @else
-                                                    <span class="badge bg-danger">No</span>
-                                                @endif
-                                            </td>
-                                            <td>
                                                 <span class="badge bg-info">{{ $user->events_count }} eventi</span>
                                             </td>
                                             <td data-sort-iscr="{{ $user->created_at ? $user->created_at->timestamp : 0 }}">
@@ -270,24 +260,51 @@
                                                 <span class="admin-date-small">{{ $user->ultimo_accesso ? $user->ultimo_accesso->format('d/m/Y') : '—' }}</span>
                                             </td>
                                             <td>
-                                                {{-- Identificazione Attivo/Sospeso/Bannato (pulsanti) + azioni sulla stessa riga --}}
-                                                <div class="d-inline-flex align-items-center flex-wrap gap-1 admin-users-azioni-inline">
-                                                    @if($user->status === 'pending')
-                                                        <button type="button" class="btn btn-danger btn-sm py-0 px-2" disabled title="Stato account">Sospeso</button>
+                                                @if($user->invia)
+                                                    <span class="badge bg-success admin-user-news-pill">Sì</span>
+                                                @else
+                                                    <span class="badge bg-danger admin-user-news-pill">No</span>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if($user->status === 'pending')
+                                                    <div class="admin-user-state-checkrow">
+                                                        <span class="badge bg-warning text-dark admin-user-state-pill">Sospeso</span>
                                                         @if(!$user->isAdmin())
-                                                            <form action="{{ route('admin.users.approve', $user) }}" method="POST" class="d-inline m-0">
+                                                            <form action="{{ route('admin.users.approve', $user) }}" method="POST" class="d-inline m-0 admin-user-state-toggle-form">
                                                                 @csrf
-                                                                <button type="submit" class="btn btn-success btn-sm py-0" title="Approva e rendi attivo">
-                                                                    <i class="fas fa-check me-1"></i> Attiva
-                                                                </button>
+                                                                <input type="checkbox"
+                                                                       class="form-check-input admin-user-state-check"
+                                                                       aria-label="Attiva utente"
+                                                                       title="Attiva utente">
                                                             </form>
+                                                        @else
+                                                            <input type="checkbox" class="form-check-input admin-user-state-check" disabled aria-label="Utente admin">
                                                         @endif
-                                                    @elseif($user->status === 'approved')
-                                                        <button type="button" class="btn btn-success btn-sm py-0 px-2" disabled title="Stato account">Attivo</button>
-                                                    @else
-                                                        <button type="button" class="btn btn-secondary btn-sm py-0 px-2" disabled title="Stato account">Bannato</button>
-                                                    @endif
-
+                                                    </div>
+                                                @elseif($user->status === 'approved')
+                                                    <div class="admin-user-state-checkrow">
+                                                        <span class="badge bg-success admin-user-state-pill">Attivo</span>
+                                                        @if(!$user->isAdmin())
+                                                            <form action="{{ route('admin.users.suspend', $user) }}" method="POST" class="d-inline m-0 admin-user-state-toggle-form">
+                                                                @csrf
+                                                                <input type="checkbox"
+                                                                       class="form-check-input admin-user-state-check"
+                                                                       checked
+                                                                       aria-label="Disattiva (sospendi) utente"
+                                                                       title="Disattiva (sospendi) utente">
+                                                            </form>
+                                                        @else
+                                                            <input type="checkbox" class="form-check-input admin-user-state-check" checked disabled aria-label="Utente admin">
+                                                        @endif
+                                                    </div>
+                                                @else
+                                                    <span class="badge bg-secondary admin-user-state-pill">Bannato</span>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                {{-- Identificazione Attivo/Sospeso/Bannato (pulsanti) + azioni sulla stessa riga --}}
+                                                <div class="d-inline-flex align-items-center gap-0 admin-users-azioni-inline">
                                                     @if($user->status !== 'banned')
                                                         <form action="{{ route('admin.users.ban', $user) }}" method="POST" class="d-inline m-0">
                                                             @csrf
@@ -356,9 +373,101 @@
 
         .admin-users-azioni-inline {
             max-width: 100%;
+            flex-wrap: nowrap;
         }
         .admin-users-azioni-inline .btn:disabled {
             opacity: 1;
+        }
+
+        /* Box azioni (ocra + bordo marrone) */
+        .admin-users-actions-box {
+            border: 2px solid #8B4513;
+            background: rgba(184, 134, 11, 0.22); /* giallo ocra */
+            border-radius: 12px;
+            padding: 10px 12px;
+        }
+        .admin-users-actions-box .btn {
+            white-space: nowrap;
+        }
+        .admin-users-actions-box {
+            flex: 0 0 auto;
+            margin-top: 0.25rem;
+        }
+        .btn.btn-border-brown {
+            border: 2px solid #8B4513 !important;
+        }
+
+        /* Stato utente (Sospeso / Attivo / Bannato) + pulsante Attiva: stessa misura */
+        .admin-user-state-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
+            font-size: 0.85rem;
+            line-height: 1.2;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+        }
+        .admin-user-state-checkrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        .admin-user-state-check {
+            margin: 0;
+            width: 1.05rem;
+            height: 1.05rem;
+            border: 2px solid rgba(0, 0, 0, 0.25);
+            cursor: pointer;
+        }
+        .admin-user-state-toggle-form {
+            display: inline-flex;
+            align-items: center;
+            margin: 0;
+        }
+        .admin-user-state-check:disabled {
+            cursor: default;
+        }
+
+        /* Spazi più evidenti tra i record */
+        .admin-users-table {
+            border-collapse: separate !important;
+            border-spacing: 0 0.5rem;
+        }
+        .admin-users-table tbody tr > td {
+            /* crea stacco tra una riga e l'altra */
+            border-top: 1px solid rgba(0, 0, 0, 0.06);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+        }
+        .admin-users-table tbody tr > td:first-child {
+            border-left: 1px solid rgba(0, 0, 0, 0.06);
+            border-top-left-radius: 0.5rem;
+            border-bottom-left-radius: 0.5rem;
+        }
+        .admin-users-table tbody tr > td:last-child {
+            border-right: 1px solid rgba(0, 0, 0, 0.06);
+            border-top-right-radius: 0.5rem;
+            border-bottom-right-radius: 0.5rem;
+        }
+
+        /* Colore riga per stato */
+        .admin-users-table tbody tr.admin-user-row--approved > td {
+            background: rgba(13, 202, 240, 0.14) !important; /* azzurro */
+        }
+        .admin-users-table tbody tr.admin-user-row--pending > td {
+            background: rgba(220, 53, 69, 0.12) !important; /* rosso */
+        }
+        .admin-users-table tbody tr.admin-user-row--banned > td {
+            background: rgba(214, 51, 132, 0.10) !important; /* rosa */
+        }
+
+        /* News: badge stessa larghezza del "Sì" */
+        .admin-user-news-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 2.2rem;
         }
 
         .admin-users-page-title-icon {
@@ -719,6 +828,23 @@
                     btn.setAttribute('data-active', '1');
 
                     sortAllRowsByColumn(key, dir);
+                });
+            });
+
+            // Toggle attivo/sospeso tramite checkbox nella colonna Stato
+            document.querySelectorAll('.admin-user-state-toggle-form').forEach(function (form) {
+                var cb = form.querySelector('input[type="checkbox"]');
+                if (!cb) return;
+                cb.addEventListener('change', function (e) {
+                    var msg = cb.checked
+                        ? 'Rendere questo utente ATTIVO?'
+                        : 'SOSPENDERE questo utente?';
+                    if (!window.confirm(msg)) {
+                        e.preventDefault();
+                        cb.checked = !cb.checked;
+                        return;
+                    }
+                    form.submit();
                 });
             });
         })();

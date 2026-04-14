@@ -36,8 +36,9 @@
             position: sticky;
             top: 1rem;
             align-self: flex-start;
-            max-height: calc(100vh - 80px);
-            overflow-y: auto;
+            /* Niente scroll interno: i box non devono "sparire" */
+            max-height: none;
+            overflow: visible;
         }
         .card-sidebar {
             font-size: 0.85rem;
@@ -152,36 +153,18 @@
         .site-nav-sticky .excursio-navbar {
             box-shadow: none;
         }
+        :root {
+            --site-sticky-header-h: 9rem;
+        }
         /* Sidebar sotto l’header sticky (solo da md, dove la sidebar è sticky) */
         @media (min-width: 768px) {
             .sidebar-left {
-                top: 7.5rem;
+                /* evita sovrapposizione con header sticky (logo+navbar) */
+                top: calc(var(--site-sticky-header-h) + 0.75rem);
             }
         }
 
-        /* Banner admin: nuove iscrizioni — allineato alla larghezza del contenuto (come box azzurro gestione utenti) */
-        .admin-pending-reg-alert {
-            border: 2px solid #b8860b !important;
-            border-radius: 14px;
-            box-shadow: none !important;
-            width: calc(100% - 1.5rem);
-            max-width: 100%;
-            margin-left: auto;
-            margin-right: auto;
-            padding: 10px 12px;
-            background-color: rgba(255, 243, 205, 0.95) !important;
-        }
-        @media (max-width: 767.98px) {
-            .admin-pending-reg-alert {
-                padding: 8px 10px;
-            }
-        }
-        .admin-pending-reg-actions-box {
-            border: 1px solid #9a7209;
-            border-radius: 10px;
-            background: rgba(184, 134, 11, 0.14);
-            padding: 8px 10px;
-        }
+        /* (rimossa) Banner admin: nuove iscrizioni da approvare */
     </style>
 </head>
 <body>
@@ -456,43 +439,21 @@
         {{-- Contenuto principale --}}
         <div class="{{ $hideSidebar ? 'col-12' : 'col-md-10' }}">
 
-            @if(session('success'))
-                <div class="alert alert-success alert-dismissible fade show">
-                    {{ session('success') }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            @endif
-
-            @if(session('error'))
-                <div class="alert alert-danger alert-dismissible fade show">
-                    {{ session('error') }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            @endif
-
-            @auth
-                @if(auth()->user()->isAdmin() && ($adminPendingUsersCount ?? 0) > 0)
-                    <div class="alert alert-warning mb-3 d-flex flex-wrap align-items-center justify-content-between gap-3 admin-pending-reg-alert" role="alert">
-                        <div class="d-flex align-items-start gap-2 flex-grow-1 min-w-0">
-                            <span class="fs-4 text-warning flex-shrink-0"><i class="fas fa-user-clock" aria-hidden="true"></i></span>
-                            <div>
-                                <strong>Nuove iscrizioni da approvare</strong>
-                                <div class="small mb-0">
-                                    Ci sono <strong>{{ $adminPendingUsersCount }}</strong>
-                                    {{ $adminPendingUsersCount === 1 ? 'utente in attesa' : 'utenti in attesa' }} di abilitazione.
-                                    Apri la gestione utenti per approvare o rifiutare le richieste.
-                                </div>
-                            </div>
-                        </div>
-                        <div class="admin-pending-reg-actions-box d-flex flex-wrap gap-2 flex-shrink-0">
-                            <a href="{{ route('admin.users.index', ['registrations' => 'pending']) }}" class="btn btn-dark btn-sm">
-                                <i class="fas fa-list me-1"></i> Vedi solo in attesa
-                            </a>
-                            <a href="{{ route('admin.users.index') }}" class="btn btn-outline-secondary btn-sm">Lista completa</a>
-                        </div>
+            @if(!View::hasSection('suppress_global_flash'))
+                @if(session('success'))
+                    <div class="alert alert-success alert-dismissible fade show">
+                        {{ session('success') }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
                 @endif
-            @endauth
+
+                @if(session('error'))
+                    <div class="alert alert-danger alert-dismissible fade show">
+                        {{ session('error') }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                @endif
+            @endif
 
             @yield('content')
 
@@ -510,6 +471,20 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    // Calcola l'altezza reale dell'header sticky e adegua il top della sidebar
+    function updateStickyHeaderVar() {
+        var header = document.querySelector('.site-nav-sticky');
+        if (!header) return;
+        var h = header.getBoundingClientRect().height;
+        if (h && h > 0) {
+            document.documentElement.style.setProperty('--site-sticky-header-h', Math.ceil(h) + 'px');
+        }
+    }
+    updateStickyHeaderVar();
+    window.addEventListener('resize', function () {
+        updateStickyHeaderVar();
+    });
+
     // Chiudi il menu hamburger dopo click su link (non sui toggle dei dropdown)
     var navCollapse = document.getElementById('navbarNav');
     if (navCollapse) {

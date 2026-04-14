@@ -2,6 +2,8 @@
 
 @section('title', 'Excursio - Community di amici a Milano')
 
+@section('suppress_admin_pending_box', true)
+
 @php
     // Ordine e didascalie come nel vecchio sito (html.it / xfade); solo file presenti in public/slide
     $slideCatalog = [

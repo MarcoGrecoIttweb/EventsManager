@@ -105,6 +105,21 @@ class UserController extends Controller
     }
 
     /**
+     * Suspend a user (pending).
+     */
+    public function suspend(User $user)
+    {
+        if ($user->isAdmin()) {
+            return back()->with('error', 'Non puoi modificare lo stato di un amministratore.');
+        }
+
+        $user->status = 'pending';
+        $user->save();
+
+        return back()->with('success', "Utente {$user->nickname} sospeso con successo!");
+    }
+
+    /**
      * Delete a user.
      */
     public function destroy(User $user)

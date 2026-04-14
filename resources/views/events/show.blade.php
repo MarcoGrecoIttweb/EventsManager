@@ -2,6 +2,8 @@
 
 @section('title', $event->title . ' - Excursio')
 
+@section('suppress_global_flash', true)
+
 @section('content')
     <style>
         .event-description img {
@@ -18,10 +20,17 @@
         $eventProfileBackQuery = http_build_query(['return' => route('events.show', $event)]);
     @endphp
     <div class="container">
-        <div class="mb-3">
-            <a href="{{ route('home') }}" class="btn btn-outline-primary btn-sm">
+        <div class="mb-3 d-flex flex-wrap align-items-stretch gap-2">
+            <a href="{{ route('home') }}" class="btn btn-outline-primary btn-sm d-inline-flex align-items-center">
                 <i class="fas fa-arrow-left"></i> Torna alla home
             </a>
+
+            @if(session('success'))
+                <div class="event-flash-success-sm alert alert-success mb-0 d-inline-flex align-items-center">
+                    <i class="fas fa-check-circle me-2"></i>
+                    <span class="text-truncate">{{ session('success') }}</span>
+                </div>
+            @endif
         </div>
         <div class="row">
             <div class="col-md-8">
@@ -67,6 +76,13 @@
                         </div>
                     @endif
 
+                    {{-- Evento al completo: box subito sotto l'immagine --}}
+                    @if($event->isFull())
+                        <div class="event-closed-box mt-2">
+                            CHIUSE ADESIONI
+                        </div>
+                    @endif
+
                     {{-- Gallery --}}
                     @if($event->images->count() > 0)
                         <div class="card mb-4">
@@ -90,20 +106,6 @@
                             </div>
                         </div>
                     @endif
-                    {{-- Banner evento al completo --}}
-                    @if($event->isFull())
-                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                            <div class="d-flex align-items-center">
-                                <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
-                                <div>
-                                    <h4 class="alert-heading mb-1">Evento al completo!</h4>
-                                    <p class="mb-0">Tutti i posti sono stati occupati. Non è più possibile iscriversi a questo evento.</p>
-                                </div>
-                            </div>
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
-                    @endif
-
                     @if($event->is_past_event)
                         <div class="alert alert-secondary border-dark mb-0 rounded-0" role="alert">
                             <div class="d-flex flex-wrap align-items-center gap-2 justify-content-between">
@@ -149,7 +151,7 @@
                                                     <div class="d-flex flex-nowrap gap-2 align-items-stretch event-participation-btns">
                                                         <form action="{{ route('events.cancel', $event) }}" method="POST" class="mb-0 d-flex align-items-stretch">
                                                             @csrf
-                                                            <button type="submit" class="btn btn-danger btn-sm w-100 h-100 event-btn-participate-map-height btn-border-brown">
+                                                            <button type="submit" class="btn btn-danger btn-sm w-100 h-100 event-btn-participate-map-height event-btn-meta-height btn-border-brown">
                                                                 <i class="fas fa-times"></i> Toglimi
                                                             </button>
                                                         </form>
@@ -1121,6 +1123,47 @@
             border: 2px solid #198754;
             border-radius: 0.5rem;
             padding: 0.6rem 0.75rem;
+        }
+
+        /* Evento al completo: box sotto cover */
+        .event-closed-box {
+            border: 2px solid #0d6efd;
+            background: #dc3545;
+            color: #fff;
+            border-radius: 0.5rem;
+            padding: 0.38rem 0.65rem;
+            font-size: 0.95rem;
+            line-height: 1.2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            letter-spacing: 0.06em;
+        }
+
+        /* Altezza/padding come "Data evento" */
+        .event-btn-meta-height {
+            padding: 0.38rem 0.65rem !important;
+            font-size: 0.95rem !important;
+            line-height: 1.2 !important;
+            min-height: 0 !important;
+        }
+
+        /* Flash "success" compatto accanto a "Torna alla home" */
+        .event-flash-success-sm {
+            border: 2px solid #198754 !important;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+            line-height: 1.5;
+            border-radius: 0.375rem;
+            max-width: 50%;
+            min-height: 2.125rem; /* come btn-sm / box compatti */
+        }
+        @media (max-width: 575.98px) {
+            .event-flash-success-sm {
+                max-width: 100%;
+                width: 100%;
+            }
         }
 
         /* Bordo marrone (sfondo invariato) */

@@ -21,6 +21,16 @@ use Illuminate\Support\Str;
 
 // Route pubbliche
 Route::get('/', [EventController::class, 'index'])->name('home');
+// Se il progetto viene aperto come /excursio/public/ (xampp senza vhost), reindirizza alla home corretta
+Route::get('/public', function () {
+    return redirect()->route('home');
+});
+Route::get('/public/', function () {
+    return redirect()->route('home');
+});
+Route::get('/public/index.php', function () {
+    return redirect()->route('home');
+});
 // Compatibilità: alcuni link puntano ancora a /home
 Route::get('/home', function () {
     return redirect()->route('home');
@@ -166,10 +176,12 @@ Route::middleware('guest')->group(function () {
 // Route protette
 Route::middleware(['auth'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+});
 
+// Route protette (solo utenti approvati)
+Route::middleware(['auth', 'approved'])->group(function () {
     Route::post('/events/{event}/participate', [EventController::class, 'participate'])
-        ->name('events.participate')
-        ->middleware('approved');
+        ->name('events.participate');
 
     Route::post('/events/{event}/cancel', [EventController::class, 'cancelParticipation'])
         ->name('events.cancel');
@@ -239,6 +251,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/users', [\App\Http\Controllers\Admin\UserController::class, 'index'])->name('users.index');
     Route::get('/users/logins', [AdminUserController::class, 'logins'])->name('users.logins');
     Route::post('/users/{user}/approve', [\App\Http\Controllers\Admin\UserController::class, 'approve'])->name('users.approve');
+    Route::post('/users/{user}/suspend', [\App\Http\Controllers\Admin\UserController::class, 'suspend'])->name('users.suspend');
     Route::post('/users/{user}/ban', [\App\Http\Controllers\Admin\UserController::class, 'ban'])->name('users.ban');
     Route::post('/users/{user}/unban', [\App\Http\Controllers\Admin\UserController::class, 'unban'])->name('users.unban');
     Route::post('/users/{user}/role', [\App\Http\Controllers\Admin\UserController::class, 'updateRole'])->name('users.update-role');
