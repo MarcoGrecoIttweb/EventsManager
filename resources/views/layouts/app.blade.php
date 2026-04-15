@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Excursio - @yield('title')</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -402,6 +403,9 @@
                 </div>
             </div>
 
+            {{-- Contenuti opzionali sotto "Utenti online" (es. homepage stats) --}}
+            @yield('sidebar_after_online')
+
             @auth
                 @php
                     try {
@@ -464,6 +468,11 @@
 <footer class="bg-dark text-white text-center py-4 mt-5">
     <div class="container">
         <p>&copy; 2026 Excursio. Tutti i diritti riservati.</p>
+        <div class="small mt-2">
+            <a href="{{ url('/cookie-policy') }}" class="text-white-50 text-decoration-none">Cookie Policy</a>
+            <span class="mx-2 text-white-50">|</span>
+            <a href="{{ url('/privacy-policy') }}" class="text-white-50 text-decoration-none">Privacy Policy</a>
+        </div>
     </div>
 </footer>
 
@@ -530,5 +539,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
 @stack('scripts')
 @yield('scripts')
+
+{{-- Banner cookie custom (solo se non hai ancora scelto) --}}
+<x-cookie-banner :show="$cookieBannerShouldShow ?? true" />
 </body>
 </html>

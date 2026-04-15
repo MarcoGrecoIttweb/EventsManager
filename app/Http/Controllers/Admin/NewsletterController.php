@@ -50,6 +50,14 @@ class NewsletterController extends Controller
             ->orderBy('nome')
             ->get();
 
+        $newsletterActiveUsers = User::nonAdmin()
+            ->where('abilitato', 1)
+            ->where('invia', true)
+            ->whereNotNull('email')
+            ->where('email', '!=', '')
+            ->orderBy('nome')
+            ->get();
+
         $newsletterReceiptAdmins = User::query()
             ->where('ruolo', 0)
             ->orderBy('nome')
@@ -64,6 +72,7 @@ class NewsletterController extends Controller
             'newsBatchCount',
             'newsBatchesMeta',
             'users',
+            'newsletterActiveUsers',
             'newsletterReceiptAdmins'
         ));
     }
@@ -73,7 +82,7 @@ class NewsletterController extends Controller
         $rules = [
             'subject' => 'required|string|max:255',
             'message' => 'required|string|min:10',
-            'target' => 'required|in:all,approved,participants,pending,selected,news',
+            'target' => 'required|in:all,approved,participants,never_participated,pending,selected,selected_news,news',
             'selected_users' => 'nullable|array',
             'selected_users.*' => 'exists:utente,userID',
             'news_send' => 'nullable|in:all,groups',
@@ -174,6 +183,9 @@ class NewsletterController extends Controller
                 case 'participants':
                     $usersQuery->where('abilitato', 1)->has('events');
                     break;
+                case 'never_participated':
+                    $usersQuery->where('abilitato', 1)->doesntHave('events');
+                    break;
                 case 'pending':
                     $usersQuery->where('abilitato', 0);
                     break;
@@ -187,12 +199,30 @@ class NewsletterController extends Controller
                     }
                     $usersQuery->whereIn('userID', $request->selected_users);
                     break;
+                case 'selected_news':
+                    if (empty($request->selected_users)) {
+                        return back()->withErrors(['selected_users' => 'Seleziona almeno un utente.']);
+                    }
+                    $usersQuery
+                        ->where('abilitato', 1)
+                        ->where('invia', true)
+                        ->whereIn('userID', $request->selected_users);
+                    break;
             }
 
             $users = $usersQuery
                 ->whereNotNull('email')
                 ->where('email', '!=', '')
                 ->get();
+        }
+
+        // Esclusioni manuali (valgono per QUALSIASI target, inclusi selected/approved/news all).
+        $excludeIds = array_values(array_unique(array_filter(array_map('intval', $request->input('exclude_newsletter_users', [])))));
+        if ($excludeIds !== []) {
+            $excludeSet = array_fill_keys($excludeIds, true);
+            $users = $users->reject(function ($u) use ($excludeSet) {
+                return isset($excludeSet[(int) $u->userID]);
+            })->values();
         }
 
         if ($users->isEmpty()) {
@@ -352,6 +382,133 @@ class NewsletterController extends Controller
         });
 
         return response()->json($mapped);
+    }
+
+    /**
+     * Anteprima elenco destinatari (per controllo prima dell'invio).
+     */
+    public function previewRecipients(Request $request)
+    {
+        $validated = $request->validate([
+            'target' => ['required', 'in:all,approved,participants,never_participated,pending,selected,selected_news,news'],
+            'selected_users' => ['nullable', 'array'],
+            'selected_users.*' => ['integer', Rule::exists('utente', 'userID')],
+            // Per target news (invio a gruppi)
+            'news_send' => ['nullable', 'in:all,groups'],
+            'news_group_size' => ['nullable', 'integer', 'min:20', 'max:300'],
+            'news_groups' => ['nullable', 'array'],
+            'news_groups.*' => ['integer', 'min:1'],
+            'exclude_newsletter_users' => ['nullable', 'array'],
+            'exclude_newsletter_users.*' => ['integer', Rule::exists('utente', 'userID')],
+        ]);
+
+        $target = $validated['target'];
+        $users = collect();
+
+        if ($target === 'news' && ($validated['news_send'] ?? 'all') === 'groups') {
+            $chunkSize = (int) ($validated['news_group_size'] ?? self::NEWS_GROUP_SIZE_DEFAULT);
+            $chunkSize = max(20, min(300, $chunkSize));
+            $groupNums = array_values(array_unique(array_filter(array_map('intval', $validated['news_groups'] ?? []))));
+            sort($groupNums);
+
+            $allNews = User::nonAdmin()
+                ->where('abilitato', 1)
+                ->where('invia', true)
+                ->whereNotNull('email')
+                ->where('email', '!=', '')
+                ->orderBy('userID')
+                ->get(['userID', 'nome', 'username', 'email']);
+
+            $chunks = $allNews->chunk($chunkSize)->values();
+            $maxGroup = $chunks->count();
+
+            foreach ($groupNums as $num) {
+                if ($num < 1 || $num > $maxGroup) {
+                    continue;
+                }
+                $users = $users->concat($chunks[$num - 1]);
+            }
+
+            $users = $users->unique('userID')->values();
+
+            $excludeIds = array_values(array_unique(array_filter(array_map('intval', $validated['exclude_newsletter_users'] ?? []))));
+            if ($excludeIds !== []) {
+                $excludeSet = array_fill_keys($excludeIds, true);
+                $users = $users->reject(function ($u) use ($excludeSet) {
+                    return isset($excludeSet[(int) $u->userID]);
+                })->values();
+            }
+        } else {
+            $q = User::nonAdmin();
+
+            switch ($target) {
+                case 'approved':
+                    $q->where('abilitato', 1);
+                    break;
+                case 'participants':
+                    $q->where('abilitato', 1)->has('events');
+                    break;
+                case 'never_participated':
+                    $q->where('abilitato', 1)->doesntHave('events');
+                    break;
+                case 'pending':
+                    $q->where('abilitato', 0);
+                    break;
+                case 'news':
+                    $q->where('abilitato', 1)->where('invia', true);
+                    break;
+                case 'selected':
+                    $ids = $validated['selected_users'] ?? [];
+                    $q->whereIn('userID', $ids);
+                    break;
+                case 'selected_news':
+                    $ids = $validated['selected_users'] ?? [];
+                    $q->where('abilitato', 1)->where('invia', true)->whereIn('userID', $ids);
+                    break;
+            }
+
+            $users = $q->whereNotNull('email')
+                ->where('email', '!=', '')
+                ->orderBy('nome')
+                ->get(['userID', 'nome', 'username', 'email']);
+        }
+
+        // Applica esclusioni manuali anche in anteprima.
+        $excludeIds = array_values(array_unique(array_filter(array_map('intval', $validated['exclude_newsletter_users'] ?? []))));
+        if ($excludeIds !== []) {
+            $excludeSet = array_fill_keys($excludeIds, true);
+            $users = $users->reject(function ($u) use ($excludeSet) {
+                return isset($excludeSet[(int) $u->userID]);
+            })->values();
+        }
+
+        // Limite visualizzazione (non influisce sull'invio)
+        $total = $users->count();
+        $maxShow = 300;
+        $shown = $users->take($maxShow)->values()->map(function ($u) {
+            return [
+                'id' => (int) $u->userID,
+                'name' => (string) ($u->nome ?? ''),
+                'nickname' => (string) ($u->username ?? ''),
+                'email' => (string) ($u->email ?? ''),
+            ];
+        });
+
+        return response()->json([
+            'target_label' => match ($target) {
+                'all' => 'Tutti gli utenti',
+                'approved' => 'Solo Utenti Attivati',
+                'participants' => 'Solo utenti che partecipano ad eventi',
+                'never_participated' => 'Solo utenti che non hanno mai partecipato ad eventi',
+                'pending' => 'Solo utenti in attesa di approvazione',
+                'selected' => 'Seleziona utenti specifici',
+                'selected_news' => 'Seleziona Utenti Newsletter Attiva',
+                default => 'Solo utenti con News attiva (newsletter)',
+            },
+            'total' => $total,
+            'shown' => $shown,
+            'max_show' => $maxShow,
+        ]);
     }
 
     public function stats()

@@ -4,6 +4,32 @@
 
 @section('suppress_admin_pending_box', true)
 
+@section('sidebar_after_online')
+    <div class="card card-sidebar mb-3 home-stats-card">
+        <div class="card-header py-2">
+            <small class="fw-bold">
+                <i class="fas fa-chart-column me-1"></i> Statistiche
+            </small>
+        </div>
+        <div class="card-body p-2">
+            <div class="small">
+                <div class="mb-1">
+                    <span class="fw-semibold">Ad oggi siamo</span>
+                    <span class="home-stats-value">{{ number_format((int)($activeUsersCount ?? 0), 0, ',', '.') }}</span>
+                </div>
+                <div class="mb-1">
+                    <span class="fw-semibold">Visite odierne</span>
+                    <span class="home-stats-value">{{ number_format((int)($todayVisitsCount ?? 0), 0, ',', '.') }}</span>
+                </div>
+                <div>
+                    <span class="fw-semibold">Rapporto visite/iscritti</span>
+                    <span class="home-stats-value">{{ number_format((float)($visitVsActivePct ?? 0), 2, ',', '.') }}%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+@endsection
+
 @php
     // Ordine e didascalie come nel vecchio sito (html.it / xfade); solo file presenti in public/slide
     $slideCatalog = [
@@ -216,6 +242,18 @@
         .title-algerian {
             font-family: Algerian, "Algerian", serif;
             letter-spacing: 0.5px;
+        }
+        .home-stats-card {
+            border: 2px solid rgba(13, 110, 253, 0.35);
+            border-radius: 8px;
+        }
+        .home-stats-card .card-header {
+            background: rgba(13, 110, 253, 0.08);
+            border-bottom: 1px solid rgba(13, 110, 253, 0.25);
+        }
+        .home-stats-value {
+            font-weight: 800;
+            color: #0d6efd;
         }
         /* Immagine hero.jpg nascosta (il blocco resta nel DOM per eventuali riattivazioni) */
         .hero-section {

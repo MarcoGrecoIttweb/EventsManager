@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use App\Models\User;
+use App\Models\UserLoginEvent;
 
 class EventController extends Controller
 {
@@ -18,7 +19,30 @@ class EventController extends Controller
             ->ordered()
             ->paginate(12);
 
-        return view('events.index', compact('events'));
+        // "Utenti attivi" = utenti approvati/abilitati (non admin)
+        $activeUsersCount = User::query()
+            ->nonAdmin()
+            ->where('abilitato', 1)
+            ->count();
+
+        // Nel progetto esiste già il tracciamento accessi giornalieri via tabella user_login_events.
+        // Lo usiamo come "Visite odierne" (accessi di oggi).
+        $todayStart = now()->startOfDay();
+        $todayEnd = now()->endOfDay();
+        $todayVisitsCount = UserLoginEvent::query()
+            ->whereBetween('logged_in_at', [$todayStart, $todayEnd])
+            ->count();
+
+        $visitVsActivePct = $activeUsersCount > 0
+            ? round(($todayVisitsCount / $activeUsersCount) * 100, 2)
+            : 0;
+
+        return view('events.index', compact(
+            'events',
+            'activeUsersCount',
+            'todayVisitsCount',
+            'visitVsActivePct'
+        ));
     }
 
     public function pastEvents()

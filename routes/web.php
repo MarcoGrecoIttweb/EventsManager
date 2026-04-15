@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\GuestController;
+use App\Http\Controllers\CookieConsentController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -21,6 +22,9 @@ use Illuminate\Support\Str;
 
 // Route pubbliche
 Route::get('/', [EventController::class, 'index'])->name('home');
+
+// Cookie consent (custom)
+Route::post('/cookie/consent', [CookieConsentController::class, 'store'])->name('cookie.consent.store');
 // Se il progetto viene aperto come /excursio/public/ (xampp senza vhost), reindirizza alla home corretta
 Route::get('/public', function () {
     return redirect()->route('home');
@@ -269,6 +273,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/newsletter/stats', [\App\Http\Controllers\Admin\NewsletterController::class, 'stats'])->name('newsletter.stats');
     Route::get('/newsletter/users', [\App\Http\Controllers\Admin\NewsletterController::class, 'getUsers'])->name('newsletter.users');
     Route::get('/newsletter/group-recipients', [\App\Http\Controllers\Admin\NewsletterController::class, 'groupRecipients'])->name('newsletter.group-recipients');
+    Route::post('/newsletter/preview-recipients', [\App\Http\Controllers\Admin\NewsletterController::class, 'previewRecipients'])->name('newsletter.preview-recipients');
 
     Route::get('/mail-test', [\App\Http\Controllers\Admin\MailTestController::class, 'show'])->name('mail-test');
     Route::post('/mail-test', [\App\Http\Controllers\Admin\MailTestController::class, 'send'])->name('mail-test.send');
