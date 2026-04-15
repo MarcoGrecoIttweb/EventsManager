@@ -11,13 +11,93 @@
                         <h2 class="mb-0">Modifica Profilo</h2>
                     </div>
                     <div class="card-body">
+                        @php
+                            $isAdminViewer = auth()->check() && auth()->user()->isAdmin();
+                        @endphp
                         <p class="text-muted small mb-4">
-                            Puoi modificare solo <strong>email</strong> e <strong>telefono</strong>.
+                            @if($isAdminViewer)
+                                Come amministratore puoi modificare <strong>tutti i campi</strong> dell’utente.
+                            @else
+                                Puoi modificare solo <strong>email</strong> e <strong>telefono</strong>.
+                            @endif
                         </p>
 
                         <form action="{{ route('profile.update', $user) }}" method="POST">
                             @csrf
                             @method('PUT')
+
+                            @if($isAdminViewer)
+                                <div class="mb-3">
+                                    <label for="username" class="form-label">Username *</label>
+                                    <input type="text" class="form-control @error('username') is-invalid @enderror"
+                                           id="username" name="username"
+                                           value="{{ old('username', $user->username) }}" required maxlength="20" autocomplete="username">
+                                    @error('username')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+
+                                <div class="row g-2">
+                                    <div class="col-12 col-md-6">
+                                        <div class="mb-3">
+                                            <label for="nome" class="form-label">Nome *</label>
+                                            <input type="text" class="form-control @error('nome') is-invalid @enderror"
+                                                   id="nome" name="nome"
+                                                   value="{{ old('nome', $user->nome) }}" required maxlength="20" autocomplete="given-name">
+                                            @error('nome')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+                                    </div>
+                                    <div class="col-12 col-md-6">
+                                        <div class="mb-3">
+                                            <label for="cognome" class="form-label">Cognome *</label>
+                                            <input type="text" class="form-control @error('cognome') is-invalid @enderror"
+                                                   id="cognome" name="cognome"
+                                                   value="{{ old('cognome', $user->cognome) }}" required maxlength="20" autocomplete="family-name">
+                                            @error('cognome')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row g-2">
+                                    <div class="col-12 col-md-6">
+                                        <div class="mb-3">
+                                            <label for="sesso" class="form-label">Sesso *</label>
+                                            <select id="sesso" name="sesso" class="form-select @error('sesso') is-invalid @enderror" required>
+                                                <option value="m" {{ old('sesso', $user->sesso) === 'm' ? 'selected' : '' }}>Uomo</option>
+                                                <option value="f" {{ old('sesso', $user->sesso) === 'f' ? 'selected' : '' }}>Donna</option>
+                                            </select>
+                                            @error('sesso')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+                                    </div>
+                                    <div class="col-12 col-md-6">
+                                        <div class="mb-3">
+                                            <label for="datanascita" class="form-label">Data di nascita</label>
+                                            <input type="date" class="form-control @error('datanascita') is-invalid @enderror"
+                                                   id="datanascita" name="datanascita"
+                                                   value="{{ old('datanascita', optional($user->datanascita)->format('Y-m-d')) }}">
+                                            @error('datanascita')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="residenza" class="form-label">Residenza</label>
+                                    <input type="text" class="form-control @error('residenza') is-invalid @enderror"
+                                           id="residenza" name="residenza"
+                                           value="{{ old('residenza', $user->residenza) }}" maxlength="30" autocomplete="address-level2">
+                                    @error('residenza')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            @endif
 
                             <div class="mb-3">
                                 <label for="email" class="form-label">Email *</label>
@@ -38,6 +118,19 @@
                                 <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
+
+                            @if($isAdminViewer)
+                                <div class="mb-4">
+                                    <label for="description" class="form-label">Descrizione</label>
+                                    <textarea id="description" name="description" rows="5"
+                                              class="form-control @error('description') is-invalid @enderror"
+                                              maxlength="65535"
+                                              placeholder="Descrizione profilo...">{{ old('description', $user->descr) }}</textarea>
+                                    @error('description')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            @endif
 
                             <div class="d-grid gap-2 d-md-flex">
                                 <button type="submit" class="btn btn-primary">Salva Modifiche</button>
@@ -100,4 +193,23 @@
             </div>
         </div>
     </div>
+
+    <style>
+        /* Modifica profilo: bordi campi grigio scuro + label in grassetto */
+        .form-label {
+            font-weight: 700;
+        }
+        .form-control,
+        .form-select {
+            border: 2px solid #adb5bd;
+        }
+        .form-control:focus,
+        .form-select:focus {
+            border-color: #868e96;
+            box-shadow: 0 0 0 .2rem rgba(134, 142, 150, 0.25);
+        }
+        .card {
+            border: 2px solid #adb5bd;
+        }
+    </style>
 @endsection

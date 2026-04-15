@@ -96,7 +96,7 @@
                                 </div>
 
                                 @auth
-                                    @if(auth()->id() === $user->id)
+                                    @if(auth()->id() === $user->id || $isAdminViewer)
                                         <a href="{{ route('profile.edit', $user) }}" class="btn btn-primary btn-sm mt-3">
                                             <i class="fas fa-edit"></i> Modifica Profilo
                                         </a>

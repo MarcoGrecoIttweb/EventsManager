@@ -284,7 +284,7 @@
                                 <li><a class="dropdown-item" href="{{ route('admin.events.index') }}">Gestione Eventi</a></li>
                                 <li>
                                     <a class="dropdown-item d-flex align-items-center justify-content-between gap-2 {{ ($adminPendingUsersCount ?? 0) > 0 ? 'fw-semibold text-dark' : '' }}"
-                                       href="{{ ($adminPendingUsersCount ?? 0) > 0 ? route('admin.users.index', ['registrations' => 'pending']) : route('admin.users.index') }}">
+                                       href="{{ route('admin.users.index') }}">
                                         <span>Gestione Utenti</span>
                                         @if(($adminPendingUsersCount ?? 0) > 0)
                                             <span class="badge bg-warning text-dark">{{ $adminPendingUsersCount }} in attesa</span>

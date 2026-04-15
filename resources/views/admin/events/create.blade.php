@@ -181,12 +181,12 @@
                                         <label class="form-label text-primary-emphasis d-block">Partecipanti &amp; Ospiti</label>
                                         <div class="form-check form-switch">
                                             <input type="checkbox" class="form-check-input" id="allow_guests" name="allow_guests" value="1"
-                                                {{ old('allow_guests') ? 'checked' : '' }}>
+                                                {{ old('allow_guests', true) ? 'checked' : '' }}>
                                             <label class="form-check-label" for="allow_guests">
                                                 Permetti ospiti
                                             </label>
                                         </div>
-                                        <div id="max_guests_container" style="display: none;" class="mt-2">
+                                        <div id="max_guests_container" style="{{ old('allow_guests', true) ? 'display: block;' : 'display: none;' }}" class="mt-2">
                                             <label for="max_guests_per_user" class="form-label text-primary-emphasis mb-1">Max ospiti per partecipante</label>
                                             <input type="number" class="form-control border border-2 border-primary @error('max_guests_per_user') is-invalid @enderror"
                                                    id="max_guests_per_user" name="max_guests_per_user"

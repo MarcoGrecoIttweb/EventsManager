@@ -66,16 +66,45 @@ class ProfileController extends Controller
     {
         $this->authorize('update', $user);
 
-        $validated = $request->validate([
-            // Permetti email duplicate: requisito richiesto (non bloccare se già usata).
-            'email' => 'required|email|max:60',
-            'telefono' => 'nullable|string|max:20',
-        ]);
+        $isAdmin = $request->user() && $request->user()->isAdmin();
 
-        $user->update([
-            'email' => $validated['email'],
-            'telefono' => $validated['telefono'] ?? null,
-        ]);
+        if ($isAdmin) {
+            $validated = $request->validate([
+                'username' => 'required|string|max:20|unique:utente,username,' . $user->getKey() . ',userID',
+                'nome' => 'required|string|max:20',
+                'cognome' => 'required|string|max:20',
+                // Permetti email duplicate: requisito richiesto (non bloccare se già usata).
+                'email' => 'required|email|max:60',
+                'telefono' => 'nullable|string|max:30',
+                'sesso' => 'required|in:m,f',
+                'residenza' => 'nullable|string|max:30',
+                'datanascita' => 'nullable|date',
+                'description' => 'nullable|string|max:65535',
+            ]);
+
+            $user->update([
+                'username' => $validated['username'],
+                'nome' => $validated['nome'],
+                'cognome' => $validated['cognome'],
+                'email' => $validated['email'],
+                'telefono' => $validated['telefono'] ?? null,
+                'sesso' => $validated['sesso'],
+                'residenza' => $validated['residenza'] ?? '',
+                'datanascita' => $validated['datanascita'] ?? $user->datanascita,
+                'descr' => $validated['description'] ?? '',
+            ]);
+        } else {
+            $validated = $request->validate([
+                // Permetti email duplicate: requisito richiesto (non bloccare se già usata).
+                'email' => 'required|email|max:60',
+                'telefono' => 'nullable|string|max:20',
+            ]);
+
+            $user->update([
+                'email' => $validated['email'],
+                'telefono' => $validated['telefono'] ?? null,
+            ]);
+        }
 
         return redirect()->route('profile.show', $user)
             ->with('success', 'Profilo aggiornato con successo!');

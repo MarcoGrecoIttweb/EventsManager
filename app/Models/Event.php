@@ -276,6 +276,41 @@ class Event extends Model
             ->withPivot('amici', 'data_iscrizione', 'ospiti_inseriti_il');
     }
 
+    /**
+     * Iscrive automaticamente l'organizzatore come partecipante (se non già presente).
+     * Utile per eventi creati/duplicati dal pannello admin.
+     */
+    public function enrollOrganizerAsParticipant(): void
+    {
+        $organizerId = (int) ($this->id_organizzatore ?? 0);
+        if ($organizerId <= 0) {
+            return;
+        }
+
+        try {
+            $exists = $this->participants()
+                ->where('utente.userID', $organizerId)
+                ->exists();
+
+            if ($exists) {
+                return;
+            }
+
+            $this->participants()->attach($organizerId, [
+                'amici' => 0,
+                'data_iscrizione' => now()->format('Y-m-d H:i:s'),
+                'ospiti_inseriti_il' => null,
+            ]);
+        } catch (\Throwable $e) {
+            // Non bloccare la creazione evento se la pivot legacy non è disponibile/ha vincoli.
+            \Log::warning('Impossibile iscrivere organizzatore come partecipante', [
+                'event_id' => $this->getKey(),
+                'organizer_id' => $organizerId,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
     public function comments(): HasMany
     {
         return $this->hasMany(Comment::class, 'id_evento', 'IDevento');

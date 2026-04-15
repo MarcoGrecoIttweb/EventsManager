@@ -15,9 +15,6 @@
                                     <i class="fas fa-users-cog admin-users-page-title-icon"></i>
                                     <span class="admin-users-page-title-text">Gestione Utenti Sospesi</span>
                                 </span>
-                                <span class="small admin-users-pending-subtitle fw-normal">
-                                    Stai visualizzando Solo la lista degli utenti sospesi
-                                </span>
                             </h1>
                         </div>
                     </div>
@@ -27,52 +24,65 @@
                             <i class="fas fa-users-cog admin-users-page-title-icon"></i>
                             <span class="admin-users-page-title-text">Gestione Utenti</span>
                         </h1>
-                        <div class="admin-users-actions-box">
-                            <div class="d-flex flex-wrap gap-2 admin-users-actions-box__row">
-                                <a href="{{ route('admin.users.index', ['registrations' => 'pending']) }}" class="btn btn-dark btn-sm btn-border-brown">
-                                    <i class="fas fa-list me-1"></i> Vedi solo in attesa
-                                </a>
-                                <a href="{{ route('admin.users.index') }}" class="btn btn-outline-secondary btn-sm btn-border-brown">Vista completa</a>
-                                <a href="{{ route('admin.users.logins') }}" class="btn btn-primary btn-sm btn-border-brown">
-                                    <i class="fas fa-sign-in-alt"></i> Ingressi giornalieri utenti ult. 10 gg.
-                                </a>
-                                <a href="{{ route('home') }}" class="btn btn-secondary btn-sm btn-border-brown">
-                                    <i class="fas fa-home"></i> Home
-                                </a>
-                            </div>
-                        </div>
                     </div>
                 @endif
 
                 <!-- Tabella Utenti -->
                 <div class="card">
-                    <div class="card-header bg-dark text-white">
+                    <div class="card-header admin-users-list-header">
                         <div class="d-flex align-items-center gap-2 admin-users-header-inline">
-                            <h5 class="mb-0">Lista Utenti</h5>
+                            <h5 class="mb-0">Lista di tutti gli Utenti Registrati</h5>
                             <div class="d-flex align-items-center gap-2 admin-user-stats-pills">
                                 <span class="admin-user-stats-pill bg-danger text-white">
                                     <i class="fas fa-clock"></i>
                                     <span class="admin-user-stats-pill-label">Sospesi</span>
                                     <span class="admin-user-stats-pill-value">{{ $pendingCount }}</span>
                                 </span>
-                                <span class="admin-user-stats-pill bg-success text-white">
-                                    <i class="fas fa-check-circle"></i>
-                                    <span class="admin-user-stats-pill-label">Attivi</span>
-                                    <span class="admin-user-stats-pill-value">{{ $approvedCount }}</span>
-                                </span>
+                                @if(request('registrations') === 'pending')
+                                    <a href="{{ route('admin.users.index') }}" class="admin-user-stats-pill bg-success text-white text-decoration-none" title="Vai alla lista completa utenti">
+                                        <i class="fas fa-check-circle"></i>
+                                        <span class="admin-user-stats-pill-label">Attivi</span>
+                                        <span class="admin-user-stats-pill-value">{{ $approvedCount }}</span>
+                                    </a>
+                                @else
+                                    <span class="admin-user-stats-pill bg-success text-white">
+                                        <i class="fas fa-check-circle"></i>
+                                        <span class="admin-user-stats-pill-label">Attivi</span>
+                                        <span class="admin-user-stats-pill-value">{{ $approvedCount }}</span>
+                                    </span>
+                                @endif
                                 <span class="admin-user-stats-pill bg-danger text-white">
                                     <i class="fas fa-ban"></i>
                                     <span class="admin-user-stats-pill-label">Bannati</span>
                                     <span class="admin-user-stats-pill-value">{{ $bannedCount }}</span>
                                 </span>
                             </div>
+                            <div class="admin-users-actions-box">
+                                <div class="d-flex flex-wrap gap-2 admin-users-actions-box__row">
+                                    <a href="{{ route('admin.users.index', ['registrations' => 'pending']) }}" class="btn btn-dark btn-sm btn-border-brown">
+                                        <i class="fas fa-list me-1"></i> Vedi solo in attesa
+                                    </a>
+                                    <a href="{{ route('admin.users.index') }}" class="btn btn-outline-secondary btn-sm btn-border-brown">Vista completa</a>
+                                    <a href="{{ route('admin.users.logins') }}" class="btn btn-primary btn-sm btn-border-brown">
+                                        <i class="fas fa-sign-in-alt"></i> Ingressi giornalieri utenti ult. 10 gg.
+                                    </a>
+                                    <a href="{{ route('home') }}" class="btn btn-secondary btn-sm btn-border-brown">
+                                        <i class="fas fa-home"></i> Home
+                                    </a>
+                                </div>
+                            </div>
                             <div class="input-group input-group-sm admin-user-finder">
                                 <label class="visually-hidden" for="userFinderField">Campo</label>
-                                <select id="userFinderField" class="form-select">
-                                    <option value="nome" selected>Nome</option>
-                                    <option value="cognome">Cognome</option>
-                                    <option value="nickname">Nickname</option>
-                                </select>
+                                <div class="admin-user-finder-select-wrap">
+                                    <select id="userFinderField" class="form-select">
+                                        <option value="nome" selected>Nome</option>
+                                        <option value="cognome">Cognome</option>
+                                        <option value="nickname">Nickname</option>
+                                    </select>
+                                    <span class="admin-user-finder-select-icon" aria-hidden="true">
+                                        <i class="fas fa-chevron-down"></i>
+                                    </span>
+                                </div>
                                 <span class="input-group-text">
                                     <i class="fas fa-search"></i>
                                 </span>
@@ -82,7 +92,7 @@
                                        placeholder="Trova utente…"
                                        autocomplete="off"
                                        aria-label="Trova utente">
-                                <button id="userFinderClear" type="button" class="btn btn-outline-light" title="Pulisci">
+                                <button id="userFinderClear" type="button" class="btn btn-outline-dark" title="Pulisci">
                                     <i class="fas fa-times"></i>
                                 </button>
                             </div>
@@ -127,7 +137,7 @@
                                         <th>Email</th>
                                         <th>Telefono</th>
                                         <th>
-                                            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-dark fw-semibold admin-sort" data-sort-key="sesso" aria-label="Ordina per sesso">
+                                            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-dark admin-sort" data-sort-key="sesso" aria-label="Ordina per sesso">
                                                 Sesso
                                                 <span class="admin-sort-icons" aria-hidden="true">
                                                     <i class="fas fa-sort-up"></i>
@@ -136,7 +146,7 @@
                                             </button>
                                         </th>
                                         <th>
-                                            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-dark fw-semibold admin-sort" data-sort-key="datanascita" aria-label="Ordina per data di nascita">
+                                            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-dark admin-sort" data-sort-key="datanascita" aria-label="Ordina per data di nascita">
                                                 Data nascita
                                                 <span class="admin-sort-icons" aria-hidden="true">
                                                     <i class="fas fa-sort-up"></i>
@@ -146,7 +156,7 @@
                                         </th>
                                         <th class="col-residenza">Residenza</th>
                                         <th>
-                                            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-dark fw-semibold admin-sort" data-sort-key="ruolo" aria-label="Ordina per ruolo">
+                                            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-dark admin-sort" data-sort-key="ruolo" aria-label="Ordina per ruolo">
                                                 Ruolo
                                                 <span class="admin-sort-icons" aria-hidden="true">
                                                     <i class="fas fa-sort-up"></i>
@@ -155,7 +165,7 @@
                                             </button>
                                         </th>
                                         <th>
-                                            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-dark fw-semibold admin-sort" data-sort-key="eventi" aria-label="Ordina per numero eventi">
+                                            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-dark admin-sort" data-sort-key="eventi" aria-label="Ordina per numero eventi">
                                                 Eventi
                                                 <span class="admin-sort-icons" aria-hidden="true">
                                                     <i class="fas fa-sort-up"></i>
@@ -164,7 +174,7 @@
                                             </button>
                                         </th>
                                         <th>
-                                            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-dark fw-semibold admin-sort" data-sort-key="iscr" aria-label="Ordina per iscrizione">
+                                            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-dark admin-sort" data-sort-key="iscr" aria-label="Ordina per iscrizione">
                                                 Iscr.
                                                 <span class="admin-sort-icons" aria-hidden="true">
                                                     <i class="fas fa-sort-up"></i>
@@ -173,7 +183,7 @@
                                             </button>
                                         </th>
                                         <th class="col-ultacc">
-                                            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-dark fw-semibold admin-sort" data-sort-key="ultimo_accesso" aria-label="Ordina per ultimo accesso">
+                                            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-dark admin-sort" data-sort-key="ultimo_accesso" aria-label="Ordina per ultimo accesso">
                                                 Ult. acc.
                                                 <span class="admin-sort-icons" aria-hidden="true">
                                                     <i class="fas fa-sort-up"></i>
@@ -182,7 +192,7 @@
                                             </button>
                                         </th>
                                         <th>
-                                            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-dark fw-semibold admin-sort" data-sort-key="news" aria-label="Ordina per newsletter">
+                                            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-dark admin-sort" data-sort-key="news" aria-label="Ordina per newsletter">
                                                 News
                                                 <span class="admin-sort-icons" aria-hidden="true">
                                                     <i class="fas fa-sort-up"></i>
@@ -191,7 +201,7 @@
                                             </button>
                                         </th>
                                         <th>
-                                            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-dark fw-semibold admin-sort" data-sort-key="stato" aria-label="Ordina per stato">
+                                            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-dark admin-sort" data-sort-key="stato" aria-label="Ordina per stato">
                                                 Stato
                                                 <span class="admin-sort-icons" aria-hidden="true">
                                                     <i class="fas fa-sort-up"></i>
@@ -540,6 +550,22 @@
             border-color: rgba(255, 255, 255, 0.5);
             box-shadow: 0 0 0 .2rem rgba(255, 255, 255, 0.12);
         }
+        /* Barra nera: box "Nome" + ricerca con bordo giallo e sfondo grigio, testo nero */
+        .admin-users-list-header .admin-user-finder .input-group-text,
+        .admin-users-list-header .admin-user-finder .form-control,
+        .admin-users-list-header .admin-user-finder .form-select {
+            background: #e9ecef !important;
+            color: #000 !important;
+            border: 2px solid #ffc107 !important;
+        }
+        .admin-users-list-header .admin-user-finder .form-control::placeholder {
+            color: rgba(0, 0, 0, 0.55) !important;
+        }
+        .admin-users-list-header .admin-user-finder .form-select:focus,
+        .admin-users-list-header .admin-user-finder .form-control:focus {
+            border-color: #ffc107 !important;
+            box-shadow: 0 0 0 .2rem rgba(255, 193, 7, 0.25) !important;
+        }
         .admin-user-stats-pill {
             display: inline-flex;
             align-items: center;
@@ -633,6 +659,41 @@
             top: 0;
             z-index: 2;
             background: #fff;
+        }
+        /* Barra (header tabella): sfondo verde, titolo nero */
+        .admin-users-list-header {
+            background: #A1F198 !important;
+            color: #000 !important;
+        }
+        .admin-users-list-header h5 {
+            color: #000 !important;
+        }
+
+        /* Intestazioni tabella: bordo grigio chiaro e testo non bold */
+        .admin-users-table thead th {
+            border: 2px solid #dee2e6;
+        }
+        .admin-users-table thead th .admin-sort {
+            font-weight: 400 !important;
+        }
+
+        /* Select "Campo": icona che indica sottomenù */
+        .admin-user-finder-select-wrap {
+            position: relative;
+            display: inline-flex;
+            align-items: stretch;
+        }
+        .admin-user-finder-select-wrap .form-select {
+            padding-right: 2rem;
+        }
+        .admin-user-finder-select-icon {
+            position: absolute;
+            right: 0.65rem;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            font-size: 0.85rem;
+            color: rgba(0, 0, 0, 0.65);
         }
         .admin-users-table-wrapper {
             max-height: calc(100vh - 260px);
