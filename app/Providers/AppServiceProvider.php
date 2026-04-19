@@ -2,11 +2,13 @@
 
 namespace App\Providers;
 
+use App\Http\Controllers\CookieConsentController;
 use App\Models\User;
 use App\Support\CookieConsent;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -26,6 +28,15 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Paginator::useBootstrap();
+
+        // Se deploy/route cache non espone ancora POST /cookie/consent, evita 404 sul banner.
+        $this->app->booted(function () {
+            if (! Route::has('cookie.consent.store')) {
+                Route::middleware('web')
+                    ->post('/cookie/consent', [CookieConsentController::class, 'store'])
+                    ->name('cookie.consent.store');
+            }
+        });
 
         View::composer('layouts.app', function ($view) {
             $pending = 0;
