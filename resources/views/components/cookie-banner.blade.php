@@ -14,14 +14,14 @@
                 </div>
             </div>
             <div class="cookie-banner__actions">
-                <form method="POST" action="{{ route('cookie.consent.store') }}" class="d-inline">
+                <form method="POST" action="{{ url('/cookie/consent') }}" class="d-inline">
                     @csrf
                     <input type="hidden" name="action" value="reject">
                     <input type="hidden" name="redirect" value="{{ url()->current() }}">
                     <button type="submit" class="btn btn-outline-secondary btn-sm">Rifiuta</button>
                 </form>
 
-                <form method="POST" action="{{ route('cookie.consent.store') }}" class="d-inline">
+                <form method="POST" action="{{ url('/cookie/consent') }}" class="d-inline">
                     @csrf
                     <input type="hidden" name="action" value="accept">
                     <input type="hidden" name="redirect" value="{{ url()->current() }}">
