@@ -81,7 +81,7 @@
                     @endif
                     <a href="{{ route('admin.users.index', ['registrations' => 'pending']) }}" class="alert-link fw-semibold ms-1">Apri le iscrizioni in attesa</a>
                 </div>
-                <form method="POST" action="{{ route('admin.home-pending-dismiss') }}" class="d-flex align-items-center flex-shrink-0 m-0">
+                <form method="POST" action="{{ url('/admin/home-pending-registrations/dismiss') }}" class="d-flex align-items-center flex-shrink-0 m-0">
                     @csrf
                     <input type="hidden" name="user_ids" value="{{ $adminPendingRegistrationBanner['dismiss_user_ids'] }}">
                     <button type="submit" class="btn btn-sm btn-dark">Chiudi</button>
