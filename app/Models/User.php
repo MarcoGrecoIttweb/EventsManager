@@ -126,7 +126,9 @@ class User extends Authenticatable
         return match ((int) $this->abilitato) {
             1 => 'approved',
             2 => 'banned',
-            default => 'pending',
+            3 => 'awaiting',
+            0 => 'suspended',
+            default => 'suspended',
         };
     }
 
@@ -135,6 +137,9 @@ class User extends Authenticatable
         $this->attributes['abilitato'] = match ($value) {
             'approved' => 1,
             'banned' => 2,
+            'awaiting' => 3,
+            'pending' => 3,
+            'suspended' => 0,
             default => 0,
         };
     }
@@ -273,9 +278,14 @@ class User extends Authenticatable
         return (int) $this->abilitato === 1;
     }
 
-    public function isPending(): bool
+    public function isSuspended(): bool
     {
         return (int) $this->abilitato === 0;
+    }
+
+    public function isAwaitingApproval(): bool
+    {
+        return (int) $this->abilitato === 3;
     }
 
     public function isBanned(): bool
@@ -295,6 +305,9 @@ class User extends Authenticatable
         return $query->where('abilitato', match ($status) {
             'approved' => 1,
             'banned' => 2,
+            'awaiting' => 3,
+            'pending' => 3,
+            'suspended' => 0,
             default => 0,
         });
     }

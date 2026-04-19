@@ -17,7 +17,7 @@ class UserController extends Controller
         $query = User::withCount('events');
 
         if ($request->query('registrations') === 'pending') {
-            $query->where('abilitato', 0)->where('ruolo', '!=', 0)
+            $query->where('abilitato', 3)->where('ruolo', '!=', 0)
                 ->orderBy('userID');
         } else {
             $query->orderBy('ruolo')
@@ -27,11 +27,18 @@ class UserController extends Controller
 
         $users = $query->get();
 
-        $pendingCount  = User::where('abilitato', 0)->count();
+        $awaitingCount  = User::where('abilitato', 3)->count();
+        $suspendedCount = User::where('abilitato', 0)->count();
         $approvedCount = User::where('abilitato', 1)->count();
         $bannedCount   = User::where('abilitato', 2)->count();
 
-        return view('admin.users.index', compact('users', 'pendingCount', 'approvedCount', 'bannedCount'));
+        return view('admin.users.index', compact(
+            'users',
+            'awaitingCount',
+            'suspendedCount',
+            'approvedCount',
+            'bannedCount'
+        ));
     }
 
     /**
@@ -69,6 +76,7 @@ class UserController extends Controller
         }
 
         $user->status = 'approved';
+        $user->note_utente = null;
         $user->save();
 
         return back()->with('success', "Utente {$user->nickname} approvato con successo!");
@@ -99,13 +107,14 @@ class UserController extends Controller
         }
 
         $user->status = 'approved';
+        $user->note_utente = null;
         $user->save();
 
         return back()->with('success', "Utente {$user->nickname} sbannato con successo!");
     }
 
     /**
-     * Suspend a user (pending).
+     * Suspend an approved user (abilitato 0, distinto dall'iscrizione in attesa = 3).
      */
     public function suspend(User $user)
     {
@@ -113,7 +122,7 @@ class UserController extends Controller
             return back()->with('error', 'Non puoi modificare lo stato di un amministratore.');
         }
 
-        $user->status = 'pending';
+        $user->status = 'suspended';
         $user->save();
 
         return back()->with('success', "Utente {$user->nickname} sospeso con successo!");

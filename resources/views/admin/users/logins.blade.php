@@ -59,12 +59,16 @@
                                             <td>{{ $event->user?->nome ?? '—' }}</td>
                                             <td>{{ $event->user?->cognome ?? '—' }}</td>
                                             <td>
-                                                @if($event->user && $event->user->status === 'pending')
+                                                @if($event->user && $event->user->status === 'awaiting')
+                                                    <span class="badge bg-warning text-dark">In attesa</span>
+                                                @elseif($event->user && $event->user->status === 'suspended')
                                                     <span class="badge bg-danger">Sospeso</span>
                                                 @elseif($event->user && $event->user->status === 'approved')
                                                     <span class="badge bg-success">Attivo</span>
-                                                @else
+                                                @elseif($event->user && $event->user->status === 'banned')
                                                     <span class="badge bg-danger">Bannato</span>
+                                                @else
+                                                    <span class="badge bg-secondary">—</span>
                                                 @endif
                                             </td>
                                             <td>

@@ -54,6 +54,12 @@ Route::get('/chat', [ChatController::class, 'index'])
 Route::post('/chat', [ChatController::class, 'store'])
     ->name('chat.store')
     ->middleware(['auth', 'approved']);
+Route::put('/chat/{message}', [ChatController::class, 'update'])
+    ->name('chat.update')
+    ->middleware(['auth', 'approved']);
+Route::delete('/chat/{message}', [ChatController::class, 'destroy'])
+    ->name('chat.destroy')
+    ->middleware(['auth', 'approved']);
 Route::post('/chat/header-image', [ChatController::class, 'updateHeaderImage'])->name('chat.header-image')->middleware('admin');
 
 // Mercatino: solo utenti registrati e approvati (come la chat)
@@ -190,6 +196,12 @@ Route::middleware(['auth', 'approved'])->group(function () {
     Route::post('/events/{event}/cancel', [EventController::class, 'cancelParticipation'])
         ->name('events.cancel');
 
+    Route::post('/events/{event}/waitlist', [EventController::class, 'joinWaitlist'])
+        ->name('events.waitlist.join');
+
+    Route::delete('/events/{event}/waitlist', [EventController::class, 'leaveWaitlist'])
+        ->name('events.waitlist.leave');
+
     // Stampa partecipanti (solo amministratori)
     Route::get('/events/{event}/print', [EventController::class, 'printParticipants'])
         ->name('events.print')
@@ -244,10 +256,13 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/dashboard', function () {
         $usersCount = User::where('ruolo', '!=', 0)->count();
         $eventsCount = Event::where('pubblicato', 1)->count();
-        $pendingUsers = User::where('abilitato', 0)->where('ruolo', '!=', 0)->count();
+        $pendingUsers = User::where('abilitato', 3)->where('ruolo', '!=', 0)->count();
 
         return view('admin.dashboard', compact('usersCount', 'eventsCount', 'pendingUsers'));
     })->name('dashboard');
+
+    Route::post('/home-pending-registrations/dismiss', [\App\Http\Controllers\Admin\HomePendingBannerController::class, 'dismiss'])
+        ->name('home-pending-dismiss');
 
     Route::resource('events', \App\Http\Controllers\Admin\EventController::class);
     Route::post('/events/{event}/duplicate', [\App\Http\Controllers\Admin\EventController::class, 'duplicate'])->name('events.duplicate');

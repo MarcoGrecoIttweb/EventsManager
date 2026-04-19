@@ -19,9 +19,37 @@ class NewsletterController extends Controller
     {
         $totalUsersCount = User::nonAdmin()->count();
         $usersCount = User::nonAdmin()->where('abilitato', 1)->count();
+
+        // Conteggi con email valida (servono per l'invio a gruppi, per QUALSIASI target).
+        $allEmailCount = User::nonAdmin()
+            ->whereNotNull('email')
+            ->where('email', '!=', '')
+            ->count();
+        $approvedEmailCount = User::nonAdmin()
+            ->where('abilitato', 1)
+            ->whereNotNull('email')
+            ->where('email', '!=', '')
+            ->count();
+        $pendingEmailCount = User::nonAdmin()
+            ->where('abilitato', 3)
+            ->whereNotNull('email')
+            ->where('email', '!=', '')
+            ->count();
         $participantsCount = User::nonAdmin()
             ->where('abilitato', 1)
             ->has('events')
+            ->count();
+        $participantsEmailCount = User::nonAdmin()
+            ->where('abilitato', 1)
+            ->has('events')
+            ->whereNotNull('email')
+            ->where('email', '!=', '')
+            ->count();
+        $neverParticipatedEmailCount = User::nonAdmin()
+            ->where('abilitato', 1)
+            ->doesntHave('events')
+            ->whereNotNull('email')
+            ->where('email', '!=', '')
             ->count();
         $newsSubscribersCount = User::nonAdmin()
             ->where('abilitato', 1)
@@ -29,6 +57,15 @@ class NewsletterController extends Controller
             ->whereNotNull('email')
             ->where('email', '!=', '')
             ->count();
+
+        $targetEmailTotals = [
+            'all' => $allEmailCount,
+            'approved' => $approvedEmailCount,
+            'participants' => $participantsEmailCount,
+            'never_participated' => $neverParticipatedEmailCount,
+            'pending' => $pendingEmailCount,
+            'news' => $newsSubscribersCount,
+        ];
 
         $newsGroupSizePreview = self::NEWS_GROUP_SIZE_DEFAULT;
         $newsBatchCount = $newsSubscribersCount > 0
@@ -73,7 +110,8 @@ class NewsletterController extends Controller
             'newsBatchesMeta',
             'users',
             'newsletterActiveUsers',
-            'newsletterReceiptAdmins'
+            'newsletterReceiptAdmins',
+            'targetEmailTotals'
         ));
     }
 
@@ -82,9 +120,7 @@ class NewsletterController extends Controller
         $rules = [
             'subject' => 'required|string|max:255',
             'message' => 'required|string|min:10',
-            'target' => 'required|in:all,approved,participants,never_participated,pending,selected,selected_news,news',
-            'selected_users' => 'nullable|array',
-            'selected_users.*' => 'exists:utente,userID',
+            'target' => 'required|in:all,approved,participants,never_participated,pending,news',
             'news_send' => 'nullable|in:all,groups',
             'news_group_size' => 'nullable|integer|min:20|max:300',
             'news_groups' => 'nullable|array|max:5',
@@ -94,7 +130,7 @@ class NewsletterController extends Controller
             'newsletter_test_send_to_receipt_admin' => 'nullable|in:0,1',
         ];
 
-        if ($request->target === 'news' && $request->input('news_send') === 'groups') {
+        if ($request->input('news_send') === 'groups') {
             $rules['news_receipt_admin_id'] = [
                 'required',
                 'integer',
@@ -111,7 +147,7 @@ class NewsletterController extends Controller
         $newsChunkSizeApplied = null;
         $newsReceiptAdmin = null;
 
-        if ($request->target === 'news' && $request->input('news_send') === 'groups') {
+        if ($request->input('news_send') === 'groups') {
             $newsReceiptAdmin = User::query()
                 ->where('userID', (int) $request->input('news_receipt_admin_id'))
                 ->where('ruolo', 0)
@@ -136,19 +172,36 @@ class NewsletterController extends Controller
                     return back()->withErrors(['news_groups' => 'Seleziona almeno un gruppo da inviare.']);
                 }
 
-                $allNews = User::nonAdmin()
-                    ->where('abilitato', 1)
-                    ->where('invia', true)
+                $baseQ = User::nonAdmin();
+                switch ($request->target) {
+                    case 'approved':
+                        $baseQ->where('abilitato', 1);
+                        break;
+                    case 'participants':
+                        $baseQ->where('abilitato', 1)->has('events');
+                        break;
+                    case 'never_participated':
+                        $baseQ->where('abilitato', 1)->doesntHave('events');
+                        break;
+                    case 'pending':
+                        $baseQ->where('abilitato', 3);
+                        break;
+                    case 'news':
+                        $baseQ->where('abilitato', 1)->where('invia', true);
+                        break;
+                }
+
+                $allBase = $baseQ
                     ->whereNotNull('email')
                     ->where('email', '!=', '')
                     ->orderBy('userID')
                     ->get();
 
-                if ($allNews->isEmpty()) {
-                    return back()->withErrors(['target' => 'Nessun iscritto alla newsletter con email valida.']);
+                if ($allBase->isEmpty()) {
+                    return back()->withErrors(['target' => 'Nessun destinatario con email valida per il filtro scelto.']);
                 }
 
-                $chunks = $allNews->chunk($chunkSize)->values();
+                $chunks = $allBase->chunk($chunkSize)->values();
                 $maxGroup = $chunks->count();
 
                 foreach ($groupNums as $num) {
@@ -173,6 +226,9 @@ class NewsletterController extends Controller
                 $newsGroupsApplied = $groupNums;
                 $newsChunkSizeApplied = $chunkSize;
             }
+        } elseif ($request->input('news_send') === 'groups') {
+            // Se per qualsiasi motivo "groups" non è entrato nel ramo sopra, evita fallback silenzioso.
+            return back()->withErrors(['news_send' => 'Seleziona i gruppi da inviare.']);
         } else {
             $usersQuery = User::nonAdmin();
 
@@ -187,26 +243,11 @@ class NewsletterController extends Controller
                     $usersQuery->where('abilitato', 1)->doesntHave('events');
                     break;
                 case 'pending':
-                    $usersQuery->where('abilitato', 0);
+                    $usersQuery->where('abilitato', 3);
                     break;
                 case 'news':
                     $usersQuery->where('abilitato', 1)
                         ->where('invia', true);
-                    break;
-                case 'selected':
-                    if (empty($request->selected_users)) {
-                        return back()->withErrors(['selected_users' => 'Seleziona almeno un utente.']);
-                    }
-                    $usersQuery->whereIn('userID', $request->selected_users);
-                    break;
-                case 'selected_news':
-                    if (empty($request->selected_users)) {
-                        return back()->withErrors(['selected_users' => 'Seleziona almeno un utente.']);
-                    }
-                    $usersQuery
-                        ->where('abilitato', 1)
-                        ->where('invia', true)
-                        ->whereIn('userID', $request->selected_users);
                     break;
             }
 
@@ -305,29 +346,48 @@ class NewsletterController extends Controller
     public function groupRecipients(Request $request)
     {
         $request->validate([
+            'target' => 'required|in:all,approved,participants,never_participated,pending,news',
             'group' => 'required|integer|min:1',
             'news_group_size' => 'required|integer|min:20|max:300',
         ]);
 
         $chunkSize = max(20, min(300, (int) $request->input('news_group_size')));
         $groupNum = (int) $request->input('group');
+        $target = (string) $request->input('target');
 
-        $allNews = User::nonAdmin()
-            ->where('abilitato', 1)
-            ->where('invia', true)
+        $q = User::nonAdmin();
+        switch ($target) {
+            case 'approved':
+                $q->where('abilitato', 1);
+                break;
+            case 'participants':
+                $q->where('abilitato', 1)->has('events');
+                break;
+            case 'never_participated':
+                $q->where('abilitato', 1)->doesntHave('events');
+                break;
+            case 'pending':
+                $q->where('abilitato', 3);
+                break;
+            case 'news':
+                $q->where('abilitato', 1)->where('invia', true);
+                break;
+        }
+
+        $allBase = $q
             ->whereNotNull('email')
             ->where('email', '!=', '')
             ->orderBy('userID')
             ->get(['userID', 'nome', 'username', 'email']);
 
-        if ($allNews->isEmpty()) {
+        if ($allBase->isEmpty()) {
             return response()->json([
-                'error' => 'Nessun iscritto alla newsletter con email valida.',
+                'error' => 'Nessun destinatario con email valida per il filtro scelto.',
                 'recipients' => [],
             ], 404);
         }
 
-        $chunks = $allNews->chunk($chunkSize)->values();
+        $chunks = $allBase->chunk($chunkSize)->values();
         $maxGroup = $chunks->count();
 
         if ($groupNum < 1 || $groupNum > $maxGroup) {
@@ -390,10 +450,8 @@ class NewsletterController extends Controller
     public function previewRecipients(Request $request)
     {
         $validated = $request->validate([
-            'target' => ['required', 'in:all,approved,participants,never_participated,pending,selected,selected_news,news'],
-            'selected_users' => ['nullable', 'array'],
-            'selected_users.*' => ['integer', Rule::exists('utente', 'userID')],
-            // Per target news (invio a gruppi)
+            'target' => ['required', 'in:all,approved,participants,never_participated,pending,news'],
+            // Invio a gruppi (per qualunque target)
             'news_send' => ['nullable', 'in:all,groups'],
             'news_group_size' => ['nullable', 'integer', 'min:20', 'max:300'],
             'news_groups' => ['nullable', 'array'],
@@ -405,21 +463,38 @@ class NewsletterController extends Controller
         $target = $validated['target'];
         $users = collect();
 
-        if ($target === 'news' && ($validated['news_send'] ?? 'all') === 'groups') {
+        if (($validated['news_send'] ?? 'all') === 'groups') {
             $chunkSize = (int) ($validated['news_group_size'] ?? self::NEWS_GROUP_SIZE_DEFAULT);
             $chunkSize = max(20, min(300, $chunkSize));
             $groupNums = array_values(array_unique(array_filter(array_map('intval', $validated['news_groups'] ?? []))));
             sort($groupNums);
 
-            $allNews = User::nonAdmin()
-                ->where('abilitato', 1)
-                ->where('invia', true)
+            $q = User::nonAdmin();
+            switch ($target) {
+                case 'approved':
+                    $q->where('abilitato', 1);
+                    break;
+                case 'participants':
+                    $q->where('abilitato', 1)->has('events');
+                    break;
+                case 'never_participated':
+                    $q->where('abilitato', 1)->doesntHave('events');
+                    break;
+                case 'pending':
+                    $q->where('abilitato', 3);
+                    break;
+                case 'news':
+                    $q->where('abilitato', 1)->where('invia', true);
+                    break;
+            }
+
+            $allBase = $q
                 ->whereNotNull('email')
                 ->where('email', '!=', '')
                 ->orderBy('userID')
                 ->get(['userID', 'nome', 'username', 'email']);
 
-            $chunks = $allNews->chunk($chunkSize)->values();
+            $chunks = $allBase->chunk($chunkSize)->values();
             $maxGroup = $chunks->count();
 
             foreach ($groupNums as $num) {
@@ -452,7 +527,7 @@ class NewsletterController extends Controller
                     $q->where('abilitato', 1)->doesntHave('events');
                     break;
                 case 'pending':
-                    $q->where('abilitato', 0);
+                    $q->where('abilitato', 3);
                     break;
                 case 'news':
                     $q->where('abilitato', 1)->where('invia', true);
@@ -515,7 +590,7 @@ class NewsletterController extends Controller
     {
         $totalUsers = User::nonAdmin()->count();
         $approvedUsers = User::nonAdmin()->where('abilitato', 1)->count();
-        $pendingUsers = User::nonAdmin()->where('abilitato', 0)->count();
+        $pendingUsers = User::nonAdmin()->where('abilitato', 3)->count();
         $participants = User::nonAdmin()
             ->where('abilitato', 1)
             ->has('events')

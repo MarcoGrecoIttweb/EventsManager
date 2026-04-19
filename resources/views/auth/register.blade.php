@@ -4,9 +4,60 @@
 @section('title', 'Registrati - Excursio')
 
 @section('content')
+    <style>
+        /* Registrazione: bordi blu per campi e pulsanti */
+        .register-box .form-control,
+        .register-box .form-select,
+        .register-box .form-check-input,
+        .register-box .btn {
+            border-color: #0d6efd !important;
+        }
+
+        /* Rendi il bordo più visibile su input/select */
+        .register-box .form-control,
+        .register-box .form-select {
+            border-width: 2px !important;
+        }
+
+        /* Focus ring blu */
+        .register-box .form-control:focus,
+        .register-box .form-select:focus,
+        .register-box .form-check-input:focus,
+        .register-box .btn:focus {
+            border-color: #0d6efd !important;
+            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25) !important;
+        }
+
+        /* Checkbox/switch checked coerente */
+        .register-box .form-check-input:checked {
+            background-color: #0d6efd !important;
+            border-color: #0d6efd !important;
+        }
+
+        /* Mantieni il rosso per i campi invalidi */
+        .register-box .form-control.is-invalid,
+        .register-box .form-select.is-invalid,
+        .register-box .form-check-input.is-invalid {
+            border-color: #dc3545 !important;
+        }
+        .register-box .form-control.is-invalid:focus,
+        .register-box .form-select.is-invalid:focus,
+        .register-box .form-check-input.is-invalid:focus {
+            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.2) !important;
+        }
+
+        /* Bordo blu anche alla card (box registrazione) */
+        .register-box.card {
+            border: 2px solid #0d6efd !important;
+        }
+        .register-box.card .card-header {
+            border-bottom: 1px solid rgba(13, 110, 253, 0.35) !important;
+        }
+    </style>
+
     <div class="row justify-content-center">
         <div class="col-md-6">
-            <div class="card">
+            <div class="card register-box">
                 <div class="card-header">Registrati</div>
                 <div class="card-body">
                     @if(session('success'))
@@ -26,6 +77,11 @@
 
                     @if($errors->any())
                         <div class="alert alert-danger">
+                            <div class="fw-semibold mb-1">Errore di registrazione</div>
+                            <div class="small text-muted mb-2">
+                                I campi già compilati restano salvati. Per motivi di sicurezza dovrai reinserire
+                                <strong>password</strong> e <strong>foto</strong> (il file non può essere mantenuto dopo il refresh).
+                            </div>
                             @foreach($errors->all() as $error)
                                 <p class="mb-0">{{ $error }}</p>
                             @endforeach
@@ -175,36 +231,10 @@
                         </div>
                         <div class="mb-3">
                             <div class="p-2 rounded border border-warning bg-warning bg-opacity-10">
-                            <div class="form-check">
-                                <input class="form-check-input @error('privacy_consent') is-invalid @enderror"
-                                       type="checkbox"
-                                       id="privacy_consent"
-                                       name="privacy_consent"
-                                       value="1"
-                                       {{ old('privacy_consent') ? 'checked' : '' }}
-                                       required>
-                                <label class="form-check-label" for="privacy_consent">
-                                    Autorizzo per il trattamento dei dati personali:
-                                </label>
-                                @error('privacy_consent')
-                                <div class="invalid-feedback d-block">{{ $message }}</div>
-                                @enderror
-                            </div>
-                            <style>
-                                /* Evidenzia il bordo della checkbox "Autorizzo" */
-                                #privacy_consent.form-check-input {
-                                    border: 2px solid #f5c400;
-                                }
-                                #privacy_consent.form-check-input:focus {
-                                    border-color: #f5c400;
-                                    box-shadow: 0 0 0 0.2rem rgba(245, 196, 0, 0.35);
-                                }
-                                #privacy_consent.form-check-input:checked {
-                                    background-color: #f5c400;
-                                    border-color: #000;
-                                }
-                            </style>
-                            <div class="mt-2 p-2 border rounded bg-light" style="max-height: 260px; overflow:auto;">
+                                <div class="fw-semibold text-dark">
+                                    Autorizzo per il trattamento dei dati personali
+                                </div>
+                                <div class="mt-2 p-2 border rounded bg-light" style="max-height: 260px; overflow:auto;">
                                 <div class="small">
                                     <strong>Informativa Privacy (Sintesi)</strong> Ai sensi dell'art. 13 del Regolamento UE 2016/679 (GDPR), ti informiamo che:
                                     <ol class="mb-2">
@@ -216,6 +246,23 @@
                                     </ol>
                                 </div>
                             </div>
+                                <div class="d-flex justify-content-end mt-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input @error('privacy_consent') is-invalid @enderror"
+                                               type="checkbox"
+                                               id="privacy_consent"
+                                               name="privacy_consent"
+                                               value="1"
+                                               {{ old('privacy_consent') ? 'checked' : '' }}
+                                               required>
+                                        <label class="form-check-label text-dark" for="privacy_consent">
+                                            Autorizzo
+                                        </label>
+                                    </div>
+                                </div>
+                                @error('privacy_consent')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
                             </div>
                         </div>
                         <button type="submit" class="btn btn-primary w-100">Registrati</button>

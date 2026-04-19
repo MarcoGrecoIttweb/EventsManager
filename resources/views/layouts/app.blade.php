@@ -62,6 +62,40 @@
         .card-sidebar.sidebar-box--green .card-header i {
             color: #198754 !important;
         }
+        /* Box "Eventi attivi": riga tra i titoli + righe alternate leggibili */
+        .sidebar-active-events-list__item {
+            border-bottom: 1px solid rgba(25, 135, 84, 0.28);
+            padding: 0.4rem 0.35rem;
+            margin-left: -0.25rem;
+            margin-right: -0.25rem;
+            border-radius: 4px;
+        }
+        .sidebar-active-events-list__item:last-child {
+            border-bottom: none;
+        }
+        .sidebar-active-events-list__item:nth-child(odd) {
+            background: rgba(255, 255, 255, 0.95);
+        }
+        .sidebar-active-events-list__item:nth-child(even) {
+            background: rgba(25, 135, 84, 0.12);
+        }
+        .sidebar-active-events-list__item:hover {
+            background: rgba(25, 135, 84, 0.22) !important;
+        }
+        .sidebar-active-events-list__link {
+            display: block;
+            color: #0f5132;
+            font-weight: 500;
+        }
+        .sidebar-active-events-list__item:nth-child(3n+1) .sidebar-active-events-list__link {
+            color: #0b5a32;
+        }
+        .sidebar-active-events-list__item:nth-child(3n+2) .sidebar-active-events-list__link {
+            color: #0d4a7a;
+        }
+        .sidebar-active-events-list__item:nth-child(3n) .sidebar-active-events-list__link {
+            color: #5c2d04;
+        }
         .online-dot {
             width: 8px;
             height: 8px;
@@ -218,8 +252,29 @@
                 <li class="nav-item d-flex align-items-center me-1 me-md-2">
                     <span class="navbar-text text-white-50 small">
                         <i class="fas fa-smile-beam me-1"></i>
-                        Benvenuto <strong class="text-white">{{ auth()->user()->username }}</strong>
+                        {{ (auth()->user()->sesso ?? '') === 'f' ? 'Benvenuta' : 'Benvenuto' }}
+                        <strong class="text-white">{{ auth()->user()->username }}</strong>
                     </span>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ route('profile.show', auth()->user()) }}">
+                        <i class="fas fa-user-circle"></i> Profilo
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ route('friends.index') }}">
+                        <i class="fas fa-user-friends"></i> Amici
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ route('users.search') }}">
+                        <i class="fas fa-search"></i> Cerca utenti
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ route('events.past') }}">
+                        <i class="fas fa-history"></i> Eventi passati
+                    </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="{{ route('chat.index') }}">
@@ -232,33 +287,6 @@
                     </a>
                 </li>
                 @auth
-                    @if(auth()->user()->isAdmin())
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ route('admin.users.index') }}">
-                                <i class="fas fa-users-cog"></i> Gestione utenti
-                            </a>
-                        </li>
-                    @endif
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ route('profile.show', auth()->user()) }}">
-                            <i class="fas fa-user-circle"></i> Profilo
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ route('events.past') }}">
-                            <i class="fas fa-history"></i> Eventi Passati
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ route('friends.index') }}">
-                            <i class="fas fa-user-friends"></i> Amici
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ route('users.search') }}">
-                            <i class="fas fa-search"></i> Cerca Utenti
-                        </a>
-                    </li>
                     @if(auth()->user()->canManageEvents())
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="manageDropdown" role="button"
@@ -424,10 +452,10 @@
                         @if($mySubscribedEvents->isEmpty())
                             <small class="text-muted">Non risulti iscritto a eventi futuri pubblicati.</small>
                         @else
-                            <ul class="list-unstyled mb-0">
+                            <ul class="list-unstyled mb-0 sidebar-active-events-list">
                                 @foreach($mySubscribedEvents as $subEvent)
-                                    <li class="small py-1">
-                                        <a href="{{ route('events.show', $subEvent) }}" class="text-decoration-none">
+                                    <li class="small sidebar-active-events-list__item">
+                                        <a href="{{ route('events.show', $subEvent) }}" class="text-decoration-none sidebar-active-events-list__link">
                                             {{ $subEvent->title }}
                                         </a>
                                     </li>

@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Facades\Storage;
 use App\Support\SafeRichText;
 use App\Support\StrLimit;
+use App\Models\EventWaitlistEntry;
 
 class Event extends Model
 {
@@ -321,6 +322,11 @@ class Event extends Model
         return $this->hasMany(EventImage::class, 'event_id', 'IDevento')->orderBy('order');
     }
 
+    public function waitlistEntries(): HasMany
+    {
+        return $this->hasMany(EventWaitlistEntry::class, 'event_id', 'IDevento');
+    }
+
     // ─── Computed attributes ──────────────────────────────────────
 
     public function getParticipantsCountAttribute(): int
@@ -367,8 +373,11 @@ class Event extends Model
             return false;
         }
 
-        $currentGuests = $participation->pivot->amici ?? 0;
-        $maxGuests = $this->max_guests_per_user ?? 10;
+        $currentGuests = (int) ($participation->pivot->amici ?? 0);
+        $maxGuests = (int) ($this->max_guests_per_user ?? 10);
+        if ($maxGuests < 1) {
+            $maxGuests = 10;
+        }
         $canAddMore = $currentGuests < $maxGuests;
         $eventNotFull = !$this->isFull();
 

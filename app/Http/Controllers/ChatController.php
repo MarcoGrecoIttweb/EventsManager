@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 
 class ChatController extends Controller
 {
@@ -17,6 +18,23 @@ class ChatController extends Controller
             ->limit(100)
             ->get()
             ->reverse();
+
+        $mentionAlerts = collect();
+        if (Auth::check()) {
+            $nick = trim((string) (Auth::user()->nickname ?? Auth::user()->username ?? ''));
+            if ($nick !== '') {
+                $needle = '@' . mb_strtolower($nick, 'UTF-8');
+                $mentionAlerts = $messages
+                    ->filter(function (ChatMessage $msg) use ($needle) {
+                        if ((int) $msg->user_id === (int) Auth::id()) {
+                            return false;
+                        }
+                        $content = mb_strtolower((string) ($msg->content ?? ''), 'UTF-8');
+                        return Str::contains($content, $needle);
+                    })
+                    ->values();
+            }
+        }
 
         // Trova un'immagine header se presente (qualunque estensione)
         $headerImage = null;
@@ -31,6 +49,7 @@ class ChatController extends Controller
         return view('chat.index', [
             'messages' => $messages,
             'headerImage' => $headerImage,
+            'mentionAlerts' => $mentionAlerts,
         ]);
     }
 
@@ -54,6 +73,41 @@ class ChatController extends Controller
         $this->notifyAdminChatMessage(Auth::user(), $validated['content']);
 
         return redirect()->route('chat.index');
+    }
+
+    public function update(Request $request, ChatMessage $message)
+    {
+        if (!Auth::check()) {
+            return redirect()->route('login');
+        }
+
+        if ((int) $message->user_id !== (int) Auth::id() && !Auth::user()->isAdmin()) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'content' => 'required|string|max:1000',
+        ]);
+
+        $message->content = $validated['content'];
+        $message->save();
+
+        return redirect()->route('chat.index')->with('success', 'Messaggio modificato.');
+    }
+
+    public function destroy(ChatMessage $message)
+    {
+        if (!Auth::check()) {
+            return redirect()->route('login');
+        }
+
+        if ((int) $message->user_id !== (int) Auth::id() && !Auth::user()->isAdmin()) {
+            abort(403);
+        }
+
+        $message->delete();
+
+        return redirect()->route('chat.index')->with('success', 'Messaggio eliminato.');
     }
 
     public function updateHeaderImage(Request $request)

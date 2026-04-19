@@ -13,7 +13,7 @@
                             <h1 class="display-5 admin-users-page-title admin-users-pending-heading mb-0 d-flex flex-wrap align-items-baseline gap-2 gap-md-3">
                                 <span class="d-inline-flex align-items-center flex-wrap">
                                     <i class="fas fa-users-cog admin-users-page-title-icon"></i>
-                                    <span class="admin-users-page-title-text">Gestione Utenti Sospesi</span>
+                                    <span class="admin-users-page-title-text">Iscrizioni in attesa di approvazione</span>
                                 </span>
                             </h1>
                         </div>
@@ -33,10 +33,15 @@
                         <div class="d-flex align-items-center gap-2 admin-users-header-inline">
                             <h5 class="mb-0">Lista di tutti gli Utenti Registrati</h5>
                             <div class="d-flex align-items-center gap-2 admin-user-stats-pills">
+                                <span class="admin-user-stats-pill bg-warning text-dark">
+                                    <i class="fas fa-user-clock"></i>
+                                    <span class="admin-user-stats-pill-label">In attesa</span>
+                                    <span class="admin-user-stats-pill-value">{{ $awaitingCount }}</span>
+                                </span>
                                 <span class="admin-user-stats-pill bg-danger text-white">
-                                    <i class="fas fa-clock"></i>
+                                    <i class="fas fa-pause-circle"></i>
                                     <span class="admin-user-stats-pill-label">Sospesi</span>
-                                    <span class="admin-user-stats-pill-value">{{ $pendingCount }}</span>
+                                    <span class="admin-user-stats-pill-value">{{ $suspendedCount }}</span>
                                 </span>
                                 @if(request('registrations') === 'pending')
                                     <a href="{{ route('admin.users.index') }}" class="admin-user-stats-pill bg-success text-white text-decoration-none" title="Vai alla lista completa utenti">
@@ -214,14 +219,29 @@
                                     </thead>
                                     <tbody>
                                     @foreach($users as $user)
-                                        <tr class="{{ $user->status === 'approved' ? 'admin-user-row admin-user-row--approved' : ($user->status === 'pending' ? 'admin-user-row admin-user-row--pending' : 'admin-user-row admin-user-row--banned') }}"
+                                        @php
+                                            $st = $user->status;
+                                            $rowClass = match ($st) {
+                                                'approved' => 'admin-user-row admin-user-row--approved',
+                                                'awaiting' => 'admin-user-row admin-user-row--awaiting',
+                                                'suspended' => 'admin-user-row admin-user-row--suspended',
+                                                default => 'admin-user-row admin-user-row--banned',
+                                            };
+                                            $statoRank = match ($st) {
+                                                'approved' => 0,
+                                                'awaiting' => 1,
+                                                'suspended' => 2,
+                                                default => 3,
+                                            };
+                                        @endphp
+                                        <tr class="{{ $rowClass }}"
                                             data-user-nome="{{ strtolower(trim($user->nome ?? '')) }}"
                                             data-user-cognome="{{ strtolower(trim($user->cognome ?? '')) }}"
                                             data-user-nickname="{{ strtolower(trim($user->nickname ?? $user->username ?? '')) }}"
                                             data-user-sesso="{{ strtolower(trim($user->sesso ?? '')) }}"
                                             data-user-ruolo="{{ (int) ($user->ruolo ?? 2) }}"
-                                            data-user-stato="{{ strtolower(trim($user->status ?? '')) }}"
-                                            data-user-stato-rank="{{ $user->status === 'approved' ? 0 : ($user->status === 'pending' ? 1 : 2) }}"
+                                            data-user-stato="{{ strtolower(trim($st ?? '')) }}"
+                                            data-user-stato-rank="{{ $statoRank }}"
                                             data-user-news-rank="{{ $user->invia ? 1 : 0 }}"
                                             data-user-eventi-count="{{ (int) ($user->events_count ?? 0) }}">
                                             <td class="text-muted d-none d-lg-table-cell">{{ $user->userID }}</td>
@@ -277,9 +297,9 @@
                                                 @endif
                                             </td>
                                             <td>
-                                                @if($user->status === 'pending')
+                                                @if($user->status === 'awaiting')
                                                     <div class="admin-user-state-checkrow">
-                                                        <span class="badge bg-warning text-dark admin-user-state-pill">Sospeso</span>
+                                                        <span class="badge bg-warning text-dark admin-user-state-pill">In attesa</span>
                                                         @if(!$user->isAdmin())
                                                             <form action="{{ route('admin.users.approve', $user) }}" method="POST" class="d-inline m-0 admin-user-state-toggle-form">
                                                                 @csrf
@@ -287,6 +307,21 @@
                                                                        class="form-check-input admin-user-state-check"
                                                                        aria-label="Attiva utente"
                                                                        title="Attiva utente">
+                                                            </form>
+                                                        @else
+                                                            <input type="checkbox" class="form-check-input admin-user-state-check" disabled aria-label="Utente admin">
+                                                        @endif
+                                                    </div>
+                                                @elseif($user->status === 'suspended')
+                                                    <div class="admin-user-state-checkrow">
+                                                        <span class="badge bg-danger admin-user-state-pill">Sospeso</span>
+                                                        @if(!$user->isAdmin())
+                                                            <form action="{{ route('admin.users.approve', $user) }}" method="POST" class="d-inline m-0 admin-user-state-toggle-form">
+                                                                @csrf
+                                                                <input type="checkbox"
+                                                                       class="form-check-input admin-user-state-check"
+                                                                       aria-label="Riattiva utente"
+                                                                       title="Riattiva utente">
                                                             </form>
                                                         @else
                                                             <input type="checkbox" class="form-check-input admin-user-state-check" disabled aria-label="Utente admin">
@@ -350,8 +385,13 @@
                         @else
                             <div class="text-center py-4">
                                 <i class="fas fa-users-slash fa-3x text-muted mb-3"></i>
-                                <h5>Nessun utente registrato</h5>
-                                <p class="text-muted">Non ci sono utenti nel sistema.</p>
+                                @if(request('registrations') === 'pending')
+                                    <h5>Nessuna iscrizione in attesa</h5>
+                                    <p class="text-muted">Al momento non ci sono nuovi profili da approvare.</p>
+                                @else
+                                    <h5>Nessun utente registrato</h5>
+                                    <p class="text-muted">Non ci sono utenti nel sistema.</p>
+                                @endif
                             </div>
                         @endif
                     </div>
@@ -465,7 +505,10 @@
         .admin-users-table tbody tr.admin-user-row--approved > td {
             background: rgba(13, 202, 240, 0.14) !important; /* azzurro */
         }
-        .admin-users-table tbody tr.admin-user-row--pending > td {
+        .admin-users-table tbody tr.admin-user-row--awaiting > td {
+            background: rgba(255, 193, 7, 0.22) !important; /* giallo */
+        }
+        .admin-users-table tbody tr.admin-user-row--suspended > td {
             background: rgba(220, 53, 69, 0.12) !important; /* rosso */
         }
         .admin-users-table tbody tr.admin-user-row--banned > td {

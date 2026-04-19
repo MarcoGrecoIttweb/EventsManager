@@ -2,6 +2,7 @@
 
 @php
     use Illuminate\Support\Str;
+    $chatBaseUrl = rtrim(request()->getBaseUrl(), '/');
 @endphp
 
 @section('title', 'Il salottino delle chat di Excursio - Excursio')
@@ -50,32 +51,93 @@
                     @endauth
                 </div>
 
-                <div class="alert alert-light border border-success border-opacity-25 mb-3 small" role="note">
-                    <p class="mb-2">
-                        <strong>Come funziona.</strong>
-                        Il salottino è uno spazio dedicato agli utenti registrati di Excursio:
-                        qui puoi scrivere messaggi brevi alla community (domande su eventi, suggerimenti, organizzazione o un saluto dopo un’uscita).
-                    </p>
-                    <p class="mb-2">
-                        Usa il riquadro in basso e premi <strong>Invia</strong> per pubblicare.
-                        Con <strong>Rispondi</strong> si antepone automaticamente <code>@nickname</code> al messaggio,
-                        così è chiaro a chi ti stai rivolgendo.
-                    </p>
-                    <p class="mb-0 text-muted">
-                        <strong>Perché c’è.</strong>
-                        Tenere un contatto semplice e informale tra escursionisti, nel rispetto di tutti;
-                        per le informazioni ufficiali continua a fare riferimento alle pagine evento.
-                    </p>
+                <div class="mb-3">
+                    <button type="button"
+                            class="btn btn-success w-100 chat-howto-toggle"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#chatHowtoCollapse"
+                            aria-expanded="false"
+                            aria-controls="chatHowtoCollapse">
+                        <i class="fas fa-circle-info me-1"></i> Come funziona
+                    </button>
+                    <div class="collapse mt-2" id="chatHowtoCollapse">
+                        <div class="alert alert-light mb-0 small chat-howto-box" role="note">
+                            <div class="d-flex justify-content-end mb-2">
+                                <button type="button"
+                                        class="btn btn-sm chat-howto-close-btn"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#chatHowtoCollapse"
+                                        aria-expanded="true"
+                                        aria-controls="chatHowtoCollapse">
+                                    <i class="fas fa-times"></i> Chiudi
+                                </button>
+                            </div>
+                            <p class="mb-2">
+                                <strong>✨ Le "regole della casa" (Buon senso e Rispetto)</strong><br>
+                                Vogliamo che questo spazio sia piacevole e accogliente per tutti.
+                                Per far sì che funzioni, ti chiediamo di seguire queste piccole ma importanti regole di convivenza:
+                            </p>
+                            <ul class="mb-2 ps-3">
+                                <li class="mb-1">
+                                    <strong>Rispetto e Buone maniere</strong>: Sii sempre gentile. Non sono ammessi insulti, parolacce o toni aggressivi.
+                                </li>
+                                <li class="mb-1">
+                                    <strong>Argomenti delicati</strong>: Per mantenere un clima sereno, ti chiediamo di evitare discussioni su politica e sesso, che spesso portano a inutili tensioni.
+                                </li>
+                                <li class="mb-1">
+                                    <strong>No Discriminazione</strong>: Non tolleriamo alcun tipo di commento razzista, sessista o discriminatorio. Siamo qui per stare insieme, non per dividere!
+                                </li>
+                                <li class="mb-1">
+                                    <strong>Niente Spam</strong>: Evita di inondare il Salottino con pubblicità, link esterni non richiesti o messaggi ripetitivi.
+                                </li>
+                                <li class="mb-1">
+                                    <strong>La tua firma</strong>: Ricorda che sei l'unico responsabile di ciò che scrivi.
+                                </li>
+                                <li class="mb-0">
+                                    <strong>Conseguenze</strong>:
+                                    <span class="text-danger fw-semibold">
+                                        In caso di lamentele fondate o comportamenti che violano queste regole, saremo costretti a ricorrere al ban dell'account. Ci teniamo troppo alla serenità del gruppo!
+                                    </span>
+                                </li>
+                            </ul>
+                            <p class="mb-0 fw-semibold">Buon divertimento!</p>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="mb-3" style="max-height: 400px; overflow-y: auto; border:1px solid #dee2e6; border-radius: .5rem; padding: .75rem; background:#fff;">
+                @auth
+                    @if(isset($mentionAlerts) && $mentionAlerts->count() > 0)
+                        <div class="alert alert-warning border border-2 border-warning-subtle mb-3 small" role="alert">
+                            <div class="fw-semibold mb-2">
+                                <i class="fas fa-bell"></i> Avviso: hai {{ $mentionAlerts->count() }} messagg{{ $mentionAlerts->count() > 1 ? 'i' : 'io' }} rivol{{ $mentionAlerts->count() > 1 ? 'ti' : 'to' }} a te.
+                            </div>
+                            <ul class="mb-0 ps-3">
+                                @foreach($mentionAlerts as $mAlert)
+                                    <li class="mb-1">
+                                        <strong>{{ $mAlert->user?->nickname ?? 'Utente' }}</strong>
+                                        <span class="text-muted">({{ optional($mAlert->created_at)->format('d/m H:i') }})</span>:
+                                        @php
+                                            $alertText = (string) ($mAlert->content ?? '');
+                                            $alertPreview = strlen($alertText) > 120 ? (substr($alertText, 0, 120) . '...') : $alertText;
+                                        @endphp
+                                        {{ $alertPreview }}
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+                @endauth
+
+                <div class="mb-3 chat-messages-box" style="max-height: 400px; overflow-y: auto;">
                     @forelse($messages as $message)
-                        <div class="mb-3 p-2 rounded" style="background:#f8f9fa; border: 2px solid #5dade2;"
-                             data-nickname="{{ $message->user?->nickname ?? 'Utente' }}">
+                        <div class="mb-3 p-2 rounded chat-message-item" style="background:#f8f9fa; border: 2px solid #5dade2;"
+                             data-nickname="{{ $message->user?->nickname ?? 'Utente' }}"
+                             data-message-id="{{ $message->id }}"
+                             data-message-update-url="{{ $chatBaseUrl . '/chat/' . $message->id }}">
                             <div class="d-flex justify-content-between align-items-start">
                                 <div>
                                     <div class="small mb-1">
-                                        <span class="d-inline-flex align-items-center gap-1 flex-wrap fw-semibold" style="color:#3E2723;">
+                                        <span class="d-inline-flex align-items-center gap-1 flex-wrap fw-semibold chat-nickname">
                                             {{ $message->user?->nickname ?? 'Utente' }}
                                             @php
                                                 $chatSesso = strtolower(trim((string) ($message->user?->sesso ?? '')));
@@ -107,13 +169,51 @@
                                     @endforeach
                                 </div>
                                 @auth
-                                    <button type="button"
-                                            class="btn btn-sm btn-outline-secondary ms-2 chat-reply-btn"
-                                            title="Rispondi a questo messaggio">
-                                        <i class="fas fa-reply"></i>
-                                    </button>
+                                    <div class="d-flex align-items-start gap-1 ms-2">
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-secondary chat-reply-btn"
+                                                title="Rispondi a questo messaggio">
+                                            <i class="fas fa-reply"></i>
+                                        </button>
+                                        @if((int) auth()->id() === (int) $message->user_id || auth()->user()->isAdmin())
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-primary chat-edit-btn"
+                                                    title="Modifica messaggio">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <form method="POST" action="{{ $chatBaseUrl . '/chat/' . $message->id }}" class="d-inline"
+                                                  onsubmit="return confirm('Vuoi davvero eliminare questo messaggio?');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Elimina messaggio">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        @endif
+                                    </div>
                                 @endauth
                             </div>
+                            @auth
+                                @if((int) auth()->id() === (int) $message->user_id || auth()->user()->isAdmin())
+                                    <div class="chat-edit-panel mt-2" style="display:none;">
+                                        <form method="POST" action="{{ $chatBaseUrl . '/chat/' . $message->id }}">
+                                            @csrf
+                                            @method('PUT')
+                                            <div class="mb-2">
+                                                <textarea name="content" class="form-control form-control-sm" rows="3" maxlength="1000" required>{{ $message->content }}</textarea>
+                                            </div>
+                                            <div class="d-flex gap-2">
+                                                <button type="submit" class="btn btn-sm btn-primary">
+                                                    <i class="fas fa-save"></i> Salva
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-outline-secondary chat-edit-cancel-btn">
+                                                    <i class="fas fa-times"></i> Annulla
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                @endif
+                            @endauth
                         </div>
                     @empty
                         <p class="text-muted mb-0">Nessun messaggio in chat. Scrivi tu il primo!</p>
@@ -158,6 +258,44 @@
             border-color: #146c43 !important;
             box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25);
         }
+
+        .chat-howto-box {
+            border: 2px solid rgba(25, 135, 84, 0.75) !important;
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85);
+            border-radius: 0.5rem;
+            background: #fff9db !important; /* giallo chiaro */
+        }
+
+        .chat-messages-box {
+            border: 2px solid rgba(25, 135, 84, 0.75);
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            background: #fff;
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85);
+        }
+
+        .chat-howto-toggle {
+            border-width: 2px;
+            font-weight: 800;
+        }
+
+        .chat-howto-close-btn {
+            background: #e9ecef;
+            border: 2px solid #ced4da;
+            color: #0d6efd;
+            font-weight: 700;
+        }
+        .chat-howto-close-btn:hover,
+        .chat-howto-close-btn:focus {
+            background: #dee2e6;
+            border-color: #adb5bd;
+            color: #0b5ed7;
+        }
+
+        .chat-nickname {
+            color: #4b2aad;
+            font-size: 1.02rem;
+        }
     </style>
 @endsection
 @section('scripts')
@@ -179,6 +317,26 @@
                     }
                     textarea.focus();
                     textarea.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                });
+            });
+
+            document.querySelectorAll('.chat-edit-btn').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    const box = this.closest('.chat-message-item');
+                    if (!box) return;
+                    const panel = box.querySelector('.chat-edit-panel');
+                    if (!panel) return;
+                    panel.style.display = '';
+                    const ta = panel.querySelector('textarea[name="content"]');
+                    if (ta) ta.focus();
+                });
+            });
+
+            document.querySelectorAll('.chat-edit-cancel-btn').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    const panel = this.closest('.chat-edit-panel');
+                    if (!panel) return;
+                    panel.style.display = 'none';
                 });
             });
         });

@@ -62,6 +62,34 @@
 @endphp
 
 @section('content')
+    @auth
+        @if(isset($adminPendingRegistrationBanner) && is_array($adminPendingRegistrationBanner) && auth()->user()->isAdmin())
+            <div class="alert alert-warning border border-warning shadow-sm mb-4 d-flex flex-wrap align-items-center justify-content-between gap-3"
+                 role="alert"
+                 id="admin-home-pending-registrations-banner">
+                <div class="flex-grow-1 min-w-0">
+                    @if(($adminPendingRegistrationBanner['count'] ?? 0) === 1)
+                        <strong>Nuova iscrizione.</strong>
+                        Si è iscritto un nuovo utente con nickname
+                        <strong>{{ $adminPendingRegistrationBanner['latest_username'] }}</strong>:
+                        va <strong>abilitato</strong> da un amministratore prima di poter accedere al sito.
+                    @else
+                        <strong>Nuove iscrizioni.</strong>
+                        Si sono iscritti <strong>{{ (int) $adminPendingRegistrationBanner['count'] }}</strong> nuovi utenti in attesa di abilitazione;
+                        il più recente ha nickname <strong>{{ $adminPendingRegistrationBanner['latest_username'] }}</strong>.
+                        Vanno <strong>abilitati</strong> da un amministratore prima che possano accedere.
+                    @endif
+                    <a href="{{ route('admin.users.index', ['registrations' => 'pending']) }}" class="alert-link fw-semibold ms-1">Apri le iscrizioni in attesa</a>
+                </div>
+                <form method="POST" action="{{ route('admin.home-pending-dismiss') }}" class="d-flex align-items-center flex-shrink-0 m-0">
+                    @csrf
+                    <input type="hidden" name="user_ids" value="{{ $adminPendingRegistrationBanner['dismiss_user_ids'] }}">
+                    <button type="submit" class="btn btn-sm btn-dark">Chiudi</button>
+                </form>
+            </div>
+        @endif
+    @endauth
+
     {{-- Hero --}}
     <div class="hero-section mb-4">
         <img src="{{ asset('upload_immagini/hero.jpg') }}" alt="Excursio" class="hero-img">
@@ -88,6 +116,13 @@
     @endif
 
     <div class="container">
+        {{-- Mobile quick action: back to homepage --}}
+        <div class="d-block d-md-none mb-3">
+            <a href="{{ route('home') }}" class="btn btn-outline-primary w-100 btn-mobile-home">
+                <i class="fas fa-home"></i> Torna alla home
+            </a>
+        </div>
+
         <div class="text-center mb-4">
             <h2 class="mb-0 text-uppercase title-algerian">Eventi in programma</h2>
             @auth
@@ -126,14 +161,15 @@
             <div class="row g-4 align-items-stretch">
                 @foreach($events as $event)
                     <div class="col-12 col-lg-6 d-flex">
-                        <div class="card h-100 w-100 event-box {{ $event->isFull() ? 'event-box--full' : '' }}">
+                        <div id="event-card-{{ $event->getKey() }}"
+                             class="card h-100 w-100 event-box {{ $event->isFull() ? 'event-box--full' : '' }} {{ session('waitlist_flash_event_id') == $event->getKey() ? 'event-box--flash' : '' }}">
                             @if($event->isFull())
                                 <div class="card-header bg-danger text-white text-center py-2">
                                     <small><i class="fas fa-exclamation-triangle"></i> <strong>EVENTO AL COMPLETO</strong></small>
                                 </div>
                             @endif
 
-                            <div class="row g-0 h-100">
+                            <div class="row g-0 h-100 event-card-row">
                                 <div class="col-md-4">
                                     @if($event->cover_image_url)
                                         <div class="event-thumb-box position-relative bg-light h-100">
@@ -157,7 +193,7 @@
                                         </div>
                                     @endif
                                 </div>
-                                <div class="col-md-8 d-flex flex-column h-100">
+                                <div class="col-md-8 d-flex flex-column h-100 event-card-content">
                                     <div class="card-body">
                                         <h5 class="card-title {{ $event->isFull() ? 'text-muted' : '' }}">{{ $event->title }}</h5>
                                         <div class="mb-3 d-flex flex-wrap gap-2 event-meta-badges">
@@ -185,7 +221,7 @@
                                             {{ $event->getHomepagePreview(100) }}
                                         </div>
 
-                                        @if($event->isFull())
+                                        @if($event->isFull() && (!auth()->check() || !auth()->user()->isApproved()))
                                             <div class="alert alert-warning alert-sm mb-0 py-2 mt-2">
                                                 <small>
                                                     <i class="fas fa-info-circle"></i>
@@ -193,11 +229,130 @@
                                                 </small>
                                             </div>
                                         @endif
+
+                                        @auth
+                                            @if(auth()->user()->isApproved())
+                                                @php
+                                                    $cannotJoin = $event->isFull() || !$event->isRegistrationOpen();
+                                                    $isWaitlistedHere = isset($waitlistedEventIds) && in_array($event->getKey(), $waitlistedEventIds, true);
+                                                    $waitName = auth()->user()->nickname ?? trim((auth()->user()->nome ?? '') . ' ' . (auth()->user()->cognome ?? '')) ?: 'Utente';
+                                                @endphp
+                                                @if($cannotJoin)
+                                                    <div class="mt-2 p-2 rounded event-waitlist-box">
+                                                        @if(session('waitlist_flash_event_id') == $event->getKey())
+                                                            @if(session('success'))
+                                                                <div class="alert alert-success alert-sm mb-2 py-2">
+                                                                    <i class="fas fa-check-circle me-1"></i>
+                                                                    <strong>Sei stato inserito in questa lista d’attesa.</strong>
+                                                                    <span class="d-block">
+                                                                        Evento:
+                                                                        <a href="{{ route('events.show', $event) }}" class="text-decoration-underline">
+                                                                            {{ $event->title }}
+                                                                        </a>
+                                                                    </span>
+                                                                    <span class="d-block">{{ session('success') }}</span>
+                                                                </div>
+                                                            @elseif(session('error'))
+                                                                <div class="alert alert-danger alert-sm mb-2 py-2">
+                                                                    <i class="fas fa-exclamation-triangle me-1"></i> {{ session('error') }}
+                                                                </div>
+                                                            @endif
+                                                        @endif
+                                                        @php
+                                                            $waitlistEntriesHere = isset($waitlistByEventId) ? ($waitlistByEventId[$event->getKey()] ?? []) : [];
+                                                        @endphp
+                                                        @if($isWaitlistedHere)
+                                                            <div class="small fw-semibold mb-2">
+                                                                <i class="fas fa-hourglass-half"></i>
+                                                                {{ $waitName }} è in attesa qualora si liberassero posti.
+                                                            </div>
+                                                            <form action="{{ route('events.waitlist.leave', $event) }}" method="POST" class="mb-0">
+                                                                @csrf
+                                                                @method('DELETE')
+                                                                <button type="submit" class="btn btn-outline-secondary btn-sm w-100"
+                                                                        onclick="return confirm('Vuoi uscire dalla lista d’attesa?');">
+                                                                    <i class="fas fa-user-slash"></i> Esci dalla lista d’attesa
+                                                                </button>
+                                                            </form>
+                                                        @else
+                                                            @php
+                                                                $wlBoxId = 'waitlistBoxEvent' . $event->getKey();
+                                                            @endphp
+                                                            <button type="button"
+                                                                    class="btn btn-warning btn-sm w-100"
+                                                                    data-bs-toggle="collapse"
+                                                                    data-bs-target="#{{ $wlBoxId }}"
+                                                                    aria-expanded="false"
+                                                                    aria-controls="{{ $wlBoxId }}">
+                                                                <i class="fas fa-clipboard-list"></i> Inseriscimi in lista di Riserva
+                                                            </button>
+
+                                                            <div class="collapse mt-2" id="{{ $wlBoxId }}">
+                                                                <div class="event-waitlist-explain p-2 rounded">
+                                                                    <div class="small">
+                                                                        <div class="fw-semibold mb-1">
+                                                                            <i class="fas fa-info-circle"></i> Come funziona
+                                                                        </div>
+                                                                        <div class="mb-2">
+                                                                            Ti inseriamo in lista d’attesa per questo evento. Se qualcuno si toglie e si libera un posto,
+                                                                            la prima persona in lista riceve una mail e può iscriversi dall’evento.
+                                                                        </div>
+                                                                        <div class="d-flex flex-wrap gap-2">
+                                                                            <form action="{{ route('events.waitlist.join', $event) }}" method="POST" class="mb-0 flex-grow-1">
+                                                                                @csrf
+                                                                                <button type="submit" class="btn btn-sm btn-primary w-100">
+                                                                                    <i class="fas fa-check"></i> Sì, inseriscimi
+                                                                                </button>
+                                                                            </form>
+                                                                            <button type="button"
+                                                                                    class="btn btn-sm btn-outline-secondary flex-grow-1"
+                                                                                    data-bs-toggle="collapse"
+                                                                                    data-bs-target="#{{ $wlBoxId }}"
+                                                                                    aria-expanded="true"
+                                                                                    aria-controls="{{ $wlBoxId }}">
+                                                                                <i class="fas fa-times"></i> No, grazie
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        @endif
+
+                                                        @if(is_iterable($waitlistEntriesHere) && count($waitlistEntriesHere) > 0)
+                                                            <div class="mt-2 small">
+                                                                <div class="fw-semibold mb-1">
+                                                                    <i class="fas fa-list"></i> Persone in lista d’attesa
+                                                                </div>
+                                                                <ul class="mb-0 ps-3">
+                                                                    @foreach($waitlistEntriesHere as $wl)
+                                                                        @php
+                                                                            $wlName =
+                                                                                $wl->user?->nickname
+                                                                                ?? trim((string) (($wl->user?->nome ?? '') . ' ' . ($wl->user?->cognome ?? '')))
+                                                                                ?: ($wl->display_name ?? 'Utente');
+                                                                        @endphp
+                                                                        <li>
+                                                                            @if($wl->user)
+                                                                                <a href="{{ route('profile.show', $wl->user) }}" class="text-decoration-none">
+                                                                                    <i class="fas fa-user"></i> {{ $wlName }}
+                                                                                </a>
+                                                                            @else
+                                                                                <i class="fas fa-user"></i> {{ $wlName }}
+                                                                            @endif
+                                                                        </li>
+                                                                    @endforeach
+                                                                </ul>
+                                                            </div>
+                                                        @endif
+                                                    </div>
+                                                @endif
+                                            @endif
+                                        @endauth
                                     </div>
 
                                     <div class="card-footer bg-transparent mt-auto">
                                         @auth
-                                            <a href="{{ route('events.show', $event) }}" class="btn btn-{{ $event->isFull() ? 'outline-secondary' : 'primary' }} w-100">
+                                            <a href="{{ route('events.show', $event) }}" class="btn btn-primary w-100">
                                                 <i class="fas fa-eye"></i>
                                                 {{ $event->isFull() ? 'Visualizza (Completo)' : 'Dettagli Evento' }}
                                             </a>
@@ -383,16 +538,30 @@
         .event-thumb-box {
             min-height: 220px;
             overflow: hidden;
+            background: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .event-thumb-box__img {
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            object-fit: contain;
+            object-position: center;
             display: block;
         }
         @media (max-width: 767.98px) {
             .event-thumb-box {
                 min-height: 200px;
+            }
+            /* Fix mobile: evita che l'h-100 nasconda il footer (pulsante guest) */
+            .event-card-row,
+            .event-card-content {
+                height: auto !important;
+            }
+            .btn-mobile-home {
+                border-width: 2px;
+                font-weight: 700;
             }
         }
 
@@ -408,6 +577,25 @@
         .alert-sm {
             padding: 0.5rem 0.75rem;
             font-size: 0.875rem;
+        }
+
+        .event-waitlist-box {
+            border: 2px dashed rgba(13, 110, 253, 0.65);
+            background: rgba(255, 243, 205, 0.85);
+        }
+        .event-waitlist-explain {
+            border: 2px solid rgba(13, 110, 253, 0.35);
+            background: rgba(255, 255, 255, 0.85);
+        }
+        .event-box.event-box--flash {
+            box-shadow: 0 0 0 4px rgba(25, 135, 84, 0.35), 0 8px 22px rgba(0, 0, 0, 0.12);
+            border: 2px solid rgba(25, 135, 84, 0.65);
+            animation: waitlistFlashPulse 1.2s ease-in-out 0s 2;
+        }
+        @keyframes waitlistFlashPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.01); }
+            100% { transform: scale(1); }
         }
 
         .card-img-top {
@@ -478,6 +666,22 @@
                         img.addEventListener('error', onImgReady, { once: true });
                     }
                 }
+            });
+        </script>
+    @endif
+    @if(session('waitlist_flash_event_id'))
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                var id = 'event-card-{{ (int) session('waitlist_flash_event_id') }}';
+                var el = document.getElementById(id);
+                if (!el) return;
+                setTimeout(function () {
+                    try {
+                        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    } catch (e) {
+                        el.scrollIntoView(true);
+                    }
+                }, 150);
             });
         </script>
     @endif

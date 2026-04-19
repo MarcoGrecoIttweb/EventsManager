@@ -192,8 +192,16 @@
                                     @php
                                         $isBanned = $user->status === 'banned';
                                         $isApproved = $user->status === 'approved';
-                                        $statusLabel = $isApproved ? 'Attivo' : ($isBanned ? 'Disattivato' : 'Sospeso');
-                                        $statusBg = $isApproved ? 'success' : 'danger';
+                                        $isAwaiting = $user->status === 'awaiting';
+                                        $isSuspended = $user->status === 'suspended';
+                                        $statusLabel = $isApproved ? 'Attivo' : ($isBanned ? 'Disattivato' : ($isAwaiting ? 'In attesa di approvazione' : ($isSuspended ? 'Sospeso' : 'Non attivo')));
+                                        $statusBg = match (true) {
+                                            $isApproved => 'success',
+                                            $isBanned => 'danger',
+                                            $isAwaiting => 'warning',
+                                            $isSuspended => 'secondary',
+                                            default => 'secondary',
+                                        };
                                     @endphp
                                     <span class="badge profile-action-chip bg-{{ $statusBg }}">
                                         {{ $statusLabel }}

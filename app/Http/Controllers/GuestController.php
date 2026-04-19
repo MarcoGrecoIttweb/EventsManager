@@ -25,7 +25,10 @@ class GuestController extends Controller
         }
 
         $currentGuests = (int) ($participation->pivot->amici ?? 0);
-        $maxGuests = $event->max_guests_per_user ?? 10;
+        $maxGuests = (int) ($event->max_guests_per_user ?? 10);
+        if ($maxGuests < 1) {
+            $maxGuests = 10;
+        }
 
         if ($currentGuests >= $maxGuests) {
             return back()->with('error', 'Hai raggiunto il limite massimo di ' . $maxGuests . ' ospiti per questo evento.');

@@ -50,16 +50,18 @@
                                     <option value="participants">Solo utenti che partecipano ad eventi</option>
                                     <option value="never_participated">Solo utenti che non hanno mai partecipato ad eventi</option>
                                     <option value="pending">Solo utenti in attesa di approvazione</option>
-                                    <option value="selected">Seleziona utenti specifici</option>
-                                    <option value="selected_news">Seleziona Utenti Newsletter Attiva</option>
                                 </select>
                                 <small class="form-text text-muted">
-                                    <strong>Consigliato:</strong> usa «Solo utenti con News attiva» per inviare solo a chi ha accettato di ricevere comunicazioni (campo <em>News</em> nel profilo).
+                                    Seleziona il gruppo a cui inviare email
                                 </small>
+                                <div id="targetInfoBox" class="alert alert-secondary py-2 px-3 mt-2 mb-0 small" role="status"></div>
                             </div>
 
-                            <div class="mb-3 border rounded p-3 bg-light" id="newsGroupPanel" style="display: none;">
+                            <div class="mb-3 border rounded p-3 bg-light" id="newsGroupPanel">
                                 <h6 class="mb-2"><i class="fas fa-layer-group me-1"></i> Invio a gruppi (solo con destinatari «News attiva»)</h6>
+                                <div id="newsGroupPanelHint" class="alert alert-info py-2 px-3 small mb-3 d-none" role="status">
+                                    Seleziona <strong>“Solo utenti con News attiva”</strong> in <strong>Destinatari</strong> per attivare l’invio a gruppi.
+                                </div>
                                 <p class="small text-muted mb-3">
                                     Gli iscritti sono ordinati in modo fisso (per ID utente) e divisi in blocchi della dimensione che scegli (es. 80).
                                     Puoi inviare <strong>2 o 3 gruppi per volta</strong> (fino a 5) per non sovraccaricare il server.
@@ -89,11 +91,15 @@
                                         <strong>Riepilogo invio a gruppi:</strong>
                                         <span id="newsGroupSummaryText"></span>
                                     </div>
-                                    <p class="small fw-semibold mb-1">Seleziona i gruppi da includere in questo invio:</p>
+                                    <p class="small fw-semibold mb-1 news-groups-prompt">Seleziona i gruppi da includere in questo invio:</p>
                                     <div id="newsGroupsCheckboxArea" class="d-flex flex-column gap-1 mb-2"></div>
                                     <p id="newsGroupsEmptyHint" class="small text-warning mb-0 d-none">Nessun iscritto con email: non ci sono gruppi.</p>
 
                                     <div class="mt-3 pt-2 border-top">
+                                        <button type="button" class="btn btn-secondary btn-sm mb-2" id="previewRecipientsBtn">
+                                            <i class="fas fa-list"></i> Mostra elenco destinatari
+                                        </button>
+
                                         @php
                                             if (old('news_receipt_admin_id') !== null) {
                                                 $newsReceiptSelectedId = (string) old('news_receipt_admin_id');
@@ -125,13 +131,17 @@
                                                 </select>
                                             </div>
                                             <div class="pb-1">
-                                                <button type="button" class="btn btn-outline-secondary btn-sm" id="newsletterTestSendToReceiptBtn"
+                                                <button type="button" class="btn btn-success btn-sm" id="newsletterTestSendToReceiptBtn"
                                                         title="Invia una sola email di prova al responsabile scelto, per controllare oggetto, formattazione e consegna">
                                                     <i class="fas fa-envelope me-1"></i>Prova invio al responsabile
                                                 </button>
+                                                <button type="button" class="btn btn-secondary btn-sm ms-1" id="newsletterReceiptHelpBtn"
+                                                        title="Mostra/Nascondi spiegazione">
+                                                    Leggimi
+                                                </button>
                                             </div>
                                         </div>
-                                        <small class="text-muted d-block mt-1">
+                                        <small class="text-muted d-block mt-1 d-none" id="newsletterReceiptHelpText">
                                             Solo per invio a gruppi: scegli chi viene indicato come referente interno per questo invio (compare nel messaggio di conferma e nel registro attività).
                                             Il pulsante «Prova invio» manda <strong>solo a quel destinatario</strong> una copia (oggetto con prefisso [PROVA]), senza inviare ai gruppi.
                                         </small>
@@ -144,6 +154,11 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <button type="submit" class="btn btn-primary btn-sm"
+                                    onclick="return confirm('Sei sicuro di voler inviare la newsletter?')">
+                                <i class="fas fa-paper-plane"></i> Invia Newsletter
+                            </button>
 
                             <!-- Selezione utenti specifici -->
                             <div class="mb-3" id="userSelection" style="display: none;">
@@ -172,7 +187,7 @@
                                                        id="user_{{ $user->id }}">
                                                 <label class="form-check-label" for="user_{{ $user->id }}">
                                                     {{ $user->name }} ({{ $user->nickname }}) - {{ $user->email }}
-                                                    <span class="badge bg-{{ $user->status === 'approved' ? 'success' : ($user->status === 'pending' ? 'warning' : 'danger') }} ms-2">
+                                                    <span class="badge bg-{{ $user->status === 'approved' ? 'success' : ($user->status === 'awaiting' ? 'warning' : ($user->status === 'suspended' ? 'secondary' : 'danger')) }} ms-2">
                                                     {{ $user->status }}
                                                 </span>
                                                 </label>
@@ -216,20 +231,11 @@
                                 </small>
                             </div>
 
-                            <div class="alert alert-warning">
+                            <div class="alert py-1 px-2 mt-2 mb-3 small" id="newsletterWarningBox" role="status">
                                 <i class="fas fa-exclamation-triangle"></i>
-                                <strong>Attenzione:</strong> Questa newsletter verrà inviata a tutti gli utenti selezionati.
-                                Assicurati del contenuto prima di inviare.
+                                <strong>Attenzione:</strong> Assicurati del contenuto prima di inviare.
                             </div>
 
-                            <button type="button" class="btn btn-outline-success me-2" id="previewRecipientsBtn">
-                                <i class="fas fa-list"></i> Mostra elenco destinatari
-                            </button>
-
-                            <button type="submit" class="btn btn-primary btn-lg"
-                                    onclick="return confirm('Sei sicuro di voler inviare la newsletter?')">
-                                <i class="fas fa-paper-plane"></i> Invia Newsletter
-                            </button>
                         </form>
                     </div>
                 </div>
@@ -266,7 +272,7 @@
                         </div>
                         <div class="mb-3">
                             <strong>In attesa di approvazione:</strong>
-                            <span class="badge bg-secondary float-end">{{ number_format($users->where('status', 'pending')->count()) }}</span>
+                            <span class="badge bg-secondary float-end">{{ number_format($users->where('status', 'awaiting')->count()) }}</span>
                         </div>
                         <hr>
                         <small class="text-muted">
@@ -331,6 +337,7 @@
 
     <script>
         window.NEWS_SUBSCRIBERS_TOTAL = {{ (int) ($newsSubscribersCount ?? 0) }};
+        window.TARGET_EMAIL_TOTALS = @json($targetEmailTotals ?? []);
         window.NEWS_GROUP_RECIPIENTS_URL = @json(route('admin.newsletter.group-recipients'));
         window.NEWSLETTER_PREVIEW_RECIPIENTS_URL = @json(route('admin.newsletter.preview-recipients'));
         window.NEWSLETTER_EXCLUDED_IDS = Object.create(null);
@@ -373,7 +380,10 @@
         }
 
         function refreshNewsGroupsCheckboxes() {
-            var total = window.NEWS_SUBSCRIBERS_TOTAL || 0;
+            var selTargetEl = document.getElementById('target');
+            var v = selTargetEl ? (selTargetEl.value || 'news') : 'news';
+            var totals = window.TARGET_EMAIL_TOTALS || {};
+            var total = parseInt(totals[v] || 0, 10) || 0;
             var sizeInput = document.getElementById('news_group_size');
             var area = document.getElementById('newsGroupsCheckboxArea');
             var summary = document.getElementById('newsGroupSummary');
@@ -398,7 +408,7 @@
 
             var numGroups = Math.ceil(total / size);
             summaryText.innerHTML =
-                'persone per gruppo: <strong>' + size + '</strong> · iscritti newsletter: <strong>' + total + '</strong> · ' +
+                'persone per gruppo: <strong>' + size + '</strong> · destinatari: <strong>' + total + '</strong> · ' +
                 'gruppi totali: <strong>' + numGroups + '</strong> (posizioni 1–' + total + ' nell’ordine fisso per ID utente).';
             summary.classList.remove('d-none');
 
@@ -462,6 +472,9 @@
             modal.show();
 
             var url = new URL(window.NEWS_GROUP_RECIPIENTS_URL, window.location.origin);
+            var targetSel = document.getElementById('target');
+            var t = targetSel ? (targetSel.value || 'news') : 'news';
+            url.searchParams.set('target', t);
             url.searchParams.set('group', String(groupIndex));
             url.searchParams.set('news_group_size', String(size));
 
@@ -539,31 +552,20 @@
             });
             payload.exclude_newsletter_users = exAll.filter(function (n) { return !isNaN(n); });
 
-            // selected / selected_news
-            if (target === 'selected' || target === 'selected_news') {
-                var ids = [];
-                document.querySelectorAll('#userSelection .user-checkbox:checked').forEach(function (cb) {
-                    ids.push(parseInt(cb.value, 10));
+            // invio a gruppi (per QUALSIASI target)
+            var groupsRadio = document.getElementById('news_send_groups');
+            var sendMode = (groupsRadio && groupsRadio.checked) ? 'groups' : 'all';
+            payload.news_send = sendMode;
+            if (sendMode === 'groups') {
+                var sizeEl = document.getElementById('news_group_size');
+                var sz = sizeEl ? parseInt(sizeEl.value, 10) : 80;
+                if (!isNaN(sz)) payload.news_group_size = sz;
+                var gr = [];
+                document.querySelectorAll('.news-group-cb:checked').forEach(function (cb) {
+                    var v = parseInt(cb.value, 10);
+                    if (!isNaN(v)) gr.push(v);
                 });
-                payload.selected_users = ids.filter(function (n) { return !isNaN(n); });
-            }
-
-            // news groups preview
-            if (target === 'news') {
-                var groupsRadio = document.getElementById('news_send_groups');
-                var sendMode = (groupsRadio && groupsRadio.checked) ? 'groups' : 'all';
-                payload.news_send = sendMode;
-                if (sendMode === 'groups') {
-                    var sizeEl = document.getElementById('news_group_size');
-                    var sz = sizeEl ? parseInt(sizeEl.value, 10) : 80;
-                    if (!isNaN(sz)) payload.news_group_size = sz;
-                    var gr = [];
-                    document.querySelectorAll('.news-group-cb:checked').forEach(function (cb) {
-                        var v = parseInt(cb.value, 10);
-                        if (!isNaN(v)) gr.push(v);
-                    });
-                    payload.news_groups = gr;
-                }
+                payload.news_groups = gr;
             }
 
             return payload;
@@ -585,8 +587,6 @@
                         case 'participants': return 'Partecipanti ad eventi';
                         case 'never_participated': return 'Mai partecipato ad eventi';
                         case 'pending': return 'In attesa di approvazione';
-                        case 'selected': return 'Utenti specifici';
-                        case 'selected_news': return 'Utenti Newsletter Attiva';
                         default: return 'Newsletter attiva (News)';
                     }
                 })();
@@ -661,38 +661,24 @@
             const target = document.getElementById('target').value;
             const userSelection = document.getElementById('userSelection');
             const newsPanel = document.getElementById('newsGroupPanel');
-            userSelection.style.display = (target === 'selected' || target === 'selected_news') ? 'block' : 'none';
+            if (userSelection) {
+                userSelection.style.display = 'none';
+            }
             var listAll = document.getElementById('usersList');
             var listNews = document.getElementById('usersListNews');
             if (listAll && listNews) {
-                if (target === 'selected_news') {
-                    listAll.style.display = 'none';
-                    listNews.style.display = 'block';
-                } else {
-                    listAll.style.display = 'block';
-                    listNews.style.display = 'none';
-                }
+                listAll.style.display = 'block';
+                listNews.style.display = 'none';
             }
             if (newsPanel) {
-                newsPanel.style.display = target === 'news' ? 'block' : 'none';
+                // box sempre disponibile: i gruppi sono calcolati in base al target selezionato
+                newsPanel.querySelectorAll('input, select, button, textarea').forEach(function (el) {
+                    el.disabled = false;
+                });
+                var hint = document.getElementById('newsGroupPanelHint');
+                if (hint) hint.classList.add('d-none');
             }
-            if (target !== 'news') {
-                clearNewsletterManualExclusions();
-                const allRadio = document.getElementById('news_send_all');
-                if (allRadio) {
-                    allRadio.checked = true;
-                }
-                toggleNewsGroupsFields();
-            }
-            if (target === 'news') {
-                refreshNewsGroupsCheckboxes();
-            } else {
-                var rsa = document.getElementById('news_receipt_admin_id');
-                if (rsa) {
-                    rsa.required = false;
-                    rsa.setCustomValidity('');
-                }
-            }
+            refreshNewsGroupsCheckboxes();
             syncNewsReceiptAdminRequired();
             updateSelectionPreview();
             updateTargetSelectTheme();
@@ -708,9 +694,7 @@
                 'target-theme-news',
                 'target-theme-participants',
                 'target-theme-never',
-                'target-theme-pending',
-                'target-theme-selected',
-                'target-theme-selected-news'
+                'target-theme-pending'
             ];
             classes.forEach(function (c) { sel.classList.remove(c); });
 
@@ -750,21 +734,35 @@
                     if (previewBox) previewBox.classList.add('target-theme-pending');
                     if (modalTitle) modalTitle.classList.add('target-theme-pending');
                     break;
-                case 'selected':
-                    sel.classList.add('target-theme-selected');
-                    if (previewBox) previewBox.classList.add('target-theme-selected');
-                    if (modalTitle) modalTitle.classList.add('target-theme-selected');
-                    break;
-                case 'selected_news':
-                    sel.classList.add('target-theme-selected-news');
-                    if (previewBox) previewBox.classList.add('target-theme-selected-news');
-                    if (modalTitle) modalTitle.classList.add('target-theme-selected-news');
-                    break;
                 default:
                     sel.classList.add('target-theme-news');
                     if (previewBox) previewBox.classList.add('target-theme-news');
                     if (modalTitle) modalTitle.classList.add('target-theme-news');
                     break; // news
+            }
+
+            var infoBox = document.getElementById('targetInfoBox');
+            if (infoBox) {
+                switch (v) {
+                    case 'approved':
+                        infoBox.innerHTML = 'Invia email a gruppi (solo con destinatari <strong>«Attivati»</strong>)';
+                        break;
+                    case 'all':
+                        infoBox.innerHTML = 'Invia email a tutti gli utenti';
+                        break;
+                    case 'pending':
+                        infoBox.innerHTML = 'Invia email a gruppi (solo con destinatari <strong>«Sospesi»</strong>)';
+                        break;
+                    case 'participants':
+                        infoBox.innerHTML = 'Invia email a gruppi (solo con destinatari <strong>«Partecipanti ad eventi»</strong>)';
+                        break;
+                    case 'never_participated':
+                        infoBox.innerHTML = 'Invia email a gruppi (solo con destinatari <strong>«Mai partecipato»</strong>)';
+                        break;
+                    default:
+                        infoBox.innerHTML = 'Invia email a gruppi (solo con destinatari <strong>«News attiva»</strong>)';
+                        break;
+                }
             }
         }
 
@@ -800,45 +798,41 @@
             const target = document.getElementById('target').value;
             const preview = document.getElementById('selectionPreview');
             let message = '';
+            const groupsOn = document.getElementById('news_send_groups') && document.getElementById('news_send_groups').checked;
+            let groupsExtra = '';
+            if (groupsOn) {
+                const n = document.querySelectorAll('.news-group-cb:checked').length;
+                const sz = document.getElementById('news_group_size');
+                const s = sz ? sz.value : '';
+                const ex = countNewsletterManualExclusions();
+                groupsExtra = '<br><small class="text-muted">Modalità gruppi: <strong>' + s + '</strong> persone/gruppo · ' +
+                    n + ' gruppi selezionati in questo invio';
+                if (ex > 0) {
+                    groupsExtra += ' · <strong>' + ex + '</strong> destinatari esclusi manualmente';
+                }
+                groupsExtra += '</small>';
+            }
 
             switch(target) {
                 case 'all':
-                    message = '<span class="text-success"><i class="fas fa-users"></i> Tutti gli utenti</span>';
+                    message = '<span class="text-success"><i class="fas fa-users"></i> Tutti gli utenti' + groupsExtra + '</span>';
                     break;
                 case 'approved':
-                    message = '<span class="text-success"><i class="fas fa-check-circle"></i> Solo utenti approvati</span>';
+                    message = '<span class="text-success"><i class="fas fa-check-circle"></i> Solo utenti approvati' + groupsExtra + '</span>';
                     break;
                 case 'news':
                     {
-                        const groupsOn = document.getElementById('news_send_groups') && document.getElementById('news_send_groups').checked;
-                        let extra = '';
-                        if (groupsOn) {
-                            const n = document.querySelectorAll('.news-group-cb:checked').length;
-                            const sz = document.getElementById('news_group_size');
-                            const s = sz ? sz.value : '';
-                            const ex = countNewsletterManualExclusions();
-                            extra = '<br><small class="text-muted">Modalità gruppi: <strong>' + s + '</strong> persone/gruppo · ' +
-                                n + ' gruppi selezionati in questo invio';
-                            if (ex > 0) {
-                                extra += ' · <strong>' + ex + '</strong> destinatari esclusi manualmente';
-                            }
-                            extra += '</small>';
-                        }
-                        message = '<span class="text-info"><i class="fas fa-newspaper"></i> Iscritti newsletter (News attiva)' + extra + '</span>';
+                        message = '<span class="text-info"><i class="fas fa-newspaper"></i> Iscritti newsletter (News attiva)' + groupsExtra + '</span>';
                     }
                     break;
                 case 'participants':
-                    message = '<span class="text-warning"><i class="fas fa-calendar-check"></i> Solo partecipanti ad eventi</span>';
+                    message = '<span class="text-warning"><i class="fas fa-calendar-check"></i> Solo partecipanti ad eventi' + groupsExtra + '</span>';
                     break;
                 case 'never_participated':
-                    message = '<span class="text-info"><i class="fas fa-user-slash"></i> Solo utenti che non hanno mai partecipato ad eventi</span>';
+                    message = '<span class="text-info"><i class="fas fa-user-slash"></i> Solo utenti che non hanno mai partecipato ad eventi' + groupsExtra + '</span>';
                     break;
                 case 'pending':
-                    message = '<span class="text-warning"><i class="fas fa-clock"></i> Solo utenti in attesa</span>';
-                    break;
-                case 'selected':
-                    const selectedCount = document.querySelectorAll('.user-checkbox:checked').length;
-                    message = `<span class="text-info"><i class="fas fa-user-check"></i> ${selectedCount} utenti selezionati</span>`;
+                    message = '<span class="text-warning"><i class="fas fa-clock"></i> Solo utenti in attesa' + groupsExtra + '</span>';
                     break;
             }
 
@@ -846,7 +840,8 @@
         }
 
         // Selezione multipla
-        document.getElementById('selectAllUsers').addEventListener('change', function() {
+        var selectAllUsersEl = document.getElementById('selectAllUsers');
+        if (selectAllUsersEl) selectAllUsersEl.addEventListener('change', function() {
             const checkboxes = document.querySelectorAll('.user-checkbox');
             checkboxes.forEach(checkbox => {
                 checkbox.checked = this.checked;
@@ -855,7 +850,8 @@
         });
 
         // Ricerca utenti
-        document.getElementById('userSearch').addEventListener('input', function() {
+        var userSearchEl = document.getElementById('userSearch');
+        if (userSearchEl) userSearchEl.addEventListener('input', function() {
             const searchTerm = this.value.toLowerCase();
             const userItems = document.querySelectorAll('.user-item');
 
@@ -967,6 +963,15 @@
             });
         }
 
+        var newsletterReceiptHelpBtn = document.getElementById('newsletterReceiptHelpBtn');
+        if (newsletterReceiptHelpBtn) {
+            newsletterReceiptHelpBtn.addEventListener('click', function () {
+                var t = document.getElementById('newsletterReceiptHelpText');
+                if (!t) return;
+                t.classList.toggle('d-none');
+            });
+        }
+
         // Inizializza
         document.addEventListener('DOMContentLoaded', function() {
             var testFlag = document.getElementById('newsletter_test_send_to_receipt_admin');
@@ -1039,38 +1044,107 @@
             color: #0d6efd;
         }
 
+        /* Evidenzia Oggetto/Messaggio in marrone */
+        label[for="subject"],
+        label[for="message"] {
+            font-weight: 800;
+            color: #8b5a2b; /* marrone */
+        }
+        #subject,
+        #message {
+            border: 2px solid #8b5a2b;
+        }
+        #subject:focus,
+        #message:focus {
+            border-color: #8b5a2b;
+            box-shadow: 0 0 0 .2rem rgba(139, 90, 43, 0.25);
+        }
+
+        /* Box "Attenzione" compatto con contorno marrone */
+        #newsletterWarningBox {
+            border: 2px solid #8b5a2b;
+            background-color: rgba(139, 90, 43, 0.08);
+            color: #5a3a1b;
+        }
+
+        /* Prompt "Seleziona i gruppi..." rosso lampeggiante */
+        @keyframes nl-red-blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.25; }
+        }
+        #newsGroupPanel .news-groups-prompt {
+            color: #dc3545; /* rosso bootstrap */
+            animation: nl-red-blink 1.1s ease-in-out infinite;
+        }
+
+        /* Box "Invio a gruppi": bordo blu + radio blu */
+        #newsGroupPanel {
+            border: 2px solid #0d6efd !important;
+        }
+        /* Bordi blu per tutte le caselle dentro "Invio a gruppi" */
+        #newsGroupPanel .form-control,
+        #newsGroupPanel .form-select,
+        #newsGroupPanel input[type="number"],
+        #newsGroupPanel input[type="text"],
+        #newsGroupPanel textarea {
+            border-color: #0d6efd !important;
+        }
+        #newsGroupPanel .form-check-input {
+            border-color: #0d6efd !important;
+        }
+        #newsGroupPanel .form-check-input[type="radio"] {
+            accent-color: #0d6efd;
+            /* bordo grigio per rendere evidente il pallino */
+            background-color: #fff;
+            border: 2px solid #6c757d;
+            box-shadow: none;
+        }
+        #newsGroupPanel .form-check-input[type="radio"]:checked {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 .2rem rgba(13, 110, 253, 0.25);
+        }
+
+        /* Rende evidente che "Destinatari" è una combo (freccetta a destra) */
+        #target {
+            font-weight: 800; /* testo selezionato in grassetto */
+            padding-right: 2.75rem; /* spazio per la freccetta */
+            cursor: pointer;
+            background-repeat: no-repeat;
+            background-position: right .85rem center;
+            background-size: 1.15rem 1.15rem;
+            /* freccetta più visibile (override dell'icona bootstrap) */
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23212529' stroke-linecap='round' stroke-linejoin='round' stroke-width='2.25' d='M2.5 5.75l5.5 5.5 5.5-5.5'/%3e%3c/svg%3e");
+        }
+
+        /* Voci del menu in grassetto (supporto variabile per browser/OS) */
+        #target option {
+            font-weight: 800;
+        }
+
         /* Evidenziazione casella combinata "Destinatari" in base al target */
         #target.target-theme-all {
-            border: 2px solid #6c757d;
-            background: rgba(108, 117, 125, 0.08);
+            border: 2px solid #6c757d !important;
+            background-color: rgba(108, 117, 125, 0.10) !important;
         }
         #target.target-theme-approved {
-            border: 2px solid #198754;
-            background: rgba(25, 135, 84, 0.10);
+            border: 2px solid #198754 !important;
+            background-color: rgba(25, 135, 84, 0.12) !important;
         }
         #target.target-theme-news {
-            border: 2px solid #0dcaf0;
-            background: rgba(13, 202, 240, 0.10);
+            border: 2px solid #0dcaf0 !important;
+            background-color: rgba(13, 202, 240, 0.12) !important;
         }
         #target.target-theme-participants {
-            border: 2px solid #ffc107;
-            background: rgba(255, 193, 7, 0.12);
+            border: 2px solid #ffc107 !important;
+            background-color: rgba(255, 193, 7, 0.14) !important;
         }
         #target.target-theme-never {
-            border: 2px solid #6f42c1;
-            background: rgba(111, 66, 193, 0.10);
+            border: 2px solid #6f42c1 !important;
+            background-color: rgba(111, 66, 193, 0.12) !important;
         }
         #target.target-theme-pending {
-            border: 2px solid #fd7e14;
-            background: rgba(253, 126, 20, 0.10);
-        }
-        #target.target-theme-selected {
-            border: 2px solid #0d6efd;
-            background: rgba(13, 110, 253, 0.10);
-        }
-        #target.target-theme-selected-news {
-            border: 2px solid #20c997;
-            background: rgba(32, 201, 151, 0.10);
+            border: 2px solid #fd7e14 !important;
+            background-color: rgba(253, 126, 20, 0.12) !important;
         }
 
         /* Titoli/anteprime: colori in base al target */
@@ -1092,10 +1166,5 @@
         #selectionPreview.target-theme-pending,
         #newsletterPreviewRecipientsModalLabel.target-theme-pending { color: #fd7e14; }
 
-        #selectionPreview.target-theme-selected,
-        #newsletterPreviewRecipientsModalLabel.target-theme-selected { color: #0d6efd; }
-
-        #selectionPreview.target-theme-selected-news,
-        #newsletterPreviewRecipientsModalLabel.target-theme-selected-news { color: #20c997; }
     </style>
 @endsection

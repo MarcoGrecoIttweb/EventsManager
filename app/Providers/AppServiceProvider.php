@@ -30,7 +30,7 @@ class AppServiceProvider extends ServiceProvider
         View::composer('layouts.app', function ($view) {
             $pending = 0;
             if (Auth::check() && Auth::user()->isAdmin()) {
-                $pending = User::nonAdmin()->where('abilitato', 0)->count();
+                $pending = User::nonAdmin()->where('abilitato', 3)->count();
             }
             $view->with('adminPendingUsersCount', $pending);
         });

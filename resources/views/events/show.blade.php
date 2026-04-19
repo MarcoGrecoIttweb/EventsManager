@@ -31,6 +31,12 @@
                     <span class="text-truncate">{{ session('success') }}</span>
                 </div>
             @endif
+            @if(session('error'))
+                <div class="event-flash-error-sm alert alert-danger mb-0 d-inline-flex align-items-center">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    <span class="text-truncate">{{ session('error') }}</span>
+                </div>
+            @endif
         </div>
         <div class="row">
             <div class="col-md-8">
@@ -84,21 +90,37 @@
                     @endif
 
                     {{-- Gallery --}}
-                    @if($event->images->count() > 0)
-                        <div class="card mb-4">
+                    @php
+                        $galleryImages = $event->images
+                            ? $event->images->filter(function ($img) {
+                                try {
+                                    $p = $img?->path;
+                                    if (!is_string($p) || trim($p) === '') {
+                                        return false;
+                                    }
+                                    $full = Storage::disk('public')->path($p);
+                                    return is_file($full) && @filesize($full) > 0;
+                                } catch (\Throwable $e) {
+                                    return false;
+                                }
+                            })->values()
+                            : collect();
+                    @endphp
+                    @if($galleryImages->count() > 0)
+                        <div class="card mb-4" id="eventGalleryCard">
                             <div class="card-header">
                                 <h5 class="mb-0">
                                     <i class="fas fa-images"></i> Gallery
-                                    <span class="badge bg-primary">{{ $event->images->count() }}</span>
+                                    <span class="badge bg-primary">{{ $galleryImages->count() }}</span>
                                 </h5>
                             </div>
                             <div class="card-body">
-                                <div class="row">
-                                    @foreach($event->images as $image)
-                                        <div class="col-md-4 col-lg-3 mb-3">
+                                <div class="row" id="eventGalleryGrid">
+                                    @foreach($galleryImages as $image)
+                                        <div class="col-md-4 col-lg-3 mb-3 event-gallery-item">
                                             <a href="{{ Storage::disk('public')->url($image->path) }}" data-lightbox="event-gallery" data-title="{{ $event->title }}">
                                                 <img src="{{ Storage::disk('public')->url($image->path) }}" alt="{{ $event->title }}"
-                                                     class="img-fluid rounded shadow-sm event-gallery-thumb">
+                                                     class="img-fluid rounded shadow-sm event-gallery-thumb event-gallery-thumb-js">
                                             </a>
                                         </div>
                                     @endforeach
@@ -147,20 +169,22 @@
                                                         $currentUserGuestsCount = $currentUserParticipation->pivot->amici ?? 0;
                                                     }
                                                 @endphp
-                                                <div class="d-flex flex-column align-items-end gap-1">
-                                                    <div class="d-flex flex-nowrap gap-2 align-items-stretch event-participation-btns">
+                                                <div class="d-flex justify-content-end">
+                                                    <div class="d-flex flex-nowrap gap-2 align-items-stretch event-participation-btns event-participation-btns--toglimi">
                                                         <form action="{{ route('events.cancel', $event) }}" method="POST" class="mb-0 d-flex align-items-stretch">
                                                             @csrf
-                                                            <button type="submit" class="btn btn-danger btn-sm w-100 h-100 event-btn-participate-map-height event-btn-meta-height btn-border-brown">
+                                                            <button type="submit" class="btn btn-danger btn-sm event-btn-participate-map-height event-btn-meta-height btn-border-brown">
                                                                 <i class="fas fa-times"></i> Toglimi
                                                             </button>
                                                         </form>
+                                                        @if($currentUserGuestsCount > 0)
+                                                            <div class="event-porti-guest-box event-btn-meta-height" role="status">
+                                                                <span class="fw-semibold">Porti</span>
+                                                                <span class="ms-1">{{ $currentUserGuestsCount }}</span>
+                                                                <span class="ms-1">{{ $currentUserGuestsCount === 1 ? 'Ospite' : 'Ospiti' }}</span>
+                                                            </div>
+                                                        @endif
                                                     </div>
-                                                    @if($currentUserGuestsCount > 0)
-                                                        <small class="text-muted">
-                                                            Porti con te {{ $currentUserGuestsCount }} ospite{{ $currentUserGuestsCount > 1 ? 'i' : '' }}
-                                                        </small>
-                                                    @endif
                                                 </div>
                                             @else
                                                 @php
@@ -177,6 +201,99 @@
                                                             {{ $joinLabel }}
                                                         </button>
                                                     </form>
+                                                    @if($cannotJoin)
+                                                        @php
+                                                            $wlBoxId = 'waitlistBoxEventShow' . $event->getKey();
+                                                            $waitName = auth()->user()->nickname ?? trim((auth()->user()->nome ?? '') . ' ' . (auth()->user()->cognome ?? '')) ?: 'Utente';
+                                                        @endphp
+                                                        <div class="w-100">
+                                                            <div class="mt-2 p-2 rounded event-waitlist-box">
+                                                                @if(session('waitlist_flash_event_id') == $event->getKey())
+                                                                    @if(session('success'))
+                                                                        <div class="alert alert-success alert-sm mb-2 py-2">
+                                                                            <i class="fas fa-check-circle me-1"></i> {{ session('success') }}
+                                                                        </div>
+                                                                    @elseif(session('error'))
+                                                                        <div class="alert alert-danger alert-sm mb-2 py-2">
+                                                                            <i class="fas fa-exclamation-triangle me-1"></i> {{ session('error') }}
+                                                                        </div>
+                                                                    @endif
+                                                                @endif
+                                                                @if(isset($isWaitlisted) && $isWaitlisted)
+                                                                    <div class="small fw-semibold mb-2">
+                                                                        <i class="fas fa-hourglass-half"></i>
+                                                                        {{ $waitName }} è in attesa qualora si liberassero posti.
+                                                                    </div>
+                                                                    <form action="{{ route('events.waitlist.leave', $event) }}" method="POST" class="mb-0">
+                                                                        @csrf
+                                                                        @method('DELETE')
+                                                                        <button type="submit" class="btn btn-outline-secondary btn-sm w-100"
+                                                                                onclick="return confirm('Vuoi uscire dalla lista d’attesa?');">
+                                                                            <i class="fas fa-user-slash"></i> Esci dalla lista d’attesa
+                                                                        </button>
+                                                                    </form>
+                                                                @else
+                                                                    <button type="button"
+                                                                            class="btn btn-warning btn-sm w-100"
+                                                                            data-bs-toggle="collapse"
+                                                                            data-bs-target="#{{ $wlBoxId }}"
+                                                                            aria-expanded="false"
+                                                                            aria-controls="{{ $wlBoxId }}">
+                                                                        <i class="fas fa-clipboard-list"></i> Vuoi inserirti in lista di attesa?
+                                                                    </button>
+
+                                                                    <div class="collapse mt-2" id="{{ $wlBoxId }}">
+                                                                        <div class="event-waitlist-explain p-2 rounded">
+                                                                            <div class="small">
+                                                                                <div class="fw-semibold mb-1">
+                                                                                    <i class="fas fa-info-circle"></i> Cosa succede
+                                                                                </div>
+                                                                                <div class="mb-2">
+                                                                                    Ti inseriamo in lista d’attesa per questo evento. Se si libera un posto,
+                                                                                    la prima persona in lista riceve una mail e può iscriversi.
+                                                                                </div>
+                                                                                <div class="d-flex flex-wrap gap-2">
+                                                                                    <form action="{{ route('events.waitlist.join', $event) }}" method="POST" class="mb-0 flex-grow-1">
+                                                                                        @csrf
+                                                                                        <button type="submit" class="btn btn-sm btn-primary w-100">
+                                                                                            <i class="fas fa-check"></i> Sì, inseriscimi
+                                                                                        </button>
+                                                                                    </form>
+                                                                                    <button type="button"
+                                                                                            class="btn btn-sm btn-outline-secondary flex-grow-1"
+                                                                                            data-bs-toggle="collapse"
+                                                                                            data-bs-target="#{{ $wlBoxId }}"
+                                                                                            aria-expanded="true"
+                                                                                            aria-controls="{{ $wlBoxId }}">
+                                                                                        <i class="fas fa-times"></i> No, grazie
+                                                                                    </button>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                @endif
+
+                                                                @if(isset($waitlistEntries) && is_iterable($waitlistEntries) && count($waitlistEntries) > 0)
+                                                                    <div class="mt-2 small">
+                                                                        <div class="fw-semibold mb-1">
+                                                                            <i class="fas fa-list"></i> Persone in lista d’attesa
+                                                                        </div>
+                                                                        <ul class="mb-0 ps-3">
+                                                                            @foreach($waitlistEntries as $wl)
+                                                                                @php
+                                                                                    $wlName =
+                                                                                        $wl->user?->nickname
+                                                                                        ?? trim((string) (($wl->user?->nome ?? '') . ' ' . ($wl->user?->cognome ?? '')))
+                                                                                        ?: ($wl->display_name ?? 'Utente');
+                                                                                @endphp
+                                                                                <li>{{ $wlName }}</li>
+                                                                            @endforeach
+                                                                        </ul>
+                                                                    </div>
+                                                                @endif
+                                                            </div>
+                                                        </div>
+                                                    @endif
                                                     @if($event->isFull())
                                                         <span class="small text-warning mb-0"><i class="fas fa-users-slash"></i> Posti esauriti</span>
                                                     @endif
@@ -196,79 +313,114 @@
                                 </div>
                             </div>
 
-                            <div class="event-meta-stack mb-1">
-                                <div class="event-meta-date-box">
-                                    <i class="fas fa-calendar"></i>
-                                    <span class="event-meta-date-line">
-                                        <span class="fw-semibold">Data Evento</span>
-                                        <span class="ms-1">{{ $event->italian_event_date ?? $event->date->format('d/m/Y H:i') }}</span>
-                                    </span>
-                                </div>
-                                <div class="event-meta-localita-inline-box">
-                                    <i class="fas fa-map-marker-alt"></i>
-                                    <span class="event-meta-localita-inline-text">
-                                        <span><span class="fw-semibold">Città</span> {{ $event->city ?? '—' }}</span>
-                                        <span class="event-meta-localita-sep" aria-hidden="true">,</span>
-                                        <span class="event-meta-localita-addr-part">
-                                            <span class="fw-semibold">Indirizzo</span>
-                                            @auth
-                                                {{ $event->address ?: '—' }}
-                                            @else
-                                                <a href="{{ route('login') }}" class="event-meta-localita-login-link">Accedi</a> per l’indirizzo
-                                            @endauth
-                                        </span>
-                                    </span>
-                                </div>
-                                <div class="event-meta-posti-box">
-                                    <i class="fas fa-users"></i>
-                                    <span class="event-meta-posti-line">
-                                        <span class="event-meta-label-iscritti">Iscritti:</span> <strong>{{ $iscrittiCount }}</strong>
-                                        <span class="event-meta-posti-sep"> / </span>
-                                        <span class="event-meta-label-liberi">Liberi:</span> <strong>{{ $postiLiberi !== null ? $postiLiberi : '—' }}</strong>
-                                        <span class="event-meta-posti-sep"> / </span>
-                                        <span class="event-meta-label-totali">Totali:</span> <strong>{{ $postiTotali !== null ? $postiTotali : '—' }}</strong>
-                                        @if($postiTotali === null)
-                                            <small class="event-meta-posti-hint"> (posti illimitati)</small>
-                                        @endif
-                                    </span>
-                                </div>
-                            </div>
-
-                            @if($event->formatted_cost)
-                                <div class="mb-1">
-                                    <span class="badge bg-success fs-6">
-                                        <i class="fas fa-euro-sign"></i> {{ $event->formatted_cost }}
-                                    </span>
-                                </div>
-                            @endif
-
                             @php
+                                $venueDisplay = trim((string) ($event->venue ?? ''));
                                 $mapWithAddress = auth()->check();
                                 $mapSrc = $event->googleMapsEmbedUrl($mapWithAddress);
                                 $mapOpen = $event->googleMapsExternalUrl($mapWithAddress);
                             @endphp
 
-                            <div class="mb-2 event-iscrizione-mappa-row d-flex align-items-stretch gap-2">
-                                @if($event->deadline)
-                                    <div class="event-registration-deadline-box rounded flex-shrink-0">
-                                        <i class="fas fa-clock"></i>
-                                        Iscrizioni {{ $event->isRegistrationOpen() ? 'Entro' : 'chiuse il' }}
-                                        {{ $event->deadline->format('d/m/Y H:i') }}
+                            <div class="event-meta-stack mb-1">
+                                {{-- Riga 1: Data evento | Nome locale --}}
+                                <div class="event-meta-row event-meta-row--line1">
+                                    <div class="event-meta-date-box event-meta-row__cell">
+                                        <i class="fas fa-calendar"></i>
+                                        <span class="event-meta-date-line">
+                                            <span class="fw-semibold">Data Evento</span>
+                                            <span class="ms-1">{{ $event->italian_event_date ?? $event->date->format('d/m/Y H:i') }}</span>
+                                        </span>
                                     </div>
-                                @endif
-                                @if($mapSrc)
-                                    <button type="button"
-                                            class="btn btn-event-map-paired event-map-btn-fill"
-                                            data-bs-toggle="collapse"
-                                            data-bs-target="#eventMapCollapse"
-                                            aria-expanded="false"
-                                            aria-controls="eventMapCollapse"
-                                            id="btnEventMapToggle">
-                                        <i class="fas fa-map"></i> Mappa
-                                    </button>
-                                @else
-                                    <span class="text-muted small flex-shrink-0">Mappa non disponibile</span>
-                                @endif
+                                    <div class="event-meta-place-box event-meta-row__cell">
+                                        <i class="fas fa-store"></i>
+                                        <span class="event-meta-place-line">
+                                            <span class="fw-semibold">Nome del locale</span>
+                                            <span class="ms-1">{{ $venueDisplay !== '' ? $venueDisplay : '—' }}</span>
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {{-- Riga 2: Indirizzo | Città | Mappa --}}
+                                <div class="event-meta-row event-meta-row--line2 mt-1">
+                                    <div class="event-meta-place-box event-meta-row__cell">
+                                        <i class="fas fa-road"></i>
+                                        <span class="event-meta-place-line">
+                                            <span class="fw-semibold">Indirizzo</span>
+                                            @auth
+                                                <span class="ms-1">{{ $event->address ?: '—' }}</span>
+                                            @else
+                                                <span class="ms-1">
+                                                    <a href="{{ route('login') }}" class="event-meta-localita-login-link">Accedi</a> per l’indirizzo
+                                                </span>
+                                            @endauth
+                                        </span>
+                                    </div>
+                                    <div class="event-meta-place-box event-meta-row__cell">
+                                        <i class="fas fa-city"></i>
+                                        <span class="event-meta-place-line">
+                                            <span class="fw-semibold">Città</span>
+                                            <span class="ms-1">{{ $event->city ? $event->city : '—' }}</span>
+                                        </span>
+                                    </div>
+                                    <div class="event-meta-map-slot event-meta-row__cell">
+                                        @if($mapSrc)
+                                            <button type="button"
+                                                    class="btn btn-event-map-paired event-map-btn-fill w-100 h-100"
+                                                    data-bs-toggle="collapse"
+                                                    data-bs-target="#eventMapCollapse"
+                                                    aria-expanded="false"
+                                                    aria-controls="eventMapCollapse"
+                                                    id="btnEventMapToggle">
+                                                <i class="fas fa-map"></i> Mappa
+                                            </button>
+                                        @else
+                                            <div class="event-meta-map-unavailable">
+                                                <i class="fas fa-map"></i> Mappa non disponibile
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
+
+                                {{-- Riga 3: Prezzo | Iscrizioni | Box iscritti --}}
+                                <div class="event-meta-row event-meta-row--line3 mt-1">
+                                    <div class="event-meta-price-box event-meta-row__cell">
+                                        <i class="fas fa-euro-sign"></i>
+                                        <span class="event-meta-price-line">
+                                            <span class="fw-semibold">Prezzo</span>
+                                            <span class="ms-1">{{ $event->formatted_cost ?: 'Gratuito' }}</span>
+                                        </span>
+                                    </div>
+                                    @if($event->deadline)
+                                        <div class="event-registration-deadline-box event-meta-row__cell rounded">
+                                            <i class="fas fa-clock"></i>
+                                            <span class="event-meta-iscr-line">
+                                                <span class="fw-semibold">Iscrizioni</span>
+                                                {{ $event->isRegistrationOpen() ? ' entro il ' : ' chiuse il ' }}
+                                                {{ $event->deadline->format('d/m/Y H:i') }}
+                                            </span>
+                                        </div>
+                                    @else
+                                        <div class="event-meta-iscr-empty-box event-meta-row__cell">
+                                            <i class="fas fa-clock"></i>
+                                            <span class="event-meta-iscr-line">
+                                                <span class="fw-semibold">Iscrizioni</span>
+                                                <span class="ms-1">—</span>
+                                            </span>
+                                        </div>
+                                    @endif
+                                    <div class="event-meta-posti-box event-meta-row__cell">
+                                        <i class="fas fa-users"></i>
+                                        <span class="event-meta-posti-line">
+                                            <span class="event-meta-label-iscritti">Iscritti:</span> <strong>{{ $iscrittiCount }}</strong>
+                                            <span class="event-meta-posti-sep"> / </span>
+                                            <span class="event-meta-label-liberi">Liberi:</span> <strong>{{ $postiLiberi !== null ? $postiLiberi : '—' }}</strong>
+                                            <span class="event-meta-posti-sep"> / </span>
+                                            <span class="event-meta-label-totali">Totali:</span> <strong>{{ $postiTotali !== null ? $postiTotali : '—' }}</strong>
+                                            @if($postiTotali === null)
+                                                <small class="event-meta-posti-hint"> (posti illimitati)</small>
+                                            @endif
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
 
                             @if($mapSrc)
@@ -313,7 +465,7 @@
                             @endif
 
                             <div class="mb-4">
-                                <h5><i class="fas fa-info-circle"></i> Dettagli</h5>
+                                <h5><i class="fas fa-info-circle"></i> Presentazione Riassuntiva</h5>
                                 <div class="event-description">
                                     {!! ( (int) $event->id === 2204 ? $event->safe_description_no_images : $event->safe_description ) !!}
                                 </div>
@@ -500,6 +652,41 @@
                     </div>
                 </div>
 
+                @if(isset($waitlistEntries) && is_iterable($waitlistEntries) && count($waitlistEntries) > 0)
+                    <div class="card mb-3 event-waitlist-side">
+                        <div class="card-header py-2 event-waitlist-side__title">
+                            <h5 class="mb-0">
+                                <i class="fas fa-hourglass-half"></i> Lista d’attesa
+                                <span class="badge bg-primary">{{ count($waitlistEntries) }}</span>
+                            </h5>
+                        </div>
+                        <div class="card-body py-2">
+                            <div class="small text-muted mb-2">
+                                Utenti in attesa per questo evento (in ordine di inserimento).
+                            </div>
+                            <ul class="mb-0 ps-3 small">
+                                @foreach($waitlistEntries as $wl)
+                                    @php
+                                        $wlName =
+                                            $wl->user?->nickname
+                                            ?? trim((string) (($wl->user?->nome ?? '') . ' ' . ($wl->user?->cognome ?? '')))
+                                            ?: ($wl->display_name ?? 'Utente');
+                                    @endphp
+                                    <li>
+                                        @if($wl->user)
+                                            <a href="{{ route('profile.show', $wl->user) }}?{{ $eventProfileBackQuery }}" class="text-decoration-none">
+                                                <i class="fas fa-user"></i> {{ $wlName }}
+                                            </a>
+                                        @else
+                                            <i class="fas fa-user"></i> {{ $wlName }}
+                                        @endif
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    </div>
+                @endif
+
                 <!-- Partecipanti -->
                 <div class="event-participants-box mb-3">
                 <h5 class="mb-2">
@@ -548,11 +735,24 @@
                                             </div>
                                             @auth
                                                 @if($currentUserIsParticipant)
+                                                    @php
+                                                        $addGuestBlockReason = '';
+                                                        if (!$canAddMoreGuests) {
+                                                            if (!$event->allow_guests) {
+                                                                $addGuestBlockReason = 'Questo evento non permette di portare ospiti.';
+                                                            } elseif ($event->isFull()) {
+                                                                $addGuestBlockReason = 'L\'evento è al completo: non puoi aggiungere altri ospiti.';
+                                                            } else {
+                                                                $addGuestBlockReason = 'Hai raggiunto il limite di ospiti consentiti per questo evento.';
+                                                            }
+                                                        }
+                                                    @endphp
                                                     <form action="{{ route('events.add-guest', $event) }}" method="POST" class="d-inline">
                                                         @csrf
                                                         <button type="submit" class="btn btn-outline-success btn-sm"
-                                                                title="Con + aggiungi un amico, poi scrivi il nome nella riga sotto"
-                                                                aria-label="Con + aggiungi un amico, poi scrivi il nome nella riga sotto">
+                                                                @if(!$canAddMoreGuests) disabled aria-disabled="true" @endif
+                                                                title="{{ $canAddMoreGuests ? 'Con + aggiungi un amico, poi scrivi il nome nella riga sotto' : $addGuestBlockReason }}"
+                                                                aria-label="{{ $canAddMoreGuests ? 'Con + aggiungi un amico, poi scrivi il nome nella riga sotto' : $addGuestBlockReason }}">
                                                             <i class="fas fa-user-plus" aria-hidden="true"></i>
                                                         </button>
                                                     </form>
@@ -672,9 +872,22 @@
                                         </button>
                                     </form>
                                     @if($event->allow_guests)
+                                        @php
+                                            $authCanAddMoreGuests = auth()->user()->isApproved() && $event->canAddMoreGuests(auth()->user());
+                                            $addGuestBlockReasonInvite = '';
+                                            if (!$authCanAddMoreGuests) {
+                                                if ($event->isFull()) {
+                                                    $addGuestBlockReasonInvite = 'L\'evento è al completo: non puoi aggiungere altri ospiti.';
+                                                } else {
+                                                    $addGuestBlockReasonInvite = 'Hai raggiunto il limite di ospiti consentiti per questo evento.';
+                                                }
+                                            }
+                                        @endphp
                                         <form action="{{ route('events.add-guest', $event) }}" method="POST" class="mt-2 mb-0">
                                             @csrf
-                                            <button type="submit" class="btn btn-success btn-sm w-100">
+                                            <button type="submit" class="btn btn-success btn-sm w-100"
+                                                    @if(!$authCanAddMoreGuests) disabled aria-disabled="true" @endif
+                                                    title="{{ $authCanAddMoreGuests ? 'Aggiungi una riga ospite in elenco' : $addGuestBlockReasonInvite }}">
                                                 <i class="fas fa-user-plus"></i> Porta un amico
                                             </button>
                                         </form>
@@ -693,6 +906,7 @@
 @endsection
 @section('scripts')
     @parent
+    @include('partials.ckeditor4-description', ['field' => 'commentContent', 'height' => 260])
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Scroll al commento se specificato
@@ -709,6 +923,46 @@
 
         });
     </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var card = document.getElementById('eventGalleryCard');
+            var grid = document.getElementById('eventGalleryGrid');
+            if (!card || !grid) return;
+
+            function cleanupIfEmpty() {
+                var items = grid.querySelectorAll('.event-gallery-item');
+                if (!items || items.length === 0) {
+                    card.remove();
+                }
+            }
+
+            var imgs = grid.querySelectorAll('img.event-gallery-thumb-js');
+            if (!imgs || imgs.length === 0) {
+                cleanupIfEmpty();
+                return;
+            }
+
+            imgs.forEach(function (img) {
+                img.addEventListener('error', function () {
+                    var item = img.closest('.event-gallery-item');
+                    if (item) item.remove();
+                    cleanupIfEmpty();
+                });
+            });
+
+            // Se per qualche motivo sono tutte "rotte" ma non scatta error subito, ripulisci dopo un attimo.
+            setTimeout(function () {
+                var anyOk = false;
+                imgs.forEach(function (img) {
+                    if (img.complete && img.naturalWidth > 0) anyOk = true;
+                });
+                if (!anyOk) {
+                    grid.querySelectorAll('.event-gallery-item').forEach(function (it) { it.remove(); });
+                    cleanupIfEmpty();
+                }
+            }, 1200);
+        });
+    </script>
 
     <style>
         .event-cover-frame {
@@ -721,16 +975,21 @@
             overflow: hidden;
         }
 
+        /* Immagine intera nel riquadro (nessun taglio); riempie il più possibile con bande se il ratio differisce */
         .event-cover-img {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            max-width: 100%;
-            max-height: 100%;
-            width: auto;
-            height: auto;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             object-fit: contain;
+            object-position: center;
+        }
+
+        @media (min-width: 768px) {
+            .event-cover-frame {
+                max-height: min(52vh, 560px);
+            }
         }
 
         @media (max-width: 767.98px) {
@@ -744,6 +1003,174 @@
             flex-direction: column;
             gap: 0.28rem;
             max-width: 100%;
+        }
+
+        /* Altezza compatta allineata al box Data evento */
+        .event-meta-stack .event-meta-date-box,
+        .event-meta-stack .event-meta-place-box,
+        .event-meta-stack .event-meta-posti-box,
+        .event-meta-stack .event-meta-price-box,
+        .event-meta-stack .event-meta-iscr-empty-box,
+        .event-meta-stack .event-registration-deadline-box {
+            padding: 0.26rem 0.5rem;
+            font-size: 0.9rem;
+            line-height: 1.15;
+        }
+        .event-meta-stack .event-meta-map-slot .btn.btn-event-map-paired,
+        .event-meta-stack .event-meta-map-unavailable {
+            padding: 0.26rem 0.5rem;
+            font-size: 0.9rem;
+            line-height: 1.15;
+            min-height: 0;
+        }
+
+        /* Data, luogo, prezzo, iscrizioni: grigio, testo nero, bordo verde */
+        .event-meta-stack .event-meta-date-box,
+        .event-meta-stack .event-meta-place-box,
+        .event-meta-stack .event-meta-price-box,
+        .event-meta-stack .event-meta-iscr-empty-box,
+        .event-meta-stack .event-registration-deadline-box {
+            background-color: #dee2e6;
+            color: #000;
+            border: 2px solid #198754;
+        }
+        .event-meta-stack .event-meta-date-box .fas,
+        .event-meta-stack .event-meta-place-box .fas,
+        .event-meta-stack .event-meta-price-box > i,
+        .event-meta-stack .event-meta-iscr-empty-box > i,
+        .event-meta-stack .event-registration-deadline-box .fas {
+            color: #000;
+        }
+        .event-meta-stack .event-meta-localita-login-link {
+            color: #000;
+        }
+
+        .event-meta-row__cell {
+            min-width: 0;
+        }
+
+        /* Riga 1: Data evento | Nome locale */
+        .event-meta-row--line1 {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.28rem;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        @media (max-width: 575.98px) {
+            .event-meta-row--line1 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Riga 2: Indirizzo | Città | Mappa */
+        .event-meta-row--line2 {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.28rem;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        @media (max-width: 991.98px) {
+            .event-meta-row--line2 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Riga 3: Prezzo (colonna stretta) | Iscrizioni | Iscritti */
+        .event-meta-row--line3 {
+            display: grid;
+            grid-template-columns: minmax(0, 9rem) minmax(0, 1fr) minmax(0, 1.2fr);
+            gap: 0.28rem;
+            width: 100%;
+            box-sizing: border-box;
+            align-items: stretch;
+        }
+        @media (max-width: 991.98px) {
+            .event-meta-row--line3 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .event-meta-price-box {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            border-radius: 0.375rem;
+            padding: 0.38rem 0.65rem;
+            font-size: 0.95rem;
+            line-height: 1.2;
+            border: 2px solid #000;
+            background-color: #d1e7dd;
+            color: #0f5132;
+        }
+        .event-meta-price-box > i {
+            flex-shrink: 0;
+            color: #198754;
+        }
+        .event-meta-price-line {
+            flex: 1;
+            min-width: 0;
+            word-break: break-word;
+        }
+
+        .event-meta-iscr-empty-box {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            width: 100%;
+            box-sizing: border-box;
+            border-radius: 0.375rem;
+            padding: 0.38rem 0.65rem;
+            font-size: 0.95rem;
+            line-height: 1.2;
+            border: 2px solid #000;
+            background-color: #dee2e6;
+            color: #212529;
+        }
+        .event-meta-iscr-empty-box > i {
+            flex-shrink: 0;
+            color: #495057;
+        }
+        .event-meta-iscr-line {
+            flex: 1;
+            min-width: 0;
+            word-break: break-word;
+        }
+
+        .event-meta-row--line3 .event-registration-deadline-box {
+            width: 100%;
+            box-sizing: border-box;
+            min-height: 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .event-meta-map-slot {
+            display: flex;
+            align-items: stretch;
+            min-height: 0;
+        }
+        .event-meta-map-slot .btn.btn-event-map-paired {
+            justify-content: center;
+        }
+        .event-meta-map-unavailable {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.35rem;
+            width: 100%;
+            box-sizing: border-box;
+            border-radius: 0.375rem;
+            padding: 0.38rem 0.5rem;
+            font-size: 0.85rem;
+            line-height: 1.2;
+            border: 2px dashed #adb5bd;
+            background: #e9ecef;
+            color: #6c757d;
         }
 
         .event-meta-organizer-box,
@@ -823,7 +1250,7 @@
         .event-meta-organizer-box > i,
         .event-meta-date-box > i,
         .event-meta-posti-box > i,
-        .event-meta-localita-inline-box > i {
+        .event-meta-place-box > i {
             margin-top: 0;
             flex-shrink: 0;
         }
@@ -850,7 +1277,8 @@
             color: #fff;
         }
 
-        .event-meta-localita-inline-box {
+        /* Città, nome locale, indirizzo: tre box separati (stesso stile del blocco luogo precedente) */
+        .event-meta-place-box {
             display: flex;
             align-items: center;
             gap: 0.35rem;
@@ -864,23 +1292,12 @@
             background-color: #0d6efd;
             color: #fff;
         }
-        .event-meta-localita-inline-text {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: baseline;
-            gap: 0.2rem 0.45rem;
+        .event-meta-place-line {
             flex: 1;
-            min-width: 0;
-        }
-        .event-meta-localita-sep {
-            opacity: 0.9;
-            user-select: none;
-        }
-        .event-meta-localita-addr-part {
             min-width: 0;
             word-break: break-word;
         }
-        .event-meta-localita-inline-box .fas {
+        .event-meta-place-box .fas {
             color: #fff;
             flex-shrink: 0;
         }
@@ -929,24 +1346,6 @@
             color: #adb5bd;
         }
 
-        .event-iscrizione-mappa-row {
-            flex-wrap: nowrap;
-        }
-        .event-iscrizione-mappa-row .btn.btn-event-map-paired.event-map-btn-fill {
-            flex: 1 1 auto;
-            min-width: 6rem;
-            justify-content: center;
-        }
-        @media (max-width: 575.98px) {
-            .event-iscrizione-mappa-row {
-                flex-wrap: wrap;
-            }
-            .event-iscrizione-mappa-row .btn.btn-event-map-paired.event-map-btn-fill {
-                flex: 1 1 100%;
-                min-width: 0;
-            }
-        }
-
         .event-registration-deadline-box {
             background-color: #198754;
             color: #fff;
@@ -967,9 +1366,9 @@
         }
 
         .btn.btn-event-map-paired {
-            background-color: #dc3545;
+            background-color: #198754;
             color: #fff;
-            border: 2px solid #0d6efd;
+            border: 2px solid #157347;
             box-shadow: none;
             padding: 0.38rem 0.65rem;
             font-size: 0.95rem;
@@ -983,15 +1382,16 @@
         }
         .btn.btn-event-map-paired .fas {
             opacity: 0.95;
+            color: #fff;
         }
         .btn.btn-event-map-paired:hover,
         .btn.btn-event-map-paired:focus {
-            background-color: #bb2d3b;
+            background-color: #157347;
             color: #fff;
-            border-color: #0d6efd;
+            border-color: #146c43;
         }
         .btn.btn-event-map-paired:focus-visible {
-            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.45);
+            box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.45);
         }
 
         .event-localita-btn-compact {
@@ -1006,6 +1406,25 @@
         .event-participation-btns > form {
             flex: 1 1 0;
             min-width: 0;
+        }
+
+        .event-participation-btns--toglimi > form {
+            flex: 0 0 auto;
+            min-width: 0;
+        }
+
+        /* Box «Porti» accanto a Toglimi: stessa altezza (event-btn-meta-height), riempimento rosso */
+        .event-porti-guest-box {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 auto;
+            box-sizing: border-box;
+            background-color: #dc3545;
+            color: #fff;
+            border: 2px solid #a52834;
+            border-radius: 0.375rem;
+            white-space: nowrap;
         }
 
         /* Stessa altezza del pulsante Mappa (btn-sm) per Partecipa e Forum Commenta */
@@ -1141,6 +1560,23 @@
             letter-spacing: 0.06em;
         }
 
+        .event-waitlist-box {
+            border: 2px dashed rgba(13, 110, 253, 0.65);
+            background: rgba(255, 243, 205, 0.85);
+        }
+        .event-waitlist-explain {
+            border: 2px solid rgba(13, 110, 253, 0.35);
+            background: rgba(255, 255, 255, 0.85);
+        }
+
+        .event-waitlist-side {
+            border: 2px solid rgba(13, 110, 253, 0.35) !important;
+        }
+        .event-waitlist-side__title {
+            background: rgba(255, 243, 205, 0.85) !important;
+            border-bottom: 1px solid rgba(13, 110, 253, 0.25) !important;
+        }
+
         /* Gallery: non tagliare le immagini nei thumbnail */
         .event-gallery-thumb {
             width: 100%;
@@ -1149,12 +1585,13 @@
             background: #f8f9fa;
         }
 
-        /* Altezza/padding come "Data evento" */
+        /* Altezza come box "Data evento" (.event-meta-stack: stessi padding/font/line-height) */
         .event-btn-meta-height {
-            padding: 0.38rem 0.65rem !important;
-            font-size: 0.95rem !important;
-            line-height: 1.2 !important;
+            padding: 0.26rem 0.5rem !important;
+            font-size: 0.9rem !important;
+            line-height: 1.15 !important;
             min-height: 0 !important;
+            box-sizing: border-box;
         }
 
         /* Flash "success" compatto accanto a "Torna alla home" */
@@ -1169,6 +1606,22 @@
         }
         @media (max-width: 575.98px) {
             .event-flash-success-sm {
+                max-width: 100%;
+                width: 100%;
+            }
+        }
+
+        .event-flash-error-sm {
+            border: 2px solid #842029 !important;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+            line-height: 1.5;
+            border-radius: 0.375rem;
+            max-width: 50%;
+            min-height: 2.125rem;
+        }
+        @media (max-width: 575.98px) {
+            .event-flash-error-sm {
                 max-width: 100%;
                 width: 100%;
             }

@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use App\Mail\NewRegistrationAdminMail;
 use App\Mail\RegistrationPendingUserMail;
 
@@ -86,10 +87,21 @@ class AuthController extends Controller
             ]);
         }
 
-        // Check if user is approved
+        if ($user->isAwaitingApproval()) {
+            return back()->withErrors([
+                'username' => 'Il tuo account è in attesa di approvazione da un amministratore.',
+            ]);
+        }
+
+        if ($user->isSuspended()) {
+            return back()->withErrors([
+                'username' => 'Il tuo account è stato sospeso. Contatta un amministratore.',
+            ]);
+        }
+
         if (!$user->isApproved()) {
             return back()->withErrors([
-                'username' => 'Il tuo account è in attesa di approvazione.'
+                'username' => 'Non puoi accedere con questo account. Contatta un amministratore.',
             ]);
         }
 
@@ -117,12 +129,21 @@ class AuthController extends Controller
 
     public function register(Request $request)
     {
+        $request->merge([
+            'name' => trim((string) $request->input('name', '')),
+            'cognome' => trim((string) $request->input('cognome', '')),
+            'nickname' => trim((string) $request->input('nickname', '')),
+            'email' => mb_strtolower(trim((string) $request->input('email', '')), 'UTF-8'),
+            'residenza' => trim((string) $request->input('residenza', '')),
+            'telefono' => trim((string) $request->input('telefono', '')),
+        ]);
+
         $adultDate = now()->subYears(18)->toDateString();
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:20',
             'cognome' => 'required|string|max:20',
             'nickname' => 'required|string|max:20|unique:utente,username',
-            'email' => 'required|email|unique:utente,email',
+            'email' => ['required', 'email', 'max:255', Rule::unique('utente', 'email')],
             'password' => 'required|min:8|confirmed',
             'sesso' => 'required|in:m,f',
             'residenza' => 'nullable|string|max:30',
@@ -131,6 +152,9 @@ class AuthController extends Controller
             'photo' => 'required|image|mimes:jpg,jpeg,png,webp,gif|max:4096',
             'description' => 'nullable|string|max:65535',
             'privacy_consent' => 'accepted',
+        ], [
+            'nickname.unique' => 'Questo nickname è già usato nel database (anche da un account ancora in attesa di approvazione o non abilitato). Scegline un altro o chiedi a un amministratore di controllare in «Gestione utenti» le iscrizioni in attesa.',
+            'email.unique' => 'Questa email è già registrata (anche se il profilo non è ancora stato abilitato). Se sei tu, prova ad accedere o usa il recupero password; altrimenti usa un altro indirizzo email.',
         ]);
 
         if ($validator->fails()) {
@@ -165,7 +189,7 @@ class AuthController extends Controller
             'telefono' => $request->telefono ?? '',
             'avatar' => $avatarFilename,
             'descr' => $request->description ?? '',
-            'abilitato' => 0,  // in attesa di approvazione: nessun accesso finché l'admin non abilita
+            'abilitato' => 3, // in attesa di approvazione (diverso da sospeso = 0)
             'ruolo' => 2,      // regular user
         ]);
 
