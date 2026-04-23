@@ -7,6 +7,7 @@ use App\Models\EventImage;
 use App\Services\ImageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class EventManageController extends Controller
 {
@@ -27,6 +28,9 @@ class EventManageController extends Controller
         if (!$user->isAdmin()) {
             $query->where('id_organizzatore', $user->getKey());
         }
+
+        // In "Gestione eventi" non mostrare eventi scaduti: solo eventi futuri.
+        $query->whereNotNull('dataevento')->where('dataevento', '>', now());
 
         $events = $query->orderBy('dataevento', 'desc')->paginate(12);
 
@@ -62,10 +66,14 @@ class EventManageController extends Controller
             'google_album_url' => 'nullable|string|max:2048|url',
         ]);
 
+        $user = Auth::user();
         $allowGuests = $request->has('allow_guests');
+        $elencoVisibile = ($user && $user->isAdmin())
+            ? ($request->has('elenco_visibile') ? 1 : 0)
+            : 1;
 
         // Forza il titolo evento in MAIUSCOLO
-        $validated['title'] = mb_strtoupper($validated['title'], 'UTF-8');
+        $validated['title'] = Str::upper((string) $validated['title']);
 
         $event = Event::create([
             'nome' => $validated['title'],
@@ -80,7 +88,7 @@ class EventManageController extends Controller
             'numeromax' => $validated['max_participants'] ?? null,
             'id_organizzatore' => Auth::id(),
             'pubblicato' => 1,
-            'elenco_visibile' => $request->has('elenco_visibile') ? 1 : 0,
+            'elenco_visibile' => $elencoVisibile,
             'sondaggio' => '',
             'url_galleria' => (string) ($validated['google_album_url'] ?? ''),
             'datascadenza' => $validated['deadline'] ?? $validated['date'],
@@ -140,11 +148,16 @@ class EventManageController extends Controller
             'google_album_url' => 'nullable|string|max:2048|url',
         ]);
 
+        $user = Auth::user();
         $allowGuests = $request->has('allow_guests');
         $wasPastEvent = $event->is_past_event;
 
         // Forza il titolo evento in MAIUSCOLO
-        $validated['title'] = mb_strtoupper($validated['title'], 'UTF-8');
+        $validated['title'] = Str::upper((string) $validated['title']);
+
+        $elencoVisibile = ($user && $user->isAdmin())
+            ? ($request->has('elenco_visibile') ? 1 : 0)
+            : 1;
 
         $updateData = [
             'nome' => $validated['title'],
@@ -158,15 +171,17 @@ class EventManageController extends Controller
             'civico' => '',
             'costo' => $validated['cost'] ?? null,
             'datascadenza' => $validated['deadline'] ?? $validated['date'],
-            'elenco_visibile' => $request->has('elenco_visibile') ? 1 : 0,
+            'elenco_visibile' => $elencoVisibile,
             'numeromax' => $validated['max_participants'] ?? null,
             'allow_guests' => $allowGuests,
             'max_guests_per_user' => $allowGuests ? ($validated['max_guests_per_user'] ?? 3) : 0,
             'url_galleria' => (string) ($validated['google_album_url'] ?? ''),
         ];
 
-        // Pubblicazione / disattivazione evento gestita dallo switch "Evento attivo"
-        $updateData['pubblicato'] = $request->has('is_active') ? 1 : 0;
+        // Pubblicazione / disattivazione evento gestita dallo switch "Evento attivo",
+        // ma un evento con data passata/non futura non può risultare "attivo/pubblicato".
+        $newDate = \Carbon\Carbon::parse($validated['date']);
+        $updateData['pubblicato'] = ($newDate->gt(now()) && $request->has('is_active')) ? 1 : 0;
 
         if ($request->has('remove_cover') && $event->immagine) {
             // Supporta sia copertine legacy (public/upload_immagini) sia copertine in storage/events/{id}
@@ -201,7 +216,6 @@ class EventManageController extends Controller
             $updateData['immagine'] = $coverResult['filename'];
         }
 
-        $newDate = \Carbon\Carbon::parse($validated['date']);
         if ($wasPastEvent && $newDate->gt(now())) {
             try {
                 $deadlineAt = \Carbon\Carbon::parse($updateData['datascadenza']);

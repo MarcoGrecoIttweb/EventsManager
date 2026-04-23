@@ -8,6 +8,12 @@
             flex: 0 0 auto;
             max-width: 16.5rem;
         }
+        .event-create-small-number {
+            max-width: 4.75rem;
+        }
+        .event-create-small-number.form-control {
+            text-align: center;
+        }
         .event-create-media-row {
             display: flex;
             flex-wrap: wrap;
@@ -80,7 +86,7 @@
                                         @enderror
                                     </div>
                                 </div>
-                                <div class="col-12 col-md-6 col-lg-3">
+                                <div class="col-12 col-md-6 col-lg-5">
                                     <div class="mb-3">
                                         <label for="venue" class="form-label text-primary-emphasis">Nome locale</label>
                                         <input type="text" class="form-control border border-2 border-primary @error('venue') is-invalid @enderror"
@@ -90,7 +96,7 @@
                                         @enderror
                                     </div>
                                 </div>
-                                <div class="col-12 col-md-6 col-lg-7">
+                                <div class="col-12 col-md-6 col-lg-5">
                                     <div class="mb-3">
                                         <label for="address" class="form-label text-primary-emphasis">Indirizzo *</label>
                                         <input type="text" class="form-control border border-2 border-primary @error('address') is-invalid @enderror"
@@ -103,17 +109,17 @@
                             </div>
 
                             <div class="row g-2 align-items-end">
-                                <div class="col-6 col-lg-2">
+                                <div class="col-12 col-sm-6 col-lg-6">
                                     <div class="mb-3">
                                         <label for="city" class="form-label text-primary-emphasis">Città *</label>
                                         <input type="text" class="form-control border border-2 border-primary @error('city') is-invalid @enderror"
-                                               id="city" name="city" value="{{ old('city') }}" required maxlength="15">
+                                               id="city" name="city" value="{{ old('city') }}" required maxlength="30">
                                         @error('city')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
                                 </div>
-                                <div class="col-6 col-lg-2">
+                                <div class="col-6 col-sm-3 col-lg-1">
                                     <div class="mb-3">
                                         <label for="cost" class="form-label text-primary-emphasis">Costo (€)</label>
                                         <input type="number" step="0.01" min="0" class="form-control border border-2 border-primary @error('cost') is-invalid @enderror"
@@ -133,23 +139,23 @@
                                         @enderror
                                     </div>
                                 </div>
-                                <div id="max_participants_cell" class="col-6 col-sm-6 {{ old('allow_guests', true) ? 'col-lg-3' : 'col-lg-5' }}">
+                                <div class="col-6 col-sm-3 col-lg-1">
                                     <div class="mb-3">
                                         <label for="max_participants" class="form-label text-primary-emphasis">Max partecipanti</label>
-                                        <input type="number" class="form-control border border-2 border-primary @error('max_participants') is-invalid @enderror"
+                                        <input type="number" class="form-control border border-2 border-primary event-create-small-number @error('max_participants') is-invalid @enderror"
                                                id="max_participants" name="max_participants"
-                                               value="{{ old('max_participants') }}" min="1">
+                                               value="{{ old('max_participants') }}" min="1" max="99">
                                         @error('max_participants')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
                                 </div>
-                                <div id="max_guests_container" class="col-6 col-sm-6 col-lg-2 {{ old('allow_guests', true) ? '' : 'd-none' }}">
+                                <div id="max_guests_container" class="col-6 col-sm-3 col-lg-1 {{ old('allow_guests', true) ? '' : 'd-none' }}">
                                     <div class="mb-3">
                                         <label for="max_guests_per_user" class="form-label text-primary-emphasis">Max ospiti</label>
-                                        <input type="number" class="form-control border border-2 border-primary @error('max_guests_per_user') is-invalid @enderror"
+                                        <input type="number" class="form-control border border-2 border-primary event-create-small-number @error('max_guests_per_user') is-invalid @enderror"
                                                id="max_guests_per_user" name="max_guests_per_user"
-                                               value="{{ old('max_guests_per_user', 3) }}" min="1" max="10">
+                                               value="{{ old('max_guests_per_user', 3) }}" min="1" max="99">
                                         @error('max_guests_per_user')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
@@ -241,18 +247,45 @@
     @include('partials.ckeditor4-description', ['height' => 400])
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Titolo evento: forza MAIUSCOLO in tempo reale
+            const titleInput = document.getElementById('title');
+            if (titleInput) {
+                titleInput.addEventListener('input', function () {
+                    const start = this.selectionStart;
+                    const end = this.selectionEnd;
+                    const upper = (this.value || '').toLocaleUpperCase('it-IT');
+                    if (upper !== this.value) {
+                        this.value = upper;
+                        try {
+                            this.setSelectionRange(start, end);
+                        } catch (e) {}
+                    }
+                });
+            }
+
+            // Presentazione riassuntiva: forza MAIUSCOLO in tempo reale (anche incolla)
+            const incipitInput = document.getElementById('incipit');
+            if (incipitInput) {
+                incipitInput.addEventListener('input', function () {
+                    const start = this.selectionStart;
+                    const end = this.selectionEnd;
+                    const upper = (this.value || '').toLocaleUpperCase('it-IT');
+                    if (upper !== this.value) {
+                        this.value = upper;
+                        try {
+                            this.setSelectionRange(start, end);
+                        } catch (e) {}
+                    }
+                });
+            }
+
             // Toggle per gli ospiti
             const allowGuestsCheckbox = document.getElementById('allow_guests');
             const maxGuestsContainer = document.getElementById('max_guests_container');
-            const maxParticipantsCell = document.getElementById('max_participants_cell');
             function toggleMaxGuests() {
                 var on = allowGuestsCheckbox.checked;
                 if (maxGuestsContainer) {
                     maxGuestsContainer.classList.toggle('d-none', !on);
-                }
-                if (maxParticipantsCell) {
-                    maxParticipantsCell.classList.remove('col-lg-3', 'col-lg-5');
-                    maxParticipantsCell.classList.add(on ? 'col-lg-3' : 'col-lg-5');
                 }
             }
 

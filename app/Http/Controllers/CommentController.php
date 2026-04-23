@@ -40,7 +40,7 @@ class CommentController extends Controller
 
             $this->notifyAdminCommentChange($event, Auth::user(), $comment, 'aggiunto');
 
-            return redirect()->route('events.show', $event)
+            return redirect()->to(url('events/' . $event->getKey()))
                 ->with('success', 'Commento aggiunto con successo!')
                 ->with('scrollTo', 'comment-' . $comment->id);
 
@@ -60,7 +60,22 @@ class CommentController extends Controller
             return back()->with('error', 'Non autorizzato a modificare questo commento.');
         }
 
-        return view('comments.edit', compact('comment'));
+        // In alcuni casi CKEditor salva <img src="upload_immagini/..."> senza slash iniziale.
+        // Nella pagina /comments/{id}/edit quel path relativo non si risolve correttamente.
+        $editorContent = (string) ($comment->content ?? '');
+        if ($editorContent !== '') {
+            $editorContent = preg_replace_callback(
+                '/\bsrc\s*=\s*(["\'])(?!\/|https?:\/\/|\/\/)([^"\']+)\1/i',
+                function (array $m): string {
+                    $q = $m[1];
+                    $src = ltrim($m[2] ?? '', '/');
+                    return 'src=' . $q . '/' . $src . $q;
+                },
+                $editorContent
+            ) ?? $editorContent;
+        }
+
+        return view('comments.edit', compact('comment', 'editorContent'));
     }
 
     public function update(Request $request, Comment $comment)
@@ -86,7 +101,7 @@ class CommentController extends Controller
                 'edited_at' => now(),
             ]);
 
-            return redirect()->route('events.show', $comment->event)
+            return redirect()->to(url('events/' . $comment->event->getKey()))
                 ->with('success', 'Commento modificato con successo!')
                 ->with('scrollTo', 'comment-' . $comment->id);
 
@@ -109,11 +124,21 @@ class CommentController extends Controller
         try {
             $event = $comment->event;
             $actor = Auth::user();
-            $this->notifyAdminCommentChange($event, $actor, $comment, 'eliminato');
+
+            // Se la relazione evento non è risolta per qualche ragione, non bloccare l'eliminazione.
+            if ($event) {
+                $this->notifyAdminCommentChange($event, $actor, $comment, 'eliminato');
+            }
+
             $comment->delete();
-            return redirect()->route('events.show', $event)
-                ->with('success', 'Commento eliminato con successo!');
-        } catch (\Exception $e) {
+
+            if ($event) {
+                return redirect()->to(url('events/' . $event->getKey()))
+                    ->with('success', 'Commento eliminato con successo!');
+            }
+
+            return back()->with('success', 'Commento eliminato con successo!');
+        } catch (\Throwable $e) {
             \Log::error('Errore eliminazione commento: ' . $e->getMessage());
             return back()->with('error', 'Errore durante l\'eliminazione del commento.');
         }

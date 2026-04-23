@@ -16,6 +16,70 @@
             </div>
         </div>
 
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-body">
+                {{-- Ricerca: visibile solo ad admin --}}
+                @if(auth()->check() && auth()->user()->isAdmin())
+                    <form method="GET" action="{{ route('events.past') }}" class="row g-2 align-items-end">
+                        <div class="col-12 col-md-4">
+                            <label for="past_search_field" class="form-label fw-semibold mb-1">Cerca per</label>
+                            <select name="field" id="past_search_field" class="form-select">
+                                <option value="title" {{ ($field ?? 'title') === 'title' ? 'selected' : '' }}>Titolo</option>
+                                <option value="description" {{ ($field ?? 'title') === 'description' ? 'selected' : '' }}>Descrizione</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label for="past_search_q" class="form-label fw-semibold mb-1">Testo</label>
+                            <input
+                                type="text"
+                                name="q"
+                                id="past_search_q"
+                                class="form-control"
+                                value="{{ $q ?? '' }}"
+                                placeholder="Scrivi qui…"
+                            >
+                        </div>
+                        <div class="col-12 col-md-2 d-grid">
+                            <button type="submit" class="btn btn-dark">
+                                <i class="fas fa-search"></i> Cerca
+                            </button>
+                        </div>
+                        @if(($q ?? '') !== '')
+                            <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-2 mt-2">
+                                <small class="text-muted">
+                                    Ricerca attiva: <strong>{{ ($field ?? 'title') === 'description' ? 'Descrizione' : 'Titolo' }}</strong> contiene “<strong>{{ $q }}</strong>”
+                                </small>
+                                <a href="{{ route('events.past', array_merge(request()->except('q', 'field', 'page'), [])) }}" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-times"></i> Pulisci
+                                </a>
+                            </div>
+                        @endif
+                    </form>
+                    <hr class="my-3">
+                @endif
+
+                {{-- Filtro "Solo i miei eventi": per tutti gli utenti loggati --}}
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <div class="d-flex flex-wrap gap-2">
+                        @if(($mine ?? false))
+                            <a href="{{ route('events.past', array_merge(request()->except('mine', 'page'), [])) }}"
+                               class="btn btn-sm btn-outline-secondary">
+                                <i class="fas fa-layer-group"></i> Tutti gli eventi
+                            </a>
+                        @else
+                            <a href="{{ route('events.past', array_merge(request()->all(), ['mine' => 1])) }}"
+                               class="btn btn-sm btn-success">
+                                <i class="fas fa-user-check"></i> Solo i miei eventi
+                            </a>
+                        @endif
+                    </div>
+                    @if(($mine ?? false))
+                        <span class="badge bg-success">Filtro: solo eventi a cui hai partecipato</span>
+                    @endif
+                </div>
+            </div>
+        </div>
+
         @if($events->count() > 0)
             <div class="row">
                 @foreach($events as $event)

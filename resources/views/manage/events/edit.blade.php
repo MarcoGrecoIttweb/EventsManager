@@ -215,8 +215,12 @@
                             <label for="allow_guests" class="form-check-label text-primary-emphasis">Permetti ospiti</label>
                         </div>
                         <div class="form-check form-switch mb-0">
+                            @if(!(auth()->user()->isAdmin()))
+                                <input type="hidden" name="elenco_visibile" value="1">
+                            @endif
                             <input type="checkbox" class="form-check-input" id="elenco_visibile" name="elenco_visibile" value="1"
-                                {{ old('elenco_visibile', $event->elenco_visibile) ? 'checked' : '' }}>
+                                {{ auth()->user()->isAdmin() ? (old('elenco_visibile', $event->elenco_visibile) ? 'checked' : '') : 'checked' }}
+                                {{ auth()->user()->isAdmin() ? '' : 'disabled' }}>
                             <label class="form-check-label" for="elenco_visibile">Visualizza partecipanti</label>
                         </div>
                     </div>

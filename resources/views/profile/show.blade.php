@@ -54,6 +54,25 @@
                                         <span class="profile-label">Cognome:</span>
                                         <span class="profile-value">{{ $isAdminViewer ? ($user->cognome ?: '—') : '—' }}</span>
                                     </div>
+                                    <div class="row g-2 profile-dob-row">
+                                        <div class="col-6">
+                                            <div class="profile-field">
+                                                <span class="profile-label">
+                                                    @if($user->sesso === 'm') Nato:
+                                                    @elseif($user->sesso === 'f') Nata:
+                                                    @else Nato/Nata:
+                                                    @endif
+                                                </span>
+                                                <span class="profile-value">{{ $isAdminViewer && $user->datanascita ? $user->datanascita->format('d/m/Y') : '—' }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="profile-field">
+                                                <span class="profile-label">Età:</span>
+                                                <span class="profile-value">{{ $isAdminViewer && $user->datanascita ? $user->datanascita->age : '—' }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
                                     <div class="profile-field">
                                         <span class="profile-label">Sesso:</span>
                                         <span class="profile-value">
@@ -75,32 +94,8 @@
                                         <span class="profile-label">Residenza:</span>
                                         <span class="profile-value">{{ $user->residenza ?: '—' }}</span>
                                     </div>
-                                    <div class="profile-field">
-                                        <span class="profile-label">Descrizione:</span>
-                                        <span class="profile-value">
-                                            {{ \App\Support\StrLimit::limit(strip_tags($user->safe_descr ?? ''), 90, '…') ?: '—' }}
-                                        </span>
-                                    </div>
-                                    <div class="profile-field">
-                                        <span class="profile-label">Età:</span>
-                                        <span class="profile-value">{{ $isAdminViewer && $user->datanascita ? $user->datanascita->age : '—' }}</span>
-                                    </div>
-                                    <div class="profile-field pb-0">
-                                        <span class="profile-label">Data di nascita:</span>
-                                        <span class="profile-value">{{ $isAdminViewer && $user->datanascita ? $user->datanascita->format('d-m-Y') : '—' }}</span>
-                                    </div>
-                                    <div class="profile-field">
-                                        <span class="profile-label">Ultimo collegamento:</span>
-                                        <span class="profile-value">{{ $user->ultimo_accesso ? $user->ultimo_accesso->format('d/m/Y H:i') : '—' }}</span>
-                                    </div>
                                 </div>
-
                                 @auth
-                                    @if(auth()->id() === $user->id || $isAdminViewer)
-                                        <a href="{{ route('profile.edit', $user) }}" class="btn btn-primary btn-sm mt-3">
-                                            <i class="fas fa-edit"></i> Modifica Profilo
-                                        </a>
-                                    @endif
                                     @if($isAdminViewer)
                                         @php
                                             $adminPwdOpen = $errors->has('password');
@@ -114,7 +109,7 @@
                                                     aria-controls="adminPasswordCollapse"
                                                     id="adminPasswordToggle">
                                                 <i class="fas fa-key" style="font-size:0.85em;"></i>
-                                                <span>Imposta password utente</span>
+                                                <span>Modifica password</span>
                                                 <i class="fas fa-chevron-down small opacity-75" id="adminPasswordChevron" aria-hidden="true"></i>
                                             </button>
                                             <div class="collapse {{ $adminPwdOpen ? 'show' : '' }}" id="adminPasswordCollapse">
@@ -153,7 +148,6 @@
                             </div>
 
                             <div class="col-12 col-md-6 text-center text-md-start">
-                                <div class="text-muted small mb-2">La foto</div>
                                 @if($user->photo_url)
                                     <img src="{{ $user->photo_url }}"
                                          alt="{{ $user->name }}"
@@ -170,25 +164,26 @@
                                     @php
                                         $roleClass = $user->isAdmin() ? 'danger' : ($user->isOrganizer() ? 'warning' : 'info');
                                     @endphp
-                                    @if($isAdminViewer)
-                                        <form action="{{ route('admin.users.update-role', $user) }}" method="POST" class="d-inline-flex align-items-center gap-1">
-                                            @csrf
-                                            <label for="role-select-{{ $user->id }}" class="small me-1 mb-0">Ruolo:</label>
-                                            <select id="role-select-{{ $user->id }}" name="ruolo"
-                                                    class="form-select form-select-sm w-auto">
-                                                <option value="2" {{ (int)$user->ruolo === 2 ? 'selected' : '' }}>Utente</option>
-                                                <option value="1" {{ (int)$user->ruolo === 1 ? 'selected' : '' }}>Organizzatore</option>
-                                                <option value="0" {{ (int)$user->ruolo === 0 ? 'selected' : '' }}>Amministratore</option>
-                                            </select>
-                                            <button type="submit" class="btn btn-sm btn-outline-secondary">
-                                                <i class="fas fa-save"></i>
-                                            </button>
-                                        </form>
-                                    @else
-                                        <span class="badge profile-action-chip bg-{{ $roleClass }}">
-                                            {{ $user->role_name }}
-                                        </span>
-                                    @endif
+                                    <div class="d-flex align-items-center gap-2 flex-wrap w-100">
+                                        @if($isAdminViewer)
+                                            <form action="{{ route('admin.users.update-role', $user) }}" method="POST" class="d-inline-flex align-items-center gap-1">
+                                                @csrf
+                                                <label for="role-select-{{ $user->id }}" class="small me-1 mb-0">Ruolo:</label>
+                                                <select id="role-select-{{ $user->id }}" name="ruolo"
+                                                        class="form-select form-select-sm w-auto">
+                                                    <option value="2" {{ (int)$user->ruolo === 2 ? 'selected' : '' }}>Utente</option>
+                                                    <option value="1" {{ (int)$user->ruolo === 1 ? 'selected' : '' }}>Organizzatore</option>
+                                                    <option value="0" {{ (int)$user->ruolo === 0 ? 'selected' : '' }}>Amministratore</option>
+                                                </select>
+                                                <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                                    <i class="fas fa-save"></i>
+                                                </button>
+                                            </form>
+                                        @else
+                                            <span class="badge profile-action-chip {{ $user->isOrganizer() ? 'badge-organizzatore' : 'bg-' . $roleClass }}">
+                                                {{ $user->role_name }}
+                                            </span>
+                                        @endif
                                     @php
                                         $isBanned = $user->status === 'banned';
                                         $isApproved = $user->status === 'approved';
@@ -203,9 +198,22 @@
                                             default => 'secondary',
                                         };
                                     @endphp
-                                    <span class="badge profile-action-chip bg-{{ $statusBg }}">
-                                        {{ $statusLabel }}
-                                    </span>
+                                        <span class="badge profile-action-chip bg-{{ $statusBg }}">
+                                            {{ $statusLabel }}
+                                        </span>
+                                        @auth
+                                            @if(auth()->id() === $user->id || $isAdminViewer)
+                                                <a href="{{ route('profile.edit', $user) }}" class="btn btn-primary btn-sm">
+                                                    <i class="fas fa-edit"></i> Modifica Profilo
+                                                </a>
+                                            @endif
+                                        @endauth
+                                    </div>
+                                    <div class="small w-100">
+                                        <span class="d-inline-block px-2 py-1 rounded text-primary border border-primary">
+                                            Ultimo collegamento: {{ $user->ultimo_accesso ? $user->ultimo_accesso->format('d/m/y') : '—' }}
+                                        </span>
+                                    </div>
                                     @auth
                                         @if(auth()->user()->isAdmin() && !$user->isAdmin())
                                             @if($user->status === 'banned')
@@ -323,19 +331,31 @@
             background: #fff;
         }
         .profile-fields-compact {
-            max-width: 380px;
+            max-width: 100%;
         }
         .profile-field {
             display: flex;
             align-items: center;
             gap: 0.35rem;
             padding: 0.25rem 0.55rem;
-            border-bottom: 1px solid rgba(0,0,0,0.08);
+            border: 1px solid #adb5bd;
             background: #f2f4f6;
             border-radius: 8px;
         }
+        /* Nato/Nata + Età: stessa altezza e più compatti */
+        .profile-dob-row > [class*="col-"] {
+            display: flex;
+        }
+        .profile-dob-row .profile-field {
+            flex: 1;
+            min-height: 32px;
+            padding: 0.2rem 0.45rem;
+        }
+        .profile-dob-row .profile-label {
+            min-width: 0;
+        }
         .profile-fields-compact .profile-field {
-            border: 1px solid #cfe8f3;
+            border: 1px solid #adb5bd;
             border-radius: 8px;
             padding: 0.22rem 0.55rem;
             margin-bottom: 0.32rem;
@@ -395,6 +415,7 @@
             padding: 0.2rem 0.5rem;
             font-size: 0.78rem;
             line-height: 1;
+            border: 1px solid #adb5bd;
         }
         .profile-action-chip-btn {
             display: inline-flex;
@@ -404,6 +425,11 @@
             padding: 0.2rem 0.5rem;
             line-height: 1;
         }
+        .badge-organizzatore {
+            background: #ffc107 !important;
+            color: #7a4a00 !important;
+            border: 1px solid #adb5bd !important;
+        }
         .profile-upcoming-events .list-group-item {
             border: 2px solid #0dcaf0 !important;
             --bs-list-group-border-color: #0dcaf0;
@@ -412,6 +438,7 @@
             padding-top: 0.85rem;
             padding-bottom: 0.85rem;
             box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.08);
+            width: 100%;
         }
         .profile-upcoming-events .card-header,
         .profile-upcoming-events .card-body {
@@ -424,6 +451,7 @@
             display: flex;
             flex-direction: column;
             gap: 0.9rem;
+            width: 100%;
         }
         .profile-events-table th,
         .profile-events-table td {

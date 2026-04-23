@@ -4,7 +4,19 @@
 
 @section('content')
 <div class="container">
-    <h2 class="mb-4"><i class="fas fa-search"></i> Cerca utenti</h2>
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+        <h2 class="mb-0"><i class="fas fa-search"></i> Cerca utenti</h2>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <a href="{{ route('home') }}" class="btn btn-outline-primary btn-sm">
+                <i class="fas fa-home"></i> Home
+            </a>
+            @if(strlen(trim($query)) >= 1)
+                <a href="{{ route('users.search') }}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-arrow-left"></i> Torna a Cerca utenti
+                </a>
+            @endif
+        </div>
+    </div>
 
     <form method="GET" action="{{ route('users.search') }}" class="mb-4">
         <div class="input-group">

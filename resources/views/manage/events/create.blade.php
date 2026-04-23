@@ -195,8 +195,12 @@
                                 </div>
                                 <div id="event_create_switches_cell" class="event-create-media-switches d-flex flex-wrap align-items-center gap-2 gap-lg-3 pb-1">
                                     <div class="form-check form-switch mb-0">
+                                        @if(!(auth()->user()->isAdmin()))
+                                            <input type="hidden" name="elenco_visibile" value="1">
+                                        @endif
                                         <input type="checkbox" class="form-check-input" id="elenco_visibile" name="elenco_visibile" value="1"
-                                            {{ old('elenco_visibile', true) ? 'checked' : '' }}>
+                                            {{ auth()->user()->isAdmin() ? (old('elenco_visibile', true) ? 'checked' : '') : 'checked' }}
+                                            {{ auth()->user()->isAdmin() ? '' : 'disabled' }}>
                                         <label class="form-check-label text-primary-emphasis text-nowrap small" for="elenco_visibile">
                                             Visualizza partecipanti
                                         </label>

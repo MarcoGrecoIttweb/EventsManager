@@ -195,7 +195,7 @@
                                                 <div class="d-flex flex-wrap align-items-center gap-2 w-100">
                                                     <form action="{{ route('events.participate', $event) }}" method="POST" class="mb-0 flex-grow-1 w-100">
                                                         @csrf
-                                                        <button type="submit" class="btn btn-sm w-100 event-btn-participate-map-height event-btn-iscrivimi-all-evento btn-iscrivimi-state-{{ $cannotJoin ? 'off' : 'on' }}"
+                                                        <button type="submit" class="btn btn-sm w-100 event-btn-participate-map-height event-btn-iscrivimi-all-evento btn-iscrivimi-state-{{ $cannotJoin ? 'off' : 'on' }} {{ $event->isFull() ? 'btn-iscrivimi-full' : '' }}"
                                                             {{ $cannotJoin ? 'disabled' : '' }}>
                                                             <i class="fas fa-{{ $joinIcon }}"></i>
                                                             {{ $joinLabel }}
@@ -222,16 +222,8 @@
                                                                 @if(isset($isWaitlisted) && $isWaitlisted)
                                                                     <div class="small fw-semibold mb-2">
                                                                         <i class="fas fa-hourglass-half"></i>
-                                                                        {{ $waitName }} è in attesa qualora si liberassero posti.
+                                                                        {{ $waitName }} sei in attesa qualora si liberassero posti..
                                                                     </div>
-                                                                    <form action="{{ route('events.waitlist.leave', $event) }}" method="POST" class="mb-0">
-                                                                        @csrf
-                                                                        @method('DELETE')
-                                                                        <button type="submit" class="btn btn-outline-secondary btn-sm w-100"
-                                                                                onclick="return confirm('Vuoi uscire dalla lista d’attesa?');">
-                                                                            <i class="fas fa-user-slash"></i> Esci dalla lista d’attesa
-                                                                        </button>
-                                                                    </form>
                                                                 @else
                                                                     <button type="button"
                                                                             class="btn btn-warning btn-sm w-100"
@@ -275,8 +267,21 @@
 
                                                                 @if(isset($waitlistEntries) && is_iterable($waitlistEntries) && count($waitlistEntries) > 0)
                                                                     <div class="mt-2 small">
-                                                                        <div class="fw-semibold mb-1">
-                                                                            <i class="fas fa-list"></i> Persone in lista d’attesa
+                                                                        <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap fw-semibold mb-1">
+                                                                            <div class="text-truncate">
+                                                                                <i class="fas fa-list"></i> Persone in lista d’attesa
+                                                                            </div>
+                                                                            @if(isset($isWaitlisted) && $isWaitlisted)
+                                                                                <form action="{{ route('events.waitlist.leave', $event) }}" method="POST" class="mb-0 flex-shrink-0">
+                                                                                    @csrf
+                                                                                    @method('DELETE')
+                                                                                    <button type="submit"
+                                                                                            class="btn btn-success btn-sm event-wl-leave-btn"
+                                                                                            onclick="return confirm('Vuoi uscire dalla lista d’attesa?');">
+                                                                                        <i class="fas fa-user-slash"></i> Esci dalla lista di attesa
+                                                                                    </button>
+                                                                                </form>
+                                                                            @endif
                                                                         </div>
                                                                         <ul class="mb-0 ps-3">
                                                                             @foreach($waitlistEntries as $wl)
@@ -424,13 +429,24 @@
                             </div>
 
                             @if($mapSrc)
+                                @externalmedia
                                 <div class="collapse mb-3" id="eventMapCollapse">
-                                    <p class="small text-muted mb-2">
-                                        <i class="fas fa-map"></i> Google Maps
+                                    <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
+                                        <p class="small text-muted mb-0">
+                                            <i class="fas fa-map"></i> Google Maps
                                         @if(!$mapWithAddress)
-                                            <span class="d-block mt-1">Posizione approssimativa: effettua l’accesso per includere l’indirizzo nella ricerca.</span>
+                                                <span class="d-block mt-1">Posizione approssimativa: effettua l’accesso per includere l’indirizzo nella ricerca.</span>
                                         @endif
-                                    </p>
+                                        </p>
+                                        <button type="button"
+                                                class="btn btn-outline-secondary btn-sm flex-shrink-0"
+                                                data-bs-toggle="collapse"
+                                                data-bs-target="#eventMapCollapse"
+                                                aria-controls="eventMapCollapse"
+                                                aria-label="Riduci mappa">
+                                            <i class="fas fa-compress-alt"></i> Riduci
+                                        </button>
+                                    </div>
                                     <div class="ratio ratio-16x9 rounded overflow-hidden border shadow-sm">
                                         <iframe
                                             id="eventMapIframe"
@@ -453,15 +469,47 @@
                                     document.addEventListener('DOMContentLoaded', function () {
                                         var col = document.getElementById('eventMapCollapse');
                                         var iframe = document.getElementById('eventMapIframe');
+                                        var btn = document.getElementById('btnEventMapToggle');
+
+                                        function setMapBtnState(open) {
+                                            if (!btn) return;
+                                            btn.innerHTML = open
+                                                ? '<i class="fas fa-compress-alt"></i> Riduci mappa'
+                                                : '<i class="fas fa-map"></i> Mappa';
+                                            btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+                                        }
+
                                         if (col) {
                                             col.addEventListener('shown.bs.collapse', function () {
                                                 if (iframe && iframe.dataset.src && (!iframe.src || iframe.src === 'about:blank')) {
                                                     iframe.src = iframe.dataset.src;
                                                 }
+                                                setMapBtnState(true);
                                             });
+                                            col.addEventListener('hidden.bs.collapse', function () {
+                                                setMapBtnState(false);
+                                            });
+                                        }
+
+                                        // Stato iniziale
+                                        if (col) {
+                                            setMapBtnState(col.classList.contains('show'));
                                         }
                                     });
                                 </script>
+                                @else
+                                    <div class="alert alert-light border shadow-sm mb-3">
+                                        <div class="fw-semibold mb-1"><i class="fas fa-map"></i> Mappa disattivata</div>
+                                        <div class="small text-muted">
+                                            Per visualizzare la mappa, abilita i <strong>Contenuti esterni (Mappe)</strong> nelle preferenze cookie.
+                                        </div>
+                                        <button type="button"
+                                                class="btn btn-success btn-sm mt-2"
+                                                onclick="(function(){var el=document.getElementById('cookieConsentModal'); if(el && typeof bootstrap!=='undefined'){bootstrap.Modal.getOrCreateInstance(el,{backdrop:'static',keyboard:false}).show();}})();">
+                                            Apri preferenze cookie
+                                        </button>
+                                    </div>
+                                @endexternalmedia
                             @endif
 
                             <div class="mb-4">
@@ -523,7 +571,7 @@
                         @if(auth()->user()->isApproved())
                             <div id="eventCommentCollapse" class="collapse">
                                 <div class="card-body border-bottom bg-light">
-                                    <form action="{{ route('comments.store', $event) }}" method="POST" id="commentForm">
+                                    <form action="{{ url('events/' . $event->getKey() . '/comments') }}" method="POST" id="commentForm">
                                         @csrf
                                         <div class="mb-3">
                                             <label for="commentContent" class="form-label">Il tuo commento</label>
@@ -593,7 +641,7 @@
                                             <div class="btn-group" role="group">
                                                 {{-- Pulsante modifica (autore o amministratore) --}}
                                                 @if(auth()->id() === $comment->id_utente || auth()->user()->isAdmin())
-                                                    <a href="{{ route('comments.edit', $comment) }}"
+                                                    <a href="{{ url('comments/' . $comment->getKey() . '/edit') }}"
                                                        class="btn btn-sm btn-outline-primary"
                                                        title="{{ auth()->user()->isAdmin() && auth()->id() !== $comment->id_utente ? 'Modifica commento (admin)' : 'Modifica commento' }}">
                                                         <i class="fas fa-edit"></i>
@@ -602,7 +650,7 @@
 
                                                 {{-- Pulsante eliminazione (proprietario o admin) --}}
                                                 @if(auth()->id() === $comment->id_utente || auth()->user()->isAdmin())
-                                                    <form action="{{ route('comments.destroy', $comment) }}" method="POST" class="d-inline">
+                                                    <form action="{{ url('comments/' . $comment->getKey()) }}" method="POST" class="d-inline">
                                                         @csrf
                                                         @method('DELETE')
                                                         <button type="submit" class="btn btn-sm btn-outline-danger"
@@ -661,7 +709,7 @@
                             </h5>
                         </div>
                         <div class="card-body py-2">
-                            <div class="small text-muted mb-2">
+                            <div class="small event-waitlist-side__hint mb-2">
                                 Utenti in attesa per questo evento (in ordine di inserimento).
                             </div>
                             <ul class="mb-0 ps-3 small">
@@ -906,7 +954,12 @@
 @endsection
 @section('scripts')
     @parent
-    @include('partials.ckeditor4-description', ['field' => 'commentContent', 'height' => 260])
+    @include('partials.ckeditor4-description', [
+        'field' => 'commentContent',
+        'height' => 260,
+        'editable_line_height' => 1.22,
+        'editable_p_margin' => '0.2em',
+    ])
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Scroll al commento se specificato
@@ -1237,6 +1290,12 @@
             border: 2px solid #0d6efd !important;
             opacity: 1;
         }
+        .btn.event-btn-iscrivimi-all-evento.btn-iscrivimi-full:disabled {
+            background-color: #dc3545 !important;
+            color: #fff !important;
+            border-color: #b02a37 !important;
+            opacity: 1;
+        }
 
         .event-meta-organizer-line {
             flex: 1;
@@ -1459,6 +1518,15 @@
              font-size: 14px;
          }
 
+        /* Immagini nei commenti: sempre responsive, mai sproporzionate */
+        .comment-content img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 8px auto;
+            object-fit: contain;
+        }
+
         .comment-content p {
             margin-bottom: 0.8rem;
         }
@@ -1531,6 +1599,46 @@
         .event-forum-box {
             border: 2px solid #0d6efd !important;
         }
+        /* Solo HTML prodotto dall’editor (CKEditor): interlinea e margini tra righe/paragrafi */
+        .event-forum-box .comment-content {
+            line-height: 1.22 !important;
+        }
+        .event-forum-box .comment-content p {
+            margin-top: 0 !important;
+            margin-bottom: 0.12em !important;
+            line-height: inherit !important;
+        }
+        .event-forum-box .comment-content p:last-child {
+            margin-bottom: 0 !important;
+        }
+        .event-forum-box .comment-content p:empty {
+            display: none;
+        }
+        .event-forum-box .comment-content ul,
+        .event-forum-box .comment-content ol {
+            margin-top: 0.15em !important;
+            margin-bottom: 0.2em !important;
+        }
+        .event-forum-box .comment-content li {
+            margin-bottom: 0.06em !important;
+            line-height: inherit !important;
+        }
+        .event-forum-box .comment-content h1,
+        .event-forum-box .comment-content h2,
+        .event-forum-box .comment-content h3,
+        .event-forum-box .comment-content h4,
+        .event-forum-box .comment-content h5,
+        .event-forum-box .comment-content h6 {
+            margin-top: 0.3em !important;
+            margin-bottom: 0.15em !important;
+            line-height: 1.22 !important;
+        }
+        .event-forum-box .comment-content pre {
+            margin-top: 0.2em !important;
+            margin-bottom: 0.2em !important;
+            padding: 0.4rem 0.5rem !important;
+            line-height: 1.25 !important;
+        }
 
         /* Box "Invita un amico / Porta un amico": bordo marrone */
         .event-invite-box {
@@ -1568,6 +1676,10 @@
             border: 2px solid rgba(13, 110, 253, 0.35);
             background: rgba(255, 255, 255, 0.85);
         }
+        .event-waitlist-box ul li {
+            color: #0d6efd;
+            font-weight: 700;
+        }
 
         .event-waitlist-side {
             border: 2px solid rgba(13, 110, 253, 0.35) !important;
@@ -1575,6 +1687,23 @@
         .event-waitlist-side__title {
             background: rgba(255, 243, 205, 0.85) !important;
             border-bottom: 1px solid rgba(13, 110, 253, 0.25) !important;
+        }
+        .event-waitlist-side__hint {
+            color: #8B4513;
+            font-weight: 700;
+        }
+        .event-waitlist-side .card-body ul li,
+        .event-waitlist-side .card-body ul li a {
+            color: #0d6efd !important;
+            font-weight: 700;
+        }
+
+        .btn.event-wl-leave-btn {
+            padding: 0.12rem 0.45rem;
+            font-size: 0.78rem;
+            line-height: 1.15;
+            border-radius: 0.35rem;
+            white-space: nowrap;
         }
 
         /* Gallery: non tagliare le immagini nei thumbnail */

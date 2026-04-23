@@ -13,16 +13,34 @@ class CookieConsentController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'action' => ['required', 'in:accept,reject'],
+            'action' => ['required', 'in:accept,reject,save'],
         ]);
 
-        $status = $validated['action'] === 'accept' ? 'accepted' : 'rejected';
+        $action = $validated['action'];
 
-        // Per ora: categorie minime.
-        // "necessary" è implicita; "third_party" viene abilitata solo con "accept".
-        $categories = ['necessary'];
-        if ($status === 'accepted') {
-            $categories[] = 'third_party';
+        $status = 'rejected';
+        $categories = [CookieConsent::CAT_NECESSARY];
+
+        if ($action === 'accept') {
+            $status = 'accepted';
+            $categories = CookieConsent::normalizeCategories([
+                CookieConsent::CAT_NECESSARY,
+                CookieConsent::CAT_EXTERNAL_MEDIA,
+            ]);
+        } elseif ($action === 'reject') {
+            $status = 'rejected';
+            $categories = [CookieConsent::CAT_NECESSARY];
+        } elseif ($action === 'save') {
+            $status = 'accepted';
+            $cats = $request->input('categories', []);
+            if (!is_array($cats)) {
+                $cats = [];
+            }
+            $categories = CookieConsent::normalizeCategories($cats);
+            // If only necessary is selected, treat as rejected for UX parity.
+            if ($categories === [CookieConsent::CAT_NECESSARY]) {
+                $status = 'rejected';
+            }
         }
 
         $payload = [

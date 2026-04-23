@@ -221,8 +221,20 @@
             </a>
         </div>
         <div class="collapse navbar-collapse flex-column align-items-stretch" id="navbarNav">
+            @php
+                $isAdmin = auth()->check() && auth()->user()->isAdmin();
+                // Mostra sempre il link chat agli utenti loggati: se la feature è OFF, verrà mostrata la pagina "in arrivo".
+                $showChatLink = auth()->check() ? true : (($featureChatSalottinoEnabled ?? true) || $isAdmin);
+                // Mostra sempre il link mercatino agli utenti loggati: se la feature è OFF, verrà mostrata la pagina "in arrivo".
+                $showMercatinoLink = auth()->check() ? true : (($featureMercatinoEnabled ?? true) || $isAdmin);
+            @endphp
             <ul class="navbar-nav excursio-navbar__main-nav mb-2 w-100">
                 @guest
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('photo-albums.index') }}">
+                            <i class="fas fa-images"></i> Album foto
+                        </a>
+                    </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ route('login') }}">
                             <i class="fas fa-sign-in-alt"></i> Accedi
@@ -233,16 +245,34 @@
                             <i class="fas fa-user-plus"></i> Registrati
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ route('chat.index') }}">
-                            <i class="fas fa-comments"></i> Salottino delle chat
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ route('mercatino.index') }}">
-                            <i class="fas fa-store"></i> Mercatino
-                        </a>
-                    </li>
+                    @if($showChatLink)
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ route('chat.index') }}">
+                                <i class="fas fa-comments"></i> Salottino delle chat
+                                @if(!($featureChatSalottinoEnabled ?? true))
+                                    @if($isAdmin)
+                                        <span class="ms-1 badge bg-secondary">OFF</span>
+                                    @else
+                                        <span class="ms-1 badge bg-warning text-dark">IN ARRIVO</span>
+                                    @endif
+                                @endif
+                            </a>
+                        </li>
+                    @endif
+                    @if($showMercatinoLink)
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ route('mercatino.index') }}">
+                                <i class="fas fa-store"></i> Mercatino
+                                @if(!($featureMercatinoEnabled ?? true))
+                                    @if($isAdmin)
+                                        <span class="ms-1 badge bg-secondary">OFF</span>
+                                    @else
+                                        <span class="ms-1 badge bg-warning text-dark">IN ARRIVO</span>
+                                    @endif
+                                @endif
+                            </a>
+                        </li>
+                    @endif
                     <li class="nav-item">
                         <a class="nav-link" href="{{ route('home') }}#descrizione-eventi" title="Chi siamo e cosa facciamo">
                             <i class="fas fa-info-circle"></i> Chi siamo e cosa facciamo
@@ -256,6 +286,27 @@
                         <strong class="text-white">{{ auth()->user()->username }}</strong>
                     </span>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ route('photo-albums.index') }}">
+                        <i class="fas fa-images"></i> Album foto
+                    </a>
+                </li>
+                @if(session()->has('impersonator_id'))
+                    <li class="nav-item d-flex align-items-center">
+                        <span class="navbar-text text-warning small">
+                            <i class="fas fa-user-secret me-1"></i>
+                            Stai impersonando <strong>{{ session('impersonated_username') }}</strong>
+                        </span>
+                    </li>
+                    <li class="nav-item">
+                        <form method="POST" action="{{ route('impersonation.stop') }}" class="d-inline">
+                            @csrf
+                            <button type="submit" class="nav-link btn btn-link text-warning" title="Torna admin">
+                                <i class="fas fa-undo"></i> Torna admin
+                            </button>
+                        </form>
+                    </li>
+                @endif
                 <li class="nav-item">
                     <a class="nav-link" href="{{ route('profile.show', auth()->user()) }}">
                         <i class="fas fa-user-circle"></i> Profilo
@@ -276,14 +327,37 @@
                         <i class="fas fa-history"></i> Eventi passati
                     </a>
                 </li>
+                @if($showChatLink)
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('chat.index') }}">
+                            <i class="fas fa-comments"></i> Salottino delle chat
+                            @if(!($featureChatSalottinoEnabled ?? true))
+                                @if($isAdmin)
+                                    <span class="ms-1 badge bg-secondary">OFF</span>
+                                @else
+                                    <span class="ms-1 badge bg-warning text-dark">IN ARRIVO</span>
+                                @endif
+                            @endif
+                        </a>
+                    </li>
+                @endif
+                @if($showMercatinoLink)
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('mercatino.index') }}">
+                            <i class="fas fa-store"></i> Mercatino
+                            @if(!($featureMercatinoEnabled ?? true))
+                                @if($isAdmin)
+                                    <span class="ms-1 badge bg-secondary">OFF</span>
+                                @else
+                                    <span class="ms-1 badge bg-warning text-dark">IN ARRIVO</span>
+                                @endif
+                            @endif
+                        </a>
+                    </li>
+                @endif
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ route('chat.index') }}">
-                        <i class="fas fa-comments"></i> Salottino delle chat
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ route('mercatino.index') }}">
-                        <i class="fas fa-store"></i> Mercatino
+                    <a class="nav-link" href="{{ route('my-events.active') }}">
+                        <i class="fas fa-calendar-check"></i> I Tuoi Eventi Attivi
                     </a>
                 </li>
                 @auth
@@ -291,10 +365,10 @@
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="manageDropdown" role="button"
                                data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="fas fa-calendar-plus"></i> I Miei Eventi
+                                <i class="fas fa-calendar-plus"></i> Gestione eventi
                             </a>
                             <ul class="dropdown-menu" aria-labelledby="manageDropdown">
-                                <li><a class="dropdown-item" href="{{ route('manage.events.index') }}">I Miei Eventi</a></li>
+                                <li><a class="dropdown-item" href="{{ route('manage.events.index') }}">Gestisci eventi</a></li>
                                 <li><a class="dropdown-item" href="{{ route('manage.events.create') }}">Crea Evento</a></li>
                             </ul>
                         </li>
@@ -311,6 +385,7 @@
                             <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
                                 <li><a class="dropdown-item" href="{{ route('admin.dashboard') }}">Dashboard</a></li>
                                 <li><a class="dropdown-item" href="{{ route('admin.events.index') }}">Gestione Eventi</a></li>
+                                <li><a class="dropdown-item" href="{{ route('photo-albums.index') }}">Album foto</a></li>
                                 <li>
                                     <a class="dropdown-item d-flex align-items-center justify-content-between gap-2 {{ ($adminPendingUsersCount ?? 0) > 0 ? 'fw-semibold text-dark' : '' }}"
                                        href="{{ route('admin.users.index') }}">
@@ -464,6 +539,9 @@
                         @endif
                     </div>
                 </div>
+
+                {{-- Contenuti opzionali sotto "Eventi attivi" (per singole pagine) --}}
+                @yield('sidebar_after_my_events')
             @endauth
         </div>
         @endif
@@ -500,6 +578,13 @@
             <a href="{{ url('/cookie-policy') }}" class="text-white-50 text-decoration-none">Cookie Policy</a>
             <span class="mx-2 text-white-50">|</span>
             <a href="{{ url('/privacy-policy') }}" class="text-white-50 text-decoration-none">Privacy Policy</a>
+            @if(!View::hasSection('suppress_cookie_modal'))
+                <span class="mx-2 text-white-50">|</span>
+                <button type="button" class="btn btn-link p-0 align-baseline text-white-50 text-decoration-none"
+                        onclick="(function(){var el=document.getElementById('cookieConsentModal'); if(el && typeof bootstrap!=='undefined'){bootstrap.Modal.getOrCreateInstance(el,{backdrop:'static',keyboard:false}).show();}})();">
+                    Preferenze cookie
+                </button>
+            @endif
         </div>
     </div>
 </footer>
@@ -569,6 +654,11 @@ document.addEventListener('DOMContentLoaded', function () {
 @yield('scripts')
 
 {{-- Banner cookie custom (solo se non hai ancora scelto) --}}
-<x-cookie-banner :show="$cookieBannerShouldShow ?? true" />
+@php
+    $cookieConsent = \App\Support\CookieConsent::read(request());
+@endphp
+@if(!View::hasSection('suppress_cookie_modal'))
+    <x-cookie-consent-modal :show="$cookieBannerShouldShow ?? true" :consent="$cookieConsent" />
+@endif
 </body>
 </html>

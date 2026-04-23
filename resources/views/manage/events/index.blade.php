@@ -1,14 +1,19 @@
 @extends('layouts.app')
 
-@section('title', 'I miei eventi - Excursio')
+@section('title', 'La Tua Agenda Eventi - Excursio')
 
 @section('content')
 <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2><i class="fas fa-calendar-plus"></i> I miei eventi</h2>
-        <a href="{{ route('manage.events.create') }}" class="btn btn-success">
-            <i class="fas fa-plus"></i> Crea evento
-        </a>
+        <h2><i class="fas fa-calendar-plus"></i> La Tua Agenda Eventi</h2>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <a href="{{ route('home') }}" class="btn btn-outline-primary">
+                <i class="fas fa-home"></i> Home
+            </a>
+            <a href="{{ route('manage.events.create') }}" class="btn btn-success">
+                <i class="fas fa-plus"></i> Crea evento
+            </a>
+        </div>
     </div>
 
     @if($events->count() > 0)
@@ -44,7 +49,9 @@
                             @endif
                         </td>
                         <td>
-                            @if(!$event->pubblicato)
+                            @if($event->is_past_event)
+                                <span class="badge text-primary border border-primary">Scaduto</span>
+                            @elseif(!$event->pubblicato)
                                 <span class="badge bg-secondary">Disattivato</span>
                             @else
                                 <span class="badge bg-success">Pubblicato</span>

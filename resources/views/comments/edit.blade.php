@@ -42,7 +42,7 @@
                                 {{-- HTML non escapato: CKEditor deve ricevere markup reale, non &lt;p&gt;… --}}
                                 <textarea class="form-control" id="content" name="content"
                                           rows="6" placeholder="Modifica il tuo commento..."
-                                          required>{!! old('content', $comment->content) !!}</textarea>
+                                          required>{!! old('content', $editorContent ?? $comment->content) !!}</textarea>
                                 @error('content')
                                 <div class="text-danger">{{ $message }}</div>
                                 @enderror
@@ -81,5 +81,10 @@
 @endsection
 
 @section('scripts')
-    @include('partials.ckeditor4-description', ['field' => 'content', 'height' => 300])
+    @include('partials.ckeditor4-description', [
+        'field' => 'content',
+        'height' => 300,
+        'editable_line_height' => 1.22,
+        'editable_p_margin' => '0.2em',
+    ])
 @endsection

@@ -44,12 +44,12 @@
                             <div class="mb-3">
                                 <label for="target" class="form-label newsletter-target-label">Destinatari</label>
                                 <select class="form-select" id="target" name="target" required onchange="toggleUserSelection()">
-                                    <option value="all">Tutti gli utenti</option>
-                                    <option value="approved">Solo Utenti Attivati</option>
-                                    <option value="news" selected>Solo utenti con News attiva (newsletter)</option>
-                                    <option value="participants">Solo utenti che partecipano ad eventi</option>
-                                    <option value="never_participated">Solo utenti che non hanno mai partecipato ad eventi</option>
-                                    <option value="pending">Solo utenti in attesa di approvazione</option>
+                                    <option value="all" style="color:#6c757d; font-weight:800;">Tutti gli utenti</option>
+                                    <option value="approved" style="color:#198754; font-weight:800;">Solo Utenti Attivati</option>
+                                    <option value="news" selected style="color:#0aa2c0; font-weight:800;">Solo utenti con News attiva (newsletter)</option>
+                                    <option value="participants" style="color:#b88400; font-weight:800;">Solo utenti che partecipano ad eventi</option>
+                                    <option value="never_participated" style="color:#6f42c1; font-weight:800;">Solo utenti che non hanno mai partecipato ad eventi</option>
+                                    <option value="pending" style="color:#fd7e14; font-weight:800;">Solo utenti in attesa di approvazione</option>
                                 </select>
                                 <small class="form-text text-muted">
                                     Seleziona il gruppo a cui inviare email
@@ -62,7 +62,7 @@
                                 <div id="newsGroupPanelHint" class="alert alert-info py-2 px-3 small mb-3 d-none" role="status">
                                     Seleziona <strong>“Solo utenti con News attiva”</strong> in <strong>Destinatari</strong> per attivare l’invio a gruppi.
                                 </div>
-                                <p class="small text-muted mb-3">
+                                <p class="small mb-3 newsletter-groups-desc">
                                     Gli iscritti sono ordinati in modo fisso (per ID utente) e divisi in blocchi della dimensione che scegli (es. 80).
                                     Puoi inviare <strong>2 o 3 gruppi per volta</strong> (fino a 5) per non sovraccaricare il server.
                                     Ripeti l’invio con altri gruppi fino a coprire tutti.
@@ -78,6 +78,60 @@
                                     <label class="form-check-label" for="news_send_groups">
                                         <strong>Solo gruppi selezionati</strong> (blocchi da N persone)
                                     </label>
+                                </div>
+
+                                @php
+                                    if (old('news_receipt_admin_id') !== null) {
+                                        $newsReceiptSelectedId = (string) old('news_receipt_admin_id');
+                                    } elseif (auth()->check() && auth()->user()->isAdmin()) {
+                                        $newsReceiptSelectedId = (string) auth()->user()->userID;
+                                    } else {
+                                        $newsReceiptSelectedId = '';
+                                    }
+                                @endphp
+                                <div class="mt-3 pt-2 border-top">
+                                    <div class="d-flex flex-wrap align-items-end gap-2">
+                                        <div class="flex-grow-1" style="min-width: 220px;">
+                                            <label for="news_receipt_admin_id" class="form-label small mb-1">
+                                                Responsabile riscontro invio (amministratore)
+                                            </label>
+                                            <select class="form-select form-select-sm" name="news_receipt_admin_id" id="news_receipt_admin_id">
+                                                <option value="">Scegli un amministratore...</option>
+                                                @foreach($newsletterReceiptAdmins ?? [] as $adm)
+                                                    @php
+                                                        $__lbl = trim((string) $adm->nome) !== '' ? trim($adm->nome) : 'Senza nome';
+                                                        if (!empty($adm->username)) {
+                                                            $__lbl .= ' ('.$adm->username.')';
+                                                        }
+                                                        if (!empty($adm->email)) {
+                                                            $__lbl .= ' - '.$adm->email;
+                                                        }
+                                                    @endphp
+                                                    <option value="{{ $adm->userID }}"{{ $newsReceiptSelectedId === (string) $adm->userID ? ' selected' : '' }}>{{ $__lbl }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div class="pb-1">
+                                            <button type="button" class="btn btn-success btn-sm" id="newsletterTestSendToReceiptBtn"
+                                                    title="Invia una sola email di prova al responsabile scelto, per controllare oggetto, formattazione e consegna">
+                                                <i class="fas fa-envelope me-1"></i>Prova invio al responsabile
+                                            </button>
+                                            <button type="button" class="btn btn-secondary btn-sm ms-1" id="newsletterReceiptHelpBtn"
+                                                    title="Mostra/Nascondi spiegazione">
+                                                Leggimi
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <small class="text-muted d-block mt-1 d-none" id="newsletterReceiptHelpText">
+                                        Scegli chi riceve la mail di prova e, se invii a gruppi, chi viene indicato come referente interno (compare nel messaggio di conferma e nel registro attività).
+                                        Il pulsante «Prova invio» manda <strong>solo a quel destinatario</strong> una copia (oggetto con prefisso [PROVA]), senza inviare ai gruppi.
+                                    </small>
+                                    @php
+                                        $__nrAdm = $newsletterReceiptAdmins ?? collect();
+                                    @endphp
+                                    @if($__nrAdm->isEmpty())
+                                        <p class="small text-danger mb-0 mt-1">Nessun amministratore trovato: serve almeno un utente con ruolo Admin.</p>
+                                    @endif
                                 </div>
 
                                 <div id="newsGroupsFields" class="ps-2 border-start border-2 border-info" style="display: none;">
@@ -99,58 +153,6 @@
                                         <button type="button" class="btn btn-secondary btn-sm mb-2" id="previewRecipientsBtn">
                                             <i class="fas fa-list"></i> Mostra elenco destinatari
                                         </button>
-
-                                        @php
-                                            if (old('news_receipt_admin_id') !== null) {
-                                                $newsReceiptSelectedId = (string) old('news_receipt_admin_id');
-                                            } elseif (auth()->check() && auth()->user()->isAdmin()) {
-                                                $newsReceiptSelectedId = (string) auth()->user()->userID;
-                                            } else {
-                                                $newsReceiptSelectedId = '';
-                                            }
-                                        @endphp
-                                        <div class="d-flex flex-wrap align-items-end gap-2">
-                                            <div class="flex-grow-1" style="min-width: 220px;">
-                                                <label for="news_receipt_admin_id" class="form-label small mb-1">
-                                                    Responsabile riscontro invio (amministratore) <span class="text-danger">*</span>
-                                                </label>
-                                                <select class="form-select form-select-sm" name="news_receipt_admin_id" id="news_receipt_admin_id">
-                                                    <option value="">Scegli un amministratore...</option>
-                                                    @foreach($newsletterReceiptAdmins ?? [] as $adm)
-                                                        @php
-                                                            $__lbl = trim((string) $adm->nome) !== '' ? trim($adm->nome) : 'Senza nome';
-                                                            if (!empty($adm->username)) {
-                                                                $__lbl .= ' ('.$adm->username.')';
-                                                            }
-                                                            if (!empty($adm->email)) {
-                                                                $__lbl .= ' - '.$adm->email;
-                                                            }
-                                                        @endphp
-                                                        <option value="{{ $adm->userID }}"{{ $newsReceiptSelectedId === (string) $adm->userID ? ' selected' : '' }}>{{ $__lbl }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                            <div class="pb-1">
-                                                <button type="button" class="btn btn-success btn-sm" id="newsletterTestSendToReceiptBtn"
-                                                        title="Invia una sola email di prova al responsabile scelto, per controllare oggetto, formattazione e consegna">
-                                                    <i class="fas fa-envelope me-1"></i>Prova invio al responsabile
-                                                </button>
-                                                <button type="button" class="btn btn-secondary btn-sm ms-1" id="newsletterReceiptHelpBtn"
-                                                        title="Mostra/Nascondi spiegazione">
-                                                    Leggimi
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <small class="text-muted d-block mt-1 d-none" id="newsletterReceiptHelpText">
-                                            Solo per invio a gruppi: scegli chi viene indicato come referente interno per questo invio (compare nel messaggio di conferma e nel registro attività).
-                                            Il pulsante «Prova invio» manda <strong>solo a quel destinatario</strong> una copia (oggetto con prefisso [PROVA]), senza inviare ai gruppi.
-                                        </small>
-                                        @php
-                                            $__nrAdm = $newsletterReceiptAdmins ?? collect();
-                                        @endphp
-                                        @if($__nrAdm->isEmpty())
-                                            <p class="small text-danger mb-0 mt-1">Nessun amministratore trovato: serve almeno un utente con ruolo Admin.</p>
-                                        @endif
                                     </div>
                                 </div>
                             </div>
@@ -950,11 +952,6 @@
                     }
                     return;
                 }
-                var groupsRadio = document.getElementById('news_send_groups');
-                if (!groupsRadio || !groupsRadio.checked) {
-                    window.alert('Attiva prima «Solo gruppi selezionati» e compila i campi obbligatori.');
-                    return;
-                }
                 if (!window.confirm('Verrà inviata una sola email di PROVA al responsabile selezionato. Nessun invio ai gruppi iscritti. Continuare?')) {
                     return;
                 }
@@ -1080,6 +1077,12 @@
         /* Box "Invio a gruppi": bordo blu + radio blu */
         #newsGroupPanel {
             border: 2px solid #0d6efd !important;
+        }
+        #newsGroupPanel .newsletter-groups-desc {
+            color: #084298 !important;
+            font-weight: 700;
+            border-left: 4px solid #084298;
+            padding-left: 0.6rem;
         }
         /* Bordi blu per tutte le caselle dentro "Invio a gruppi" */
         #newsGroupPanel .form-control,

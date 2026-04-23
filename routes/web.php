@@ -15,6 +15,8 @@ use App\Http\Controllers\CommentController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\GuestController;
 use App\Http\Controllers\CookieConsentController;
+use App\Http\Controllers\ImpersonationController;
+use App\Http\Controllers\CkeditorUploadController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -25,6 +27,15 @@ Route::get('/', [EventController::class, 'index'])->name('home');
 
 // Cookie consent (custom)
 Route::post('/cookie/consent', [CookieConsentController::class, 'store'])->name('cookie.consent.store');
+
+// Legal pages
+Route::get('/privacy-policy', function () {
+    return view('legal.privacy-policy');
+})->name('legal.privacy');
+
+Route::get('/cookie-policy', function () {
+    return view('legal.cookie-policy');
+})->name('legal.cookie');
 // Se il progetto viene aperto come /excursio/public/ (xampp senza vhost), reindirizza alla home corretta
 Route::get('/public', function () {
     return redirect()->route('home');
@@ -50,16 +61,21 @@ Route::get('/events/{event}', [EventController::class, 'show'])->name('events.sh
 // Chat: solo utenti autenticati e approvati (come il resto del sito riservato)
 Route::get('/chat', [ChatController::class, 'index'])
     ->name('chat.index')
-    ->middleware(['auth', 'approved']);
+    ->middleware(['auth', 'approved', 'feature:chat_salottino']);
+
+// Chat "in arrivo" (quando la feature è disattivata)
+Route::get('/chat/in-arrivo', function () {
+    return view('chat.coming-soon');
+})->name('chat.coming-soon')->middleware(['auth', 'approved']);
 Route::post('/chat', [ChatController::class, 'store'])
     ->name('chat.store')
-    ->middleware(['auth', 'approved']);
+    ->middleware(['auth', 'approved', 'feature:chat_salottino']);
 Route::put('/chat/{message}', [ChatController::class, 'update'])
     ->name('chat.update')
-    ->middleware(['auth', 'approved']);
+    ->middleware(['auth', 'approved', 'feature:chat_salottino']);
 Route::delete('/chat/{message}', [ChatController::class, 'destroy'])
     ->name('chat.destroy')
-    ->middleware(['auth', 'approved']);
+    ->middleware(['auth', 'approved', 'feature:chat_salottino']);
 Route::post('/chat/header-image', [ChatController::class, 'updateHeaderImage'])->name('chat.header-image')->middleware('admin');
 
 // Mercatino: solo utenti registrati e approvati (come la chat)
@@ -87,7 +103,12 @@ Route::get('/mercatino', function () {
     })->values();
 
     return view('mercatino.index', compact('bozze'));
-})->name('mercatino.index')->middleware(['auth', 'approved']);
+})->name('mercatino.index')->middleware(['auth', 'approved', 'feature:mercatino']);
+
+// Mercatino "in arrivo" (quando la feature è disattivata)
+Route::get('/mercatino/in-arrivo', function () {
+    return view('mercatino.coming-soon');
+})->name('mercatino.coming-soon')->middleware(['auth', 'approved']);
 Route::post('/mercatino', function (Request $request) {
     $validated = $request->validate([
         'titolo' => ['required', 'string', 'max:120'],
@@ -161,7 +182,7 @@ Route::post('/mercatino', function (Request $request) {
     }
 
     return redirect()->route('mercatino.index')->with('success', $msg);
-})->name('mercatino.store')->middleware(['auth', 'approved']);
+})->name('mercatino.store')->middleware(['auth', 'approved', 'feature:mercatino']);
 
 // Route di autenticazione
 Route::middleware('guest')->group(function () {
@@ -186,6 +207,16 @@ Route::middleware('guest')->group(function () {
 // Route protette
 Route::middleware(['auth'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+    Route::post('/impersonation/stop', [ImpersonationController::class, 'stop'])->name('impersonation.stop');
+
+    Route::get('/albums-foto', [EventController::class, 'photoAlbums'])
+        ->name('photo-albums.index')
+        ->middleware('feature:albums_foto');
+
+    // Azioni admin per pagina Album foto
+    Route::delete('/albums-foto/{event}', [EventController::class, 'destroyPhotoAlbumLink'])
+        ->name('photo-albums.destroy')
+        ->middleware('admin');
 });
 
 // Route protette (solo utenti approvati)
@@ -214,6 +245,7 @@ Route::middleware(['auth', 'approved'])->group(function () {
     Route::get('/profile/{user}', [ProfileController::class, 'show'])->name('profile.show');
     Route::get('/profile/{user}/edit', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile/{user}', [ProfileController::class, 'update'])->name('profile.update');
+    Route::get('/my-events/active', [ProfileController::class, 'myActiveEvents'])->name('my-events.active');
     Route::post('/profile/{user}/password', [ProfileController::class, 'updatePassword'])
         ->name('profile.password.update')
         ->middleware('admin');
@@ -233,6 +265,9 @@ Route::middleware(['auth', 'approved'])->group(function () {
     Route::get('/comments/{comment}/edit', [CommentController::class, 'edit'])->name('comments.edit');
     Route::put('/comments/{comment}', [CommentController::class, 'update'])->name('comments.update');
     Route::delete('/comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
+
+    // Upload immagini da CKEditor (Forum eventi / descrizioni)
+    Route::post('/ckeditor/upload', [CkeditorUploadController::class, 'upload'])->name('ckeditor.upload');
 
     // Gestione ospiti
     Route::post('/events/{event}/add-guest', [GuestController::class, 'addGuest'])->name('events.add-guest');
@@ -264,10 +299,19 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/home-pending-registrations/dismiss', [\App\Http\Controllers\Admin\HomePendingBannerController::class, 'dismiss'])
         ->name('home-pending-dismiss');
 
+    Route::post('/site-settings/feature/{featureKey}/toggle', [\App\Http\Controllers\Admin\SiteSettingsController::class, 'toggleFeature'])
+        ->name('site-settings.feature.toggle');
+
+    Route::get('/common-event', [\App\Http\Controllers\Admin\CommonEventController::class, 'showForm'])
+        ->name('common-event.form');
+    Route::post('/common-event', [\App\Http\Controllers\Admin\CommonEventController::class, 'search'])
+        ->name('common-event.search');
+
     Route::resource('events', \App\Http\Controllers\Admin\EventController::class);
     Route::post('/events/{event}/duplicate', [\App\Http\Controllers\Admin\EventController::class, 'duplicate'])->name('events.duplicate');
     Route::post('/events/{event}/toggle-status', [\App\Http\Controllers\Admin\EventController::class, 'toggleStatus'])->name('events.toggle-status');
     Route::get('/users', [\App\Http\Controllers\Admin\UserController::class, 'index'])->name('users.index');
+    Route::post('/users/{user}/impersonate', [ImpersonationController::class, 'start'])->name('users.impersonate');
     Route::get('/users/logins', [AdminUserController::class, 'logins'])->name('users.logins');
     Route::post('/users/{user}/approve', [\App\Http\Controllers\Admin\UserController::class, 'approve'])->name('users.approve');
     Route::post('/users/{user}/suspend', [\App\Http\Controllers\Admin\UserController::class, 'suspend'])->name('users.suspend');
@@ -283,6 +327,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::delete('/groups/{group}/members/{user}', [\App\Http\Controllers\Admin\GroupController::class, 'removeMember'])->name('groups.remove-member');
 
     // Newsletter routes
+    // Compatibilità: alcuni link vecchi puntano a /admin/newsletter/create
+    Route::get('/newsletter/create', function () {
+        return redirect()->route('admin.newsletter.create');
+    })->name('newsletter.create-compat');
     Route::get('/newsletter', [\App\Http\Controllers\Admin\NewsletterController::class, 'create'])->name('newsletter.create');
     Route::post('/newsletter/send', [\App\Http\Controllers\Admin\NewsletterController::class, 'send'])->name('newsletter.send');
     Route::get('/newsletter/stats', [\App\Http\Controllers\Admin\NewsletterController::class, 'stats'])->name('newsletter.stats');

@@ -19,6 +19,9 @@ class UserController extends Controller
         if ($request->query('registrations') === 'pending') {
             $query->where('abilitato', 3)->where('ruolo', '!=', 0)
                 ->orderBy('userID');
+        } elseif ($request->query('status') === 'suspended') {
+            $query->where('abilitato', 0)->where('ruolo', '!=', 0)
+                ->orderBy('userID');
         } else {
             $query->orderBy('ruolo')
                 ->orderBy('abilitato')

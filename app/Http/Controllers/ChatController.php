@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ChatMessage;
 use App\Models\User;
+use App\Support\SafeRichText;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
@@ -61,16 +62,38 @@ class ChatController extends Controller
             return redirect()->route('login')->with('error', 'Devi essere registrato per scrivere in chat.');
         }
 
+        $isAdmin = Auth::user()->isAdmin();
         $validated = $request->validate([
-            'content' => 'required|string|max:1000',
+            'content' => $isAdmin
+                ? 'required|string|max:10000'
+                : 'required|string|max:1000',
+            'reply_to_nickname' => 'nullable|string|max:255',
+            'reply_to_when' => 'nullable|string|max:64',
         ]);
+
+        $content = (string) $validated['content'];
+
+        $replyNick = trim((string) ($validated['reply_to_nickname'] ?? ''));
+        $replyWhen = trim((string) ($validated['reply_to_when'] ?? ''));
+        if ($replyNick !== '') {
+            $suffix = $replyWhen !== '' ? (' (' . $replyWhen . ')') : '';
+            $prefix = '@ Risponde a ' . $replyNick . $suffix . ' ';
+            $content = $prefix . $content;
+        }
+
+        if ($isAdmin) {
+            $content = SafeRichText::sanitize($content, true);
+        }
 
         ChatMessage::create([
             'user_id' => Auth::id(),
-            'content' => $validated['content'],
+            'content' => $content,
         ]);
 
-        $this->notifyAdminChatMessage(Auth::user(), $validated['content']);
+        // Evita di auto-notificare l'admin su propri messaggi ricchi.
+        if (!$isAdmin) {
+            $this->notifyAdminChatMessage(Auth::user(), $content);
+        }
 
         return redirect()->route('chat.index');
     }
@@ -85,11 +108,19 @@ class ChatController extends Controller
             abort(403);
         }
 
+        $isAdmin = Auth::user()->isAdmin();
         $validated = $request->validate([
-            'content' => 'required|string|max:1000',
+            'content' => $isAdmin
+                ? 'required|string|max:10000'
+                : 'required|string|max:1000',
         ]);
 
-        $message->content = $validated['content'];
+        $content = (string) $validated['content'];
+        if ($isAdmin) {
+            $content = SafeRichText::sanitize($content, true);
+        }
+
+        $message->content = $content;
         $message->save();
 
         return redirect()->route('chat.index')->with('success', 'Messaggio modificato.');

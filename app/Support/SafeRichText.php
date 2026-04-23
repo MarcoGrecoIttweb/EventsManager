@@ -32,11 +32,17 @@ class SafeRichText
         return preg_replace_callback('/<img\b[^>]*>/i', function (array $m): string {
             $tag = $m[0];
             $out = '';
+            $widthFromStyle = null;
+            $heightFromStyle = null;
 
             if (preg_match('/src\s*=\s*(["\'])(.*?)\1/i', $tag, $sm)) {
                 $url = trim($sm[2]);
                 if (! self::isSafeImgSrc($url)) {
                     return '';
+                }
+                // Normalizza percorsi relativi locali (es. "upload_immagini/x.jpg") in assoluti ("/upload_immagini/x.jpg")
+                if (!preg_match('#^(https?:)?//#i', $url) && !str_starts_with($url, '/')) {
+                    $url = '/' . ltrim($url, '/');
                 }
                 $out .= ' src="' . e($url) . '"';
             } else {
@@ -46,11 +52,28 @@ class SafeRichText
             if (preg_match('/alt\s*=\s*(["\'])(.*?)\1/i', $tag, $am)) {
                 $out .= ' alt="' . e($am[2]) . '"';
             }
+
+            // CKEditor spesso salva il ridimensionamento in style="width: ...; height: ...".
+            // Convertiamo width/height px in attributi HTML così sopravvivono alla sanificazione.
+            if (preg_match('/style\s*=\s*(["\'])(.*?)\1/i', $tag, $stm)) {
+                $style = (string) ($stm[2] ?? '');
+                if (preg_match('/\bwidth\s*:\s*(\d{1,4})\s*px\b/i', $style, $sw)) {
+                    $widthFromStyle = (int) $sw[1];
+                }
+                if (preg_match('/\bheight\s*:\s*(\d{1,4})\s*px\b/i', $style, $sh)) {
+                    $heightFromStyle = (int) $sh[1];
+                }
+            }
+
             if (preg_match('/\bwidth\s*=\s*(["\']?)(\d+)\1/i', $tag, $wm)) {
                 $out .= ' width="' . (int) $wm[2] . '"';
+            } elseif (is_int($widthFromStyle) && $widthFromStyle > 0) {
+                $out .= ' width="' . $widthFromStyle . '"';
             }
             if (preg_match('/\bheight\s*=\s*(["\']?)(\d+)\1/i', $tag, $hm)) {
                 $out .= ' height="' . (int) $hm[2] . '"';
+            } elseif (is_int($heightFromStyle) && $heightFromStyle > 0) {
+                $out .= ' height="' . $heightFromStyle . '"';
             }
 
             return '<img' . $out . ' />';
@@ -72,6 +95,11 @@ class SafeRichText
         }
         // Percorso assoluto sul sito (es. /upload_immagini/foo.jpg)
         if (str_starts_with($url, '/') && ! str_starts_with($url, '//')) {
+            return true;
+        }
+        // Percorso relativo locale consentito (es. upload_immagini/foo.jpg)
+        // Limitiamo a cartelle pubbliche note per evitare "path traversal" o riferimenti strani.
+        if (preg_match('#^(upload_immagini|upload_avatar)/[a-z0-9][a-z0-9._-]*\.(?:jpg|jpeg|png|webp|gif)$#i', $url)) {
             return true;
         }
 

@@ -9,6 +9,17 @@ use Illuminate\Support\Facades\Hash;
 
 class ProfileController extends Controller
 {
+    public function myActiveEvents(Request $request)
+    {
+        $user = $request->user();
+
+        $events = $user->participatingEvents()
+            ->paginate(20)
+            ->withQueryString();
+
+        return view('profile.my-active-events', compact('events'));
+    }
+
     public function show(Request $request, User $user)
     {
         $this->authorize('view', $user);

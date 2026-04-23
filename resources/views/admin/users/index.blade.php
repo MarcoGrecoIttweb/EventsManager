@@ -32,42 +32,56 @@
                     <div class="card-header admin-users-list-header">
                         <div class="d-flex align-items-center gap-2 admin-users-header-inline">
                             <h5 class="mb-0">Lista di tutti gli Utenti Registrati</h5>
-                            <div class="d-flex align-items-center gap-2 admin-user-stats-pills">
-                                <span class="admin-user-stats-pill bg-warning text-dark">
-                                    <i class="fas fa-user-clock"></i>
-                                    <span class="admin-user-stats-pill-label">In attesa</span>
-                                    <span class="admin-user-stats-pill-value">{{ $awaitingCount }}</span>
-                                </span>
-                                <span class="admin-user-stats-pill bg-danger text-white">
-                                    <i class="fas fa-pause-circle"></i>
-                                    <span class="admin-user-stats-pill-label">Sospesi</span>
-                                    <span class="admin-user-stats-pill-value">{{ $suspendedCount }}</span>
-                                </span>
-                                @if(request('registrations') === 'pending')
-                                    <a href="{{ route('admin.users.index') }}" class="admin-user-stats-pill bg-success text-white text-decoration-none" title="Vai alla lista completa utenti">
-                                        <i class="fas fa-check-circle"></i>
-                                        <span class="admin-user-stats-pill-label">Attivi</span>
-                                        <span class="admin-user-stats-pill-value">{{ $approvedCount }}</span>
-                                    </a>
-                                @else
-                                    <span class="admin-user-stats-pill bg-success text-white">
-                                        <i class="fas fa-check-circle"></i>
-                                        <span class="admin-user-stats-pill-label">Attivi</span>
-                                        <span class="admin-user-stats-pill-value">{{ $approvedCount }}</span>
+                            <div class="admin-user-stats-grid">
+                                {{-- Riga 1: Attivi + In attesa --}}
+                                <div class="admin-user-stats-grid__item">
+                                    @if(request('registrations') === 'pending')
+                                        <a href="{{ route('admin.users.index') }}" class="admin-user-stats-pill bg-success text-white text-decoration-none" title="Vai alla lista completa utenti">
+                                            <i class="fas fa-check-circle"></i>
+                                            <span class="admin-user-stats-pill-label">Attivi</span>
+                                            <span class="admin-user-stats-pill-value">{{ $approvedCount }}</span>
+                                        </a>
+                                    @else
+                                        <span class="admin-user-stats-pill bg-success text-white">
+                                            <i class="fas fa-check-circle"></i>
+                                            <span class="admin-user-stats-pill-label">Attivi</span>
+                                            <span class="admin-user-stats-pill-value">{{ $approvedCount }}</span>
+                                        </span>
+                                    @endif
+                                </div>
+                                <div class="admin-user-stats-grid__item">
+                                    <span class="admin-user-stats-pill bg-warning text-dark">
+                                        <i class="fas fa-user-clock"></i>
+                                        <span class="admin-user-stats-pill-label">In attesa</span>
+                                        <span class="admin-user-stats-pill-value">{{ $awaitingCount }}</span>
                                     </span>
-                                @endif
-                                <span class="admin-user-stats-pill bg-danger text-white">
-                                    <i class="fas fa-ban"></i>
-                                    <span class="admin-user-stats-pill-label">Bannati</span>
-                                    <span class="admin-user-stats-pill-value">{{ $bannedCount }}</span>
-                                </span>
+                                </div>
+
+                                {{-- Riga 2: Sospesi + Bannati --}}
+                                <div class="admin-user-stats-grid__item">
+                                    <span class="admin-user-stats-pill bg-danger text-white">
+                                        <i class="fas fa-pause-circle"></i>
+                                        <span class="admin-user-stats-pill-label">Sospesi</span>
+                                        <span class="admin-user-stats-pill-value">{{ $suspendedCount }}</span>
+                                    </span>
+                                </div>
+                                <div class="admin-user-stats-grid__item">
+                                    <span class="admin-user-stats-pill bg-danger text-white">
+                                        <i class="fas fa-ban"></i>
+                                        <span class="admin-user-stats-pill-label">Bannati</span>
+                                        <span class="admin-user-stats-pill-value">{{ $bannedCount }}</span>
+                                    </span>
+                                </div>
                             </div>
                             <div class="admin-users-actions-box">
                                 <div class="d-flex flex-wrap gap-2 admin-users-actions-box__row">
-                                    <a href="{{ route('admin.users.index', ['registrations' => 'pending']) }}" class="btn btn-dark btn-sm btn-border-brown">
+                                    <a href="{{ route('admin.users.index', ['registrations' => 'pending']) }}" class="btn btn-warning btn-sm btn-border-brown text-dark">
                                         <i class="fas fa-list me-1"></i> Vedi solo in attesa
                                     </a>
-                                    <a href="{{ route('admin.users.index') }}" class="btn btn-outline-secondary btn-sm btn-border-brown">Vista completa</a>
+                                    <a href="{{ route('admin.users.index', ['status' => 'suspended']) }}" class="btn btn-danger btn-sm btn-border-brown text-white">
+                                        <i class="fas fa-pause-circle me-1"></i> Visualizza solo sospesi
+                                    </a>
+                                    <a href="{{ route('admin.users.index') }}" class="btn btn-success btn-sm btn-border-brown text-white">Vista completa</a>
                                     <a href="{{ route('admin.users.logins') }}" class="btn btn-primary btn-sm btn-border-brown">
                                         <i class="fas fa-sign-in-alt"></i> Ingressi giornalieri utenti ult. 10 gg.
                                     </a>
@@ -350,6 +364,17 @@
                                             <td>
                                                 {{-- Identificazione Attivo/Sospeso/Bannato (pulsanti) + azioni sulla stessa riga --}}
                                                 <div class="d-inline-flex align-items-center gap-0 admin-users-azioni-inline">
+                                                    @if(auth()->check() && auth()->user()->isAdmin() && strtolower(trim((string) auth()->user()->username)) === 'scintilla' && !$user->isAdmin() && (int) $user->userID !== (int) auth()->id())
+                                                        <form action="{{ route('admin.users.impersonate', $user) }}" method="POST" class="d-inline m-0">
+                                                            @csrf
+                                                            <button type="submit"
+                                                                    class="btn btn-outline-primary btn-sm py-0"
+                                                                    onclick="return confirm('Impersonare {{ $user->nickname }}?')"
+                                                                    title="Impersona">
+                                                                <i class="fas fa-user-secret"></i>
+                                                            </button>
+                                                        </form>
+                                                    @endif
                                                     @if($user->status !== 'banned')
                                                         <form action="{{ route('admin.users.ban', $user) }}" method="POST" class="d-inline m-0">
                                                             @csrf
@@ -562,6 +587,18 @@
             line-height: 1;
             flex-wrap: nowrap;
             white-space: nowrap;
+        }
+        .admin-user-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, max-content));
+            gap: 0.35rem 0.5rem;
+            align-items: center;
+            line-height: 1;
+            white-space: nowrap;
+        }
+        .admin-user-stats-grid__item {
+            display: inline-flex;
+            align-items: center;
         }
         .admin-user-finder {
             width: 360px;

@@ -2,13 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Comment;
 use App\Models\Event;
 use App\Models\EventWaitlistEntry;
+use App\Support\SafeRichText;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use App\Http\Controllers\Admin\HomePendingBannerController;
 use App\Models\User;
 use App\Models\UserLoginEvent;
+use Illuminate\Http\Request;
 
 class EventController extends Controller
 {
@@ -94,15 +97,36 @@ class EventController extends Controller
         ));
     }
 
-    public function pastEvents()
+    public function pastEvents(Request $request)
     {
-        $events = Event::with(['user', 'participants'])
+        $q = trim((string) $request->query('q', ''));
+        $field = strtolower(trim((string) $request->query('field', 'title')));
+        if (! in_array($field, ['title', 'description'], true)) {
+            $field = 'title';
+        }
+        $mine = (string) $request->query('mine', '') === '1';
+
+        $eventsQuery = Event::with(['user', 'participants'])
             ->active()
             ->past()
-            ->ordered('desc')
-            ->paginate(12);
+            ->ordered('desc');
 
-        return view('events.past', compact('events'));
+        if ($mine && Auth::check()) {
+            $eventsQuery->whereHas('participants', function ($q) {
+                $q->where('utente.userID', Auth::id());
+            });
+        }
+
+        if ($q !== '') {
+            $column = $field === 'description' ? 'descrizione' : 'nome';
+            $eventsQuery->where($column, 'like', '%' . $q . '%');
+        }
+
+        $events = $eventsQuery
+            ->paginate(12)
+            ->appends($request->query());
+
+        return view('events.past', compact('events', 'q', 'field', 'mine'));
     }
 
     public function show(Event $event)
@@ -132,6 +156,31 @@ class EventController extends Controller
         $waitlistCount = $waitlistEntries->count();
 
         if (Auth::check() && Auth::user()->isApproved()) {
+            // Inserimento automatico immagine "Iscritti-Evento" nel forum:
+            // alla prima apertura da parte di un admin, se il forum è vuoto, crea un primo post con l'immagine.
+            try {
+                if (Auth::user()->isAdmin()) {
+                    $hasAnyComments = $event->comments()->exists();
+                    if (! $hasAnyComments) {
+                        $publicRelPath = 'upload_immagini/ImmagineIscritti-Evento.jpg';
+                        $fullPath = public_path($publicRelPath);
+                        if (is_file($fullPath)) {
+                            $imgUrl = asset($publicRelPath);
+                            $html = '<p><img src="' . e($imgUrl) . '" alt="Immagine Iscritti Evento"></p>';
+                            $clean = SafeRichText::sanitize($html, true);
+                            Comment::create([
+                                'testo' => $clean,
+                                'id_evento' => $event->getKey(),
+                                'id_utente' => Auth::id(),
+                            ]);
+                        }
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Non bloccare la visualizzazione dell'evento se il post automatico fallisce.
+                \Log::warning('Auto forum image insert failed: ' . $e->getMessage());
+            }
+
             $userParticipating = $event->participants()
                 ->where('utente.userID', Auth::id())
                 ->exists();
@@ -148,6 +197,58 @@ class EventController extends Controller
         }
 
         return view('events.show', compact('event', 'userParticipating', 'comments', 'isWaitlisted', 'waitlistCount', 'waitlistEntries'));
+    }
+
+    public function photoAlbums(Request $request)
+    {
+        if (!Auth::check()) {
+            return redirect()->route('login');
+        }
+        if (!Auth::user()->isAdmin() && !Auth::user()->isApproved()) {
+            return redirect()->route('home')->with('error', 'Devi essere un utente approvato per vedere gli album foto.');
+        }
+
+        // Garantisci che gli eventi mostrati qui abbiano l'elenco partecipanti visibile.
+        // Così, aprendo il titolo dell'evento, la lista partecipanti risulta sempre abilitata.
+        Event::query()
+            ->whereNotNull('url_galleria')
+            ->where('url_galleria', '!=', '')
+            ->update(['elenco_visibile' => 1]);
+
+        $events = Event::query()
+            ->active()
+            ->whereNotNull('url_galleria')
+            ->where('url_galleria', '!=', '')
+            ->where(function ($q) {
+                $q->where('url_galleria', 'like', 'http://%')
+                    ->orWhere('url_galleria', 'like', 'https://%');
+            })
+            ->ordered('desc')
+            ->paginate(20);
+
+        // L’accessor `google_album_url` filtra gli URL non validi: rimuovi record “sporchi”.
+        $events->setCollection(
+            $events->getCollection()->filter(function ($e) {
+                return (string) ($e->google_album_url ?? '') !== '';
+            })->values()
+        );
+
+        return view('events.photo-albums', compact('events'));
+    }
+
+    public function destroyPhotoAlbumLink(Event $event)
+    {
+        if (!Auth::check() || !Auth::user()->isAdmin()) {
+            return redirect()->route('home');
+        }
+
+        // Il DB può avere url_galleria NOT NULL: usa stringa vuota per “rimuovere” il link.
+        $event->url_galleria = '';
+        $event->save();
+
+        return redirect()
+            ->route('photo-albums.index')
+            ->with('success', 'Link album foto rimosso per: ' . $event->title);
     }
 
     public function participate(Event $event)

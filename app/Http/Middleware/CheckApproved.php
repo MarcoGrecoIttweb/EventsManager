@@ -11,6 +11,12 @@ class CheckApproved
 {
     public function handle(Request $request, Closure $next): Response
     {
+        // Se un admin sta impersonando un utente, permetti l’accesso anche se l’utente non è approvato
+        // (serve per poter entrare nei profili sospesi/in attesa e gestirli).
+        if ($request->session()->has('impersonator_id')) {
+            return $next($request);
+        }
+
         if (Auth::check() && !Auth::user()->isApproved()) {
             $user = Auth::user();
             $message = match (true) {

@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Http\Controllers\CookieConsentController;
 use App\Models\User;
 use App\Support\CookieConsent;
+use App\Support\SiteSettings;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Blade;
@@ -44,13 +45,31 @@ class AppServiceProvider extends ServiceProvider
                 $pending = User::nonAdmin()->where('abilitato', 3)->count();
             }
             $view->with('adminPendingUsersCount', $pending);
+
+            // Feature flags globali (nascondi/attiva sezioni dal pannello admin).
+            $view->with('featureMercatinoEnabled', SiteSettings::getBool('feature.mercatino', true));
+            $view->with('featureChatSalottinoEnabled', SiteSettings::getBool('feature.chat_salottino', true));
+            $view->with('featureAlbumsFotoEnabled', SiteSettings::getBool('feature.albums_foto', true));
+        });
+
+        // Dashboard admin: serve mostrare lo stato dei toggle (oltre al layout).
+        View::composer('admin.dashboard', function ($view) {
+            $view->with('featureMercatinoEnabled', SiteSettings::getBool('feature.mercatino', true));
+            $view->with('featureChatSalottinoEnabled', SiteSettings::getBool('feature.chat_salottino', true));
+            $view->with('featureAlbumsFotoEnabled', SiteSettings::getBool('feature.albums_foto', true));
         });
 
         // Direttive Blade per bloccare script di terze parti finché non c'è consenso.
         // Uso: @thirdparty ... @endthirdparty
         Blade::if('thirdparty', function () {
             $request = request();
-            return CookieConsent::hasCategory($request, 'third_party');
+            return CookieConsent::hasCategory($request, CookieConsent::CAT_THIRD_PARTY);
+        });
+
+        // Contenuti esterni (es. Google Maps iframe).
+        Blade::if('externalmedia', function () {
+            $request = request();
+            return CookieConsent::hasCategory($request, CookieConsent::CAT_EXTERNAL_MEDIA);
         });
 
         // Variabile comoda per mostrare/nascondere il banner

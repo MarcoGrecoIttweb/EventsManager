@@ -287,6 +287,38 @@
     @include('partials.ckeditor4-description', ['height' => 400])
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Titolo evento: forza MAIUSCOLO in tempo reale
+            const titleInput = document.getElementById('title');
+            if (titleInput) {
+                titleInput.addEventListener('input', function () {
+                    const start = this.selectionStart;
+                    const end = this.selectionEnd;
+                    const upper = (this.value || '').toLocaleUpperCase('it-IT');
+                    if (upper !== this.value) {
+                        this.value = upper;
+                        try {
+                            this.setSelectionRange(start, end);
+                        } catch (e) {}
+                    }
+                });
+            }
+
+            // Presentazione riassuntiva: forza MAIUSCOLO in tempo reale (anche incolla)
+            const incipitInput = document.getElementById('incipit');
+            if (incipitInput) {
+                incipitInput.addEventListener('input', function () {
+                    const start = this.selectionStart;
+                    const end = this.selectionEnd;
+                    const upper = (this.value || '').toLocaleUpperCase('it-IT');
+                    if (upper !== this.value) {
+                        this.value = upper;
+                        try {
+                            this.setSelectionRange(start, end);
+                        } catch (e) {}
+                    }
+                });
+            }
+
             var editForm = document.getElementById('admin-event-edit-form');
             if (editForm) {
                 editForm.addEventListener('submit', function () {
