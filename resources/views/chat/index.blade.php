@@ -359,9 +359,21 @@
                             <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-paper-plane"></i> Invia
-                        </button>
+                        @php
+                            $emojis = ['😀','😁','😂','🤣','😊','😍','😘','😉','🤗','😎','🤔','😢','😭','😡','🙏','👏','👍','👎','❤️','🔥'];
+                        @endphp
+                        <div class="d-flex align-items-start gap-2 flex-wrap flex-sm-nowrap">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i> Invia
+                            </button>
+                            <div class="chat-emoji-box border rounded p-2 bg-light">
+                                <div class="d-flex flex-wrap gap-1 justify-content-start">
+                                    @foreach($emojis as $emoji)
+                                        <button type="button" class="btn btn-light btn-sm chat-emoji-btn" data-emoji="{{ $emoji }}">{{ $emoji }}</button>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
                     </form>
                 @else
                     <p class="text-muted">
@@ -434,6 +446,13 @@
             line-height: 1;
             padding: 0.25rem 0.45rem;
         }
+        .chat-emoji-box {
+            max-width: 22rem;
+        }
+        .chat-emoji-box .chat-emoji-btn {
+            min-width: 2.1rem;
+            text-align: center;
+        }
         .chat-reply-prefix {
             color: #198754;
         }
@@ -448,9 +467,18 @@
 
             document.querySelectorAll('.chat-emoji-btn').forEach(function (btn) {
                 btn.addEventListener('click', function () {
-                    if (!textarea) return;
                     const emoji = btn.getAttribute('data-emoji') || '';
                     if (!emoji) return;
+
+                    // Admin: inserisci nell'editor se presente.
+                    if (adminTextarea && typeof CKEDITOR !== 'undefined' && CKEDITOR.instances && CKEDITOR.instances['chat_admin_content']) {
+                        CKEDITOR.instances['chat_admin_content'].focus();
+                        CKEDITOR.instances['chat_admin_content'].insertText(emoji);
+                        return;
+                    }
+
+                    // Fallback: textarea utenti
+                    if (!textarea) return;
                     const start = (typeof textarea.selectionStart === 'number') ? textarea.selectionStart : textarea.value.length;
                     const end = (typeof textarea.selectionEnd === 'number') ? textarea.selectionEnd : textarea.value.length;
                     const before = textarea.value.slice(0, start);
@@ -532,26 +560,6 @@
 
 @section('sidebar_after_my_events')
     @auth
-        @if(!auth()->user()->isAdmin())
-            <div class="card card-sidebar sidebar-box--green mb-3">
-                <div class="card-header py-2">
-                    <small class="fw-bold">
-                        <i class="fas fa-face-smile text-warning me-1"></i> Smile chat
-                    </small>
-                </div>
-                <div class="card-body p-2">
-                    @php
-                        $emojis = ['😀','😁','😂','🤣','😊','😍','😘','😉','🤗','😎','🤔','😢','😭','😡','🙏','👏','👍','👎','❤️','🔥'];
-                    @endphp
-                    <div class="d-flex flex-wrap gap-1 justify-content-start">
-                        @foreach($emojis as $emoji)
-                            <button type="button" class="btn btn-light btn-sm chat-emoji-btn" data-emoji="{{ $emoji }}">{{ $emoji }}</button>
-                        @endforeach
-                    </div>
-                    <small class="text-muted d-block mt-2">Clicca una faccina per inserirla nel messaggio.</small>
-                </div>
-            </div>
-        @endif
     @endauth
 @endsection
 
