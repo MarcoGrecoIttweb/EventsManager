@@ -83,7 +83,7 @@
                                     </a>
                                     <a href="{{ route('admin.users.index') }}" class="btn btn-success btn-sm btn-border-brown text-white">Vista completa</a>
                                     <a href="{{ route('admin.users.logins') }}" class="btn btn-primary btn-sm btn-border-brown">
-                                        <i class="fas fa-sign-in-alt"></i> Ingressi giornalieri utenti ult. 10 gg.
+                                        <i class="fas fa-sign-in-alt"></i> Ingressi giornalieri ultimi gg
                                     </a>
                                     <a href="{{ route('home') }}" class="btn btn-secondary btn-sm btn-border-brown">
                                         <i class="fas fa-home"></i> Home

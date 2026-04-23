@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Models\UserLoginEvent;
 use Illuminate\Http\Request;
 
 class UserController extends Controller
@@ -47,14 +46,26 @@ class UserController extends Controller
     /**
      * Elenco ingressi giornalieri (ultimi 10 giorni).
      */
-    public function logins()
+    public function logins(Request $request)
     {
-        $events = UserLoginEvent::with('user')
-            ->where('logged_in_at', '>=', now()->subDays(10))
-            ->orderByDesc('logged_in_at')
+        $days = (int) $request->query('days', 10);
+        if ($days < 1) {
+            $days = 1;
+        }
+        if ($days > 30) {
+            $days = 30;
+        }
+
+        // Il sito legacy (parallelo) tipicamente aggiorna solo `utente.ultimo_accesso`,
+        // mentre `user_login_events` viene popolata dal sito nuovo al momento del login.
+        // Per mostrare gli accessi di ENTRAMBE le versioni, usiamo `ultimo_accesso`.
+        $users = User::query()
+            ->whereNotNull('ultimo_accesso')
+            ->where('ultimo_accesso', '>=', now()->subDays($days))
+            ->orderByDesc('ultimo_accesso')
             ->get();
 
-        return view('admin.users.logins', compact('events'));
+        return view('admin.users.logins', compact('users', 'days'));
     }
 
     /**
