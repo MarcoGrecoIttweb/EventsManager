@@ -131,3 +131,36 @@
         });
     </script>
 @endsection
+
+@section('sidebar_after_my_events')
+    @auth
+        @php $me = auth()->user(); @endphp
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-body p-2">
+                <div class="small fw-bold mb-2">
+                    <i class="fas fa-calendar-plus text-success me-1"></i> Vuoi organizzare eventi?
+                </div>
+                <div class="small text-muted mb-2">
+                    Crea un nuovo evento oppure richiedi l’abilitazione come organizzatore.
+                </div>
+                <div class="d-grid">
+                    @if($me->canManageEvents())
+                        @if($me->isAdmin())
+                            <a href="{{ route('admin.events.create') }}" class="btn btn-success btn-sm">
+                                Crea evento
+                            </a>
+                        @else
+                            <a href="{{ route('manage.events.create') }}" class="btn btn-success btn-sm">
+                                Crea evento
+                            </a>
+                        @endif
+                    @else
+                        <a href="{{ route('profile.edit', $me) }}" class="btn btn-outline-success btn-sm">
+                            Richiedi abilitazione
+                        </a>
+                    @endif
+                </div>
+            </div>
+        </div>
+    @endauth
+@endsection

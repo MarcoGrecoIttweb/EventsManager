@@ -55,5 +55,44 @@ class CommonEventController extends Controller
             'commonEvents' => $commonEvents,
         ]);
     }
+
+    public function usersSearch(Request $request)
+    {
+        $q = trim((string) $request->query('q', ''));
+
+        // Limita la query: niente risultati troppo generici.
+        if ($q === '' || mb_strlen($q, 'UTF-8') < 2) {
+            return response()->json(['results' => []]);
+        }
+
+        $qLike = $q . '%';
+
+        $results = User::query()
+            ->select(['username', 'nome', 'cognome'])
+            ->where('ruolo', '!=', 0) // esclude gli admin
+            ->where(function ($query) use ($qLike, $q) {
+                $query->where('username', 'like', $qLike)
+                    ->orWhere('nome', 'like', $qLike)
+                    ->orWhere('cognome', 'like', $qLike)
+                    ->orWhere('email', 'like', '%' . $q . '%');
+            })
+            ->orderBy('username')
+            ->limit(10)
+            ->get();
+
+        return response()->json([
+            'results' => $results->map(function ($u) {
+                $nome = trim((string) ($u->nome ?? ''));
+                $cognome = trim((string) ($u->cognome ?? ''));
+
+                return [
+                    'username' => (string) $u->username,
+                    'label' => trim($nome . ' ' . $cognome) !== ''
+                        ? trim($nome . ' ' . $cognome) . ' (' . $u->username . ')'
+                        : $u->username,
+                ];
+            }),
+        ]);
+    }
 }
 

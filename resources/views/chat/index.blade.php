@@ -123,8 +123,8 @@
 
                 @auth
                     @if(isset($mentionAlerts) && $mentionAlerts->count() > 0)
-                        <div class="alert alert-warning border border-2 border-warning-subtle mb-3 small" role="alert">
-                            <div class="fw-semibold mb-2">
+                        <div class="alert alert-warning border border-2 border-warning-subtle mb-3 small chat-mention-alerts" role="alert">
+                            <div class="fw-semibold mb-2 d-flex align-items-center justify-content-between gap-2 flex-wrap">
                                 @php
                                     $mc = (int) $mentionAlerts->count();
                                     $msgSuffix = 'io';
@@ -134,11 +134,17 @@
                                         $rivSuffix = 'ti';
                                     }
                                 @endphp
-                                <i class="fas fa-bell"></i> Avviso: hai {{ $mc }} messagg{{ $msgSuffix }} rivol{{ $rivSuffix }} a te.
+                                <div class="min-w-0">
+                                    <i class="fas fa-bell"></i> Avviso: hai {{ $mc }} messagg{{ $msgSuffix }} rivol{{ $rivSuffix }} a te.
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-dark chat-mention-clear-all" title="Nascondi tutti questi avvisi">
+                                    <i class="fas fa-times"></i> Chiudi tutti
+                                </button>
                             </div>
                             <ul class="mb-0 ps-3">
                                 @foreach($mentionAlerts as $mAlert)
-                                    <li class="mb-1">
+                                    <li class="mb-1 d-flex align-items-start justify-content-between gap-2 chat-mention-item"
+                                        data-alert-id="{{ (int) $mAlert->id }}">
                                         @php
                                             $mNick = optional($mAlert->user)->nickname;
                                             if (!is_string($mNick) || trim($mNick) === '') {
@@ -159,7 +165,14 @@
                                                 $alertPreview = substr($alertText, 0, 120) . '...';
                                             }
                                         @endphp
-                                        {{ $alertPreview }}
+                                        <span class="flex-grow-1 min-w-0">
+                                            {{ $alertPreview }}
+                                        </span>
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-secondary chat-mention-dismiss"
+                                                title="Nascondi questo avviso">
+                                            <i class="fas fa-times"></i>
+                                        </button>
                                     </li>
                                 @endforeach
                             </ul>
@@ -169,7 +182,7 @@
 
                 <div class="mb-3 chat-messages-box" style="max-height: 400px; overflow-y: auto;">
                     @forelse($messages as $message)
-                        <div class="mb-3 p-2 rounded chat-message-item" style="background:#f8f9fa; border: 2px solid #5dade2;"
+                        <div class="mb-3 p-2 rounded chat-message-item" id="msg-{{ (int) $message->id }}"
                              @php
                                  $msgNick = optional($message->user)->nickname;
                                  if (!is_string($msgNick) || trim($msgNick) === '') {
@@ -209,12 +222,12 @@
                                                 if (!is_string($html)) {
                                                     $html = '';
                                                 }
-                                                // Evidenzia "@ Risponde a nickname" (solo la scritta) in verde.
-                                                $tmp = preg_replace('/(^\s*)@\s*Risponde\s+a\s+([^<\r\n]+?)(\s*\([^)]+\))?\s+/i', '$1<span class="chat-reply-prefix">@ Risponde a $2$3</span> ', $html, 1);
+                                                // Evidenzia "@ Risponde a nickname" e manda a capo il testo successivo.
+                                                $tmp = preg_replace('/(^\s*)@\s*Risponde\s+a\s+([^<\r\n]+?)(\s*\([^)]+\))?\s+/i', '$1<span class="chat-reply-prefix">@ Risponde a $2$3</span><br>', $html, 1);
                                                 if (is_string($tmp)) {
                                                     $html = $tmp;
                                                 }
-                                                $tmp2 = preg_replace('/(<p[^>]*>\s*)@\s*Risponde\s+a\s+([^<\r\n]+?)(\s*\([^)]+\))?\s+/i', '$1<span class="chat-reply-prefix">@ Risponde a $2$3</span> ', $html, 1);
+                                                $tmp2 = preg_replace('/(<p[^>]*>\s*)@\s*Risponde\s+a\s+([^<\r\n]+?)(\s*\([^)]+\))?\s+/i', '$1<span class="chat-reply-prefix">@ Risponde a $2$3</span><br>', $html, 1);
                                                 if (is_string($tmp2)) {
                                                     $html = $tmp2;
                                                 }
@@ -227,8 +240,15 @@
                                             if (!is_string($plain)) {
                                                 $plain = '';
                                             }
+                                            $isRemovedNotice = strip_tags($plain) === 'Messaggio rimosso: è vietato inviare Email e numero di telefono.';
                                             $lines = preg_split("/\r\n|\n|\r/", $plain);
                                         @endphp
+                                        @if($isRemovedNotice)
+                                            <div class="chat-removed-notice" role="alert">
+                                                <i class="fas fa-ban"></i>
+                                                Messaggio rimosso: è vietato inviare Email e numero di telefono.
+                                            </div>
+                                        @else
                                         @foreach($lines as $line)
                                             @php $trim = ltrim($line); @endphp
                                             @php
@@ -249,8 +269,8 @@
                                                             $whenSuffix = $m[2];
                                                         }
                                                     @endphp
-                                                    <span class="chat-reply-prefix">@ Risponde a {{ $m[1] }}{{ $whenSuffix }}</span>
-                                                    <span>{{ $rest }}</span>
+                                                    <div class="chat-reply-prefix">@ Risponde a {{ $m[1] }}{{ $whenSuffix }}</div>
+                                                    <div>{{ $rest }}</div>
                                                 </div>
                                             @elseif(Str::startsWith($trim, '@'))
                                                 <div class="fw-normal" style="background:#fff9c4; padding:2px 4px; border-radius:3px;">
@@ -262,6 +282,7 @@
                                                 </div>
                                             @endif
                                         @endforeach
+                                        @endif
                                     @endif
                                 </div>
                                 @auth
@@ -385,6 +406,34 @@
         </div>
     </div>
     <style>
+        .chat-message-item {
+            background: #f8f9fa;
+            border: 2px solid var(--user-color, #5dade2);
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85);
+        }
+
+        /* Messaggio che contiene una risposta: bordo = colore del destinatario risposta */
+        .chat-message-item.chat-message--is-reply {
+            border-color: var(--reply-color, var(--user-color, #5dade2));
+        }
+
+        /* Messaggio a cui si sta rispondendo: evidenziato con lo stesso colore */
+        .chat-message-item.chat-message--replied-target {
+            outline: 3px solid var(--reply-color, #198754);
+            outline-offset: 2px;
+            box-shadow:
+                0 0 0 2px rgba(255, 255, 255, 0.85),
+                0 0 18px color-mix(in srgb, var(--reply-color, #198754) 55%, transparent 45%);
+        }
+
+        .chat-message-item .chat-reply-prefix {
+            display: inline-block;
+            padding: 0.12rem 0.35rem;
+            border-radius: 0.4rem;
+            border: 2px solid var(--reply-color, rgba(25, 135, 84, 0.5));
+            background: color-mix(in srgb, var(--reply-color, #198754) 18%, #fff 82%);
+        }
+
         #content.form-control:not(.is-invalid) {
             box-shadow: none !important;
         }
@@ -455,6 +504,15 @@
         }
         .chat-reply-prefix {
             color: #198754;
+        }
+
+        .chat-removed-notice {
+            border: 2px solid rgba(220, 53, 69, 0.55);
+            background: rgba(220, 53, 69, 0.08);
+            color: #842029;
+            padding: 0.35rem 0.5rem;
+            border-radius: 0.5rem;
+            font-weight: 700;
         }
     </style>
 @endsection
@@ -554,6 +612,155 @@
                     panel.style.display = 'none';
                 });
             });
+
+            // Colori per utente (stabili): applica bordo box e colore risposte.
+            (function () {
+                var palette = [
+                    '#0d6efd', // blu
+                    '#198754', // verde
+                    '#dc3545', // rosso
+                    '#fd7e14', // arancio
+                    '#6f42c1', // viola
+                    '#20c997', // teal
+                    '#d63384', // magenta
+                    '#0dcaf0', // cyan
+                    '#6610f2', // indigo
+                    '#795548', // brown
+                ];
+
+                function hashStr(s) {
+                    s = (s || '').toString();
+                    var h = 0;
+                    for (var i = 0; i < s.length; i++) {
+                        h = ((h << 5) - h) + s.charCodeAt(i);
+                        h |= 0;
+                    }
+                    return Math.abs(h);
+                }
+
+                function colorForNick(nick) {
+                    var key = (nick || 'Utente').toString().trim().toLowerCase();
+                    var idx = hashStr(key) % palette.length;
+                    return palette[idx];
+                }
+
+                document.querySelectorAll('.chat-message-item[data-nickname]').forEach(function (box) {
+                    var nick = box.getAttribute('data-nickname') || 'Utente';
+                    box.style.setProperty('--user-color', colorForNick(nick));
+                });
+
+                // Per ogni prefisso "Risponde a X", colora come X.
+                document.querySelectorAll('.chat-reply-prefix').forEach(function (el) {
+                    var t = (el.textContent || '').trim();
+                    var m = t.match(/@?\s*Risponde\s+a\s+(.+?)(\s*\(|$)/i);
+                    if (!m || !m[1]) return;
+                    var nick = (m[1] || '').trim();
+                    var replyColor = colorForNick(nick);
+                    el.style.setProperty('--reply-color', replyColor);
+
+                    // Applica al messaggio di risposta: bordo = colore destinatario risposta
+                    var replyBox = el.closest('.chat-message-item');
+                    if (replyBox) {
+                        replyBox.style.setProperty('--reply-color', replyColor);
+                        replyBox.classList.add('chat-message--is-reply');
+                    }
+
+                    // Se c'è anche la data/orario tra parentesi, prova a trovare il messaggio originale e evidenzialo.
+                    // Formato: "@ Risponde a NICK (dd/mm/YYYY HH:ii)"
+                    var m2 = t.match(/@?\s*Risponde\s+a\s+(.+?)\s*\(([^)]+)\)\s*$/i);
+                    if (!m2 || !m2[1] || !m2[2]) return;
+                    var targetNick = String(m2[1]).trim();
+                    var targetWhen = String(m2[2]).trim();
+
+                    var target = document.querySelector(
+                        '.chat-message-item[data-nickname="' + CSS.escape(targetNick) + '"][data-message-when="' + CSS.escape(targetWhen) + '"]'
+                    );
+                    if (target) {
+                        target.style.setProperty('--reply-color', replyColor);
+                        target.classList.add('chat-message--replied-target');
+                    }
+                });
+            })();
+
+            // Dismiss avvisi menzioni (client-side, persistente via localStorage)
+            (function () {
+                var root = document.querySelector('.chat-mention-alerts');
+                if (!root) return;
+
+                var storageKey = 'excursio_chat_dismissed_mention_alert_ids';
+                function loadSet() {
+                    try {
+                        var raw = localStorage.getItem(storageKey);
+                        var arr = raw ? JSON.parse(raw) : [];
+                        if (!Array.isArray(arr)) arr = [];
+                        var set = {};
+                        arr.forEach(function (id) { set[String(id)] = true; });
+                        return set;
+                    } catch (e) {
+                        return {};
+                    }
+                }
+                function saveSet(set) {
+                    try {
+                        var ids = Object.keys(set).slice(-500);
+                        localStorage.setItem(storageKey, JSON.stringify(ids));
+                    } catch (e) {}
+                }
+
+                var dismissed = loadSet();
+                var items = Array.prototype.slice.call(root.querySelectorAll('.chat-mention-item[data-alert-id]'));
+
+                function hideIfDismissed(li) {
+                    var id = li.getAttribute('data-alert-id');
+                    if (!id) return false;
+                    if (dismissed[String(id)]) {
+                        li.remove();
+                        return true;
+                    }
+                    return false;
+                }
+
+                items.forEach(hideIfDismissed);
+
+                // Se non resta nulla, nascondi l'intero box
+                function cleanupBox() {
+                    var any = root.querySelector('.chat-mention-item[data-alert-id]');
+                    if (!any) {
+                        root.remove();
+                    }
+                }
+
+                root.querySelectorAll('.chat-mention-dismiss').forEach(function (btn) {
+                    btn.addEventListener('click', function () {
+                        var li = btn.closest('.chat-mention-item');
+                        if (!li) return;
+                        var id = li.getAttribute('data-alert-id');
+                        if (id) {
+                            dismissed[String(id)] = true;
+                            saveSet(dismissed);
+                        }
+                        li.remove();
+                        cleanupBox();
+                    });
+                });
+
+                var clearAll = root.querySelector('.chat-mention-clear-all');
+                if (clearAll) {
+                    clearAll.addEventListener('click', function () {
+                        root.querySelectorAll('.chat-mention-item[data-alert-id]').forEach(function (li) {
+                            var id = li.getAttribute('data-alert-id');
+                            if (id) {
+                                dismissed[String(id)] = true;
+                            }
+                            li.remove();
+                        });
+                        saveSet(dismissed);
+                        cleanupBox();
+                    });
+                }
+
+                cleanupBox();
+            })();
         });
     </script>
 @endsection

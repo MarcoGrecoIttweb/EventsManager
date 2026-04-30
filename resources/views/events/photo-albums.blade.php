@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Album foto - Excursio')
+@section('title', 'Album foto Eventi - Excursio')
 
 @section('sidebar_after_my_events')
     @php
@@ -48,14 +48,35 @@
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
             <div>
                 <h1 class="h3 mb-1 d-flex align-items-center gap-2 flex-wrap">
-                    <i class="fas fa-images"></i> Album foto
+                    <i class="fas fa-images"></i> Album foto Eventi
                 </h1>
-                <div class="fw-bold" style="color: #B8860B; font-size: 1.05rem;">Raccolta album fotografici degli eventi.</div>
             </div>
             <a href="{{ route('home') }}" class="btn btn-success text-white" style="border: 2px solid #B8860B;">
                 <i class="fas fa-home"></i> Home
             </a>
         </div>
+
+        <form method="GET" action="{{ route('photo-albums.index') }}" class="mb-3">
+            <div class="input-group" style="max-width: 520px;">
+                <span class="input-group-text">
+                    <i class="fas fa-search"></i>
+                </span>
+                <input type="search"
+                       name="q"
+                       class="form-control"
+                       placeholder="Cerca per titolo album…"
+                       value="{{ $q ?? '' }}"
+                       autocomplete="off">
+                <button type="submit" class="btn btn-primary">
+                    Cerca
+                </button>
+                @if(!empty($q))
+                    <a href="{{ route('photo-albums.index') }}" class="btn btn-outline-secondary">
+                        Reset
+                    </a>
+                @endif
+            </div>
+        </form>
 
         @if($events->count() === 0)
             <div class="alert alert-light border shadow-sm">

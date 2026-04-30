@@ -17,6 +17,10 @@
             border-color: var(--mercatino-bordo) !important;
             box-shadow: 0 0 0 0.2rem rgba(13, 202, 240, 0.22);
         }
+        /* Mercatino: casella combinata prezzo con sfondo grigio */
+        .mercatino-page #tipo_prezzo:not(.is-invalid) {
+            background-color: #f2f4f6;
+        }
         .mercatino-page .input-group-text {
             border: 2px solid var(--mercatino-bordo-trasparente) !important;
             background-color: rgba(13, 202, 240, 0.08);
@@ -74,9 +78,20 @@
     <div class="container mercatino-page">
         <div class="row justify-content-center">
             <div class="col-lg-10 col-xl-9">
-                <h1 class="mb-3 fs-2">
-                    <i class="fas fa-store text-secondary me-2" aria-hidden="true"></i>Mercatino
-                </h1>
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                    <h1 class="mb-0 fs-2">
+                        <img src="{{ asset('upload_immagini/mercatino.jpg') }}"
+                             alt=""
+                             width="300"
+                             height="300"
+                             class="me-2"
+                             style="vertical-align: middle; object-fit: contain;">
+                        <i class="fas fa-store text-secondary me-2" aria-hidden="true"></i>Mercatino
+                    </h1>
+                    <a href="{{ route('mercatino.vetrina') }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-shop"></i> Vetrina mercatino
+                    </a>
+                </div>
                 <p class="lead text-muted mb-4">
                     Scambi, attrezzatura e occasioni tra chi partecipa agli eventi Excursio: vendita, regalo o scambio in modo semplice e locale.
                 </p>
@@ -101,87 +116,21 @@
                     </div>
                 @endif
 
-                @if(isset($bozze) && $bozze->isNotEmpty())
-                    @php
-                        $mercatinoLblCat = [
-                            'attrezzatura' => 'Attrezzatura',
-                            'abbigliamento' => 'Abbigliamento tecnico',
-                            'libri_mappe' => 'Libri, mappe e guide',
-                            'trasporti' => 'Trasporti / condivisione uscite',
-                            'altro' => 'Altro',
-                        ];
-                        $mercatinoLblPrezzo = [
-                            'fisso' => 'Prezzo fisso (€)',
-                            'gratis' => 'Gratis / omaggio',
-                            'trattabile' => 'Trattabile',
-                            'scambio' => 'Solo scambio',
-                        ];
-                        $mercatinoLblCond = [
-                            'nuovo' => 'Nuovo / mai usato',
-                            'ottimo' => 'Ottime condizioni',
-                            'buono' => 'Buone condizioni',
-                            'discreto' => 'Usato, ma funzionale',
-                        ];
-                        $mercatinoLblCont = [
-                            'excursio' => 'Messaggi tramite Excursio',
-                            'email' => 'Email',
-                            'telefono' => 'Telefono',
-                        ];
-                    @endphp
-                    <div class="mb-4">
-                        <h2 class="h5 mb-2"><i class="fas fa-folder-open text-secondary me-2"></i>Le tue bozze salvate</h2>
-                        <p class="small text-muted mb-3">
-                            Di seguito i dettagli degli annunci che hai già inviato come bozza (solo tu li vedi qui).
-                            Gli invii fatti <strong>prima di oggi</strong> potevano salvare solo le foto: per quelli non c’è scheda testo.
-                        </p>
-                        @foreach($bozze as $bozza)
-                            @php $d = $bozza['dati']; @endphp
-                            <div class="card mb-3">
-                                <div class="card-header py-2 small text-muted d-flex flex-wrap justify-content-between align-items-center gap-2">
-                                    <span>
-                                        @if(!empty($d['inviato_il']))
-                                            Inviata il {{ \Carbon\Carbon::parse($d['inviato_il'])->timezone(config('app.timezone'))->format('d/m/Y H:i') }}
-                                        @else
-                                            Bozza
-                                        @endif
-                                    </span>
-                                    @if(!empty($d['foto_caricate']))
-                                        <span class="badge bg-secondary">{{ $d['foto_caricate'] }} foto allegate</span>
-                                    @endif
-                                </div>
-                                <div class="card-body">
-                                    <h3 class="h6 mb-3">{{ $d['titolo'] ?? 'Senza titolo' }}</h3>
-                                    <dl class="row small mb-0">
-                                        <dt class="col-sm-4 col-md-3">Categoria</dt>
-                                        <dd class="col-sm-8 col-md-9">{{ $mercatinoLblCat[$d['categoria'] ?? ''] ?? ($d['categoria'] ?? '—') }}</dd>
-                                        <dt class="col-sm-4 col-md-3">Prezzo</dt>
-                                        <dd class="col-sm-8 col-md-9">
-                                            {{ $mercatinoLblPrezzo[$d['tipo_prezzo'] ?? ''] ?? ($d['tipo_prezzo'] ?? '—') }}
-                                            @if(($d['tipo_prezzo'] ?? '') === 'fisso' && isset($d['prezzo']))
-                                                — <strong>{{ number_format((float) $d['prezzo'], 2, ',', '.') }} €</strong>
-                                            @endif
-                                        </dd>
-                                        <dt class="col-sm-4 col-md-3">Stato</dt>
-                                        <dd class="col-sm-8 col-md-9">{{ $mercatinoLblCond[$d['condizione'] ?? ''] ?? ($d['condizione'] ?? '—') }}</dd>
-                                        <dt class="col-sm-4 col-md-3">Zona ritiro</dt>
-                                        <dd class="col-sm-8 col-md-9">{{ $d['zona_ritiro'] ?? '—' }}</dd>
-                                        <dt class="col-sm-4 col-md-3">Contatto</dt>
-                                        <dd class="col-sm-8 col-md-9">{{ $mercatinoLblCont[$d['contatto'] ?? ''] ?? ($d['contatto'] ?? '—') }}</dd>
-                                    </dl>
-                                    <p class="small fw-semibold mt-3 mb-1">Descrizione</p>
-                                    <p class="small text-muted mb-0" style="white-space: pre-wrap;">{{ $d['descrizione'] ?? '' }}</p>
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-                @endif
+                @php
+                    $isEditingDraft = isset($editDraft) && is_array($editDraft) && !empty($editFolder);
+                @endphp
 
-                <div class="card shadow-sm border-0 mb-4">
+                <div class="card shadow-sm border-0 mb-4" id="mercatino-form">
                     <div class="card-header bg-dark text-white py-3">
-                        <h2 class="h5 mb-0"><i class="fas fa-edit me-2"></i>Nuovo annuncio (bozza)</h2>
+                        <h2 class="h5 mb-0">
+                            <i class="fas fa-edit me-2"></i>{{ $isEditingDraft ? 'Modifica bozza' : 'Nuovo annuncio (bozza)' }}
+                        </h2>
                     </div>
                     <div class="card-body p-4">
-                        <form method="POST" action="{{ route('mercatino.store') }}" enctype="multipart/form-data" novalidate>
+                        <form method="POST"
+                              action="{{ $isEditingDraft ? route('mercatino.bozza.update', ['folder' => $editFolder]) : route('mercatino.store') }}"
+                              enctype="multipart/form-data"
+                              novalidate>
                             @csrf
 
                             <div class="row g-3 mb-3">
@@ -189,7 +138,7 @@
                                     <label for="titolo" class="form-label">Titolo dell’annuncio <span class="text-danger">*</span></label>
                                     <input type="text" name="titolo" id="titolo"
                                            class="form-control @error('titolo') is-invalid @enderror"
-                                           value="{{ old('titolo') }}"
+                                           value="{{ old('titolo', $isEditingDraft ? ($editDraft['titolo'] ?? '') : '') }}"
                                            placeholder="Es. Zaino 40 L, bastoni telescopici, guida CAI…"
                                            maxlength="120" required>
                                     @error('titolo')
@@ -199,12 +148,13 @@
                                 <div class="col-md-6">
                                     <label for="categoria" class="form-label">Categoria <span class="text-danger">*</span></label>
                                     <select name="categoria" id="categoria" class="form-select @error('categoria') is-invalid @enderror" required>
-                                        <option value="">— Scegli —</option>
-                                        <option value="attrezzatura" @selected(old('categoria') === 'attrezzatura')>Attrezzatura (zaini, tende, bastoni, borracce…)</option>
-                                        <option value="abbigliamento" @selected(old('categoria') === 'abbigliamento')>Abbigliamento tecnico</option>
-                                        <option value="libri_mappe" @selected(old('categoria') === 'libri_mappe')>Libri, mappe e guide</option>
-                                        <option value="trasporti" @selected(old('categoria') === 'trasporti')>Trasporti / condivisione uscite</option>
-                                        <option value="altro" @selected(old('categoria') === 'altro')>Altro</option>
+                                        <option value="">Inserisci</option>
+                                        <option value="abbigliamento" @selected(old('categoria', $isEditingDraft ? ($editDraft['categoria'] ?? '') : '') === 'abbigliamento')>Abbigliamento</option>
+                                        <option value="veicoli" @selected(old('categoria', $isEditingDraft ? ($editDraft['categoria'] ?? '') : '') === 'veicoli')>Veicoli</option>
+                                        <option value="casa" @selected(old('categoria', $isEditingDraft ? ($editDraft['categoria'] ?? '') : '') === 'casa')>Articoli per la casa</option>
+                                        <option value="sport" @selected(old('categoria', $isEditingDraft ? ($editDraft['categoria'] ?? '') : '') === 'sport')>Articoli sportivi</option>
+                                        <option value="elettronica_videogiochi" @selected(old('categoria', $isEditingDraft ? ($editDraft['categoria'] ?? '') : '') === 'elettronica_videogiochi')>Elettronica e videogiochi</option>
+                                        <option value="altro" @selected(old('categoria', $isEditingDraft ? ($editDraft['categoria'] ?? '') : '') === 'altro')>Altro</option>
                                     </select>
                                     @error('categoria')
                                         <div class="invalid-feedback d-block">{{ $message }}</div>
@@ -217,7 +167,7 @@
                                 <textarea name="descrizione" id="descrizione" rows="5"
                                           class="form-control @error('descrizione') is-invalid @enderror"
                                           placeholder="Marca, modello, peso, taglia, difetti eventuali, cosa include…"
-                                          required>{{ old('descrizione') }}</textarea>
+                                          required>{{ old('descrizione', $isEditingDraft ? ($editDraft['descrizione'] ?? '') : '') }}</textarea>
                                 @error('descrizione')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -285,10 +235,10 @@
                                             <label for="tipo_prezzo" class="form-label">Prezzo <span class="text-danger">*</span></label>
                                             <select name="tipo_prezzo" id="tipo_prezzo" class="form-select @error('tipo_prezzo') is-invalid @enderror" required>
                                                 <option value="">— Scegli —</option>
-                                                <option value="fisso" @selected(old('tipo_prezzo') === 'fisso')>Prezzo fisso (€)</option>
-                                                <option value="gratis" @selected(old('tipo_prezzo') === 'gratis')>Gratis / omaggio</option>
-                                                <option value="trattabile" @selected(old('tipo_prezzo') === 'trattabile')>Trattabile</option>
-                                                <option value="scambio" @selected(old('tipo_prezzo') === 'scambio')>Solo scambio</option>
+                                                <option value="fisso" @selected(old('tipo_prezzo', $isEditingDraft ? ($editDraft['tipo_prezzo'] ?? '') : '') === 'fisso')>pezzo</option>
+                                                <option value="gratis" @selected(old('tipo_prezzo', $isEditingDraft ? ($editDraft['tipo_prezzo'] ?? '') : '') === 'gratis')>Gratis / omaggio</option>
+                                                <option value="trattabile" @selected(old('tipo_prezzo', $isEditingDraft ? ($editDraft['tipo_prezzo'] ?? '') : '') === 'trattabile')>Trattabile</option>
+                                                <option value="scambio" @selected(old('tipo_prezzo', $isEditingDraft ? ($editDraft['tipo_prezzo'] ?? '') : '') === 'scambio')>Solo scambio</option>
                                             </select>
                                             @error('tipo_prezzo')
                                                 <div class="invalid-feedback d-block">{{ $message }}</div>
@@ -300,7 +250,7 @@
                                                 <span class="input-group-text">€</span>
                                                 <input type="number" name="prezzo" id="prezzo" step="0.01" min="0"
                                                        class="form-control @error('prezzo') is-invalid @enderror"
-                                                       value="{{ old('prezzo') }}"
+                                                       value="{{ old('prezzo', $isEditingDraft ? ($editDraft['prezzo'] ?? '') : '') }}"
                                                        placeholder="0,00">
                                             </div>
                                             @error('prezzo')
@@ -313,10 +263,10 @@
                                     <label for="condizione" class="form-label">Stato <span class="text-danger">*</span></label>
                                     <select name="condizione" id="condizione" class="form-select @error('condizione') is-invalid @enderror" required>
                                         <option value="">— Scegli —</option>
-                                        <option value="nuovo" @selected(old('condizione') === 'nuovo')>Nuovo / mai usato</option>
-                                        <option value="ottimo" @selected(old('condizione') === 'ottimo')>Ottime condizioni</option>
-                                        <option value="buono" @selected(old('condizione') === 'buono')>Buone condizioni</option>
-                                        <option value="discreto" @selected(old('condizione') === 'discreto')>Usato, ma funzionale</option>
+                                        <option value="nuovo" @selected(old('condizione', $isEditingDraft ? ($editDraft['condizione'] ?? '') : '') === 'nuovo')>Nuovo / mai usato</option>
+                                        <option value="ottimo" @selected(old('condizione', $isEditingDraft ? ($editDraft['condizione'] ?? '') : '') === 'ottimo')>Ottime condizioni</option>
+                                        <option value="buono" @selected(old('condizione', $isEditingDraft ? ($editDraft['condizione'] ?? '') : '') === 'buono')>Buone condizioni</option>
+                                        <option value="discreto" @selected(old('condizione', $isEditingDraft ? ($editDraft['condizione'] ?? '') : '') === 'discreto')>Usato, ma funzionale</option>
                                     </select>
                                     @error('condizione')
                                         <div class="invalid-feedback d-block">{{ $message }}</div>
@@ -328,7 +278,7 @@
                                 <label for="zona_ritiro" class="form-label">Zona di ritiro / incontro <span class="text-danger">*</span></label>
                                 <input type="text" name="zona_ritiro" id="zona_ritiro"
                                        class="form-control @error('zona_ritiro') is-invalid @enderror"
-                                       value="{{ old('zona_ritiro') }}"
+                                       value="{{ old('zona_ritiro', $isEditingDraft ? ($editDraft['zona_ritiro'] ?? '') : '') }}"
                                        placeholder="Es. Milano nord, Sesto, stazione Centrale…"
                                        maxlength="120" required>
                                 @error('zona_ritiro')
@@ -340,9 +290,9 @@
                                 <label for="contatto" class="form-label">Come preferisci essere contattato <span class="text-danger">*</span></label>
                                 <select name="contatto" id="contatto" class="form-select @error('contatto') is-invalid @enderror" required>
                                     <option value="">— Scegli —</option>
-                                    <option value="excursio" @selected(old('contatto') === 'excursio')>Messaggi tramite Excursio (consigliato)</option>
-                                    <option value="email" @selected(old('contatto') === 'email')>Email (se visibile nel profilo)</option>
-                                    <option value="telefono" @selected(old('contatto') === 'telefono')>Telefono (solo dopo accordo)</option>
+                                    <option value="excursio" @selected(old('contatto', $isEditingDraft ? ($editDraft['contatto'] ?? '') : '') === 'excursio')>Messaggi tramite Excursio (consigliato)</option>
+                                    <option value="email" @selected(old('contatto', $isEditingDraft ? ($editDraft['contatto'] ?? '') : '') === 'email')>Email (se visibile nel profilo)</option>
+                                    <option value="telefono" @selected(old('contatto', $isEditingDraft ? ($editDraft['contatto'] ?? '') : '') === 'telefono')>Telefono (solo dopo accordo)</option>
                                 </select>
                                 @error('contatto')
                                     <div class="invalid-feedback d-block">{{ $message }}</div>
@@ -356,17 +306,174 @@
                                 <label class="form-check-label small" for="accetto_regole">
                                     Dichiaro che l’annuncio è veritiero e che rispetto le regole della community Excursio.
                                 </label>
+                                <div class="small text-muted mt-1">
+                                    Cliccando su <strong>Invia bozza</strong>, accetti le
+                                    <a href="#"
+                                       data-bs-toggle="modal"
+                                       data-bs-target="#mercatinoRulesModal"
+                                       class="text-decoration-none">nostre regole</a>.
+                                </div>
                                 @error('accetto_regole')
                                     <div class="invalid-feedback d-block">{{ $message }}</div>
                                 @enderror
                             </div>
 
                             <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-paper-plane me-1"></i> Invia bozza
+                                <i class="fas {{ $isEditingDraft ? 'fa-save' : 'fa-paper-plane' }} me-1"></i>
+                                {{ $isEditingDraft ? 'Salva bozza' : 'Invia bozza' }}
                             </button>
+                            @if($isEditingDraft)
+                                <a href="{{ route('mercatino.index') }}" class="btn btn-outline-secondary ms-2">
+                                    Annulla modifica
+                                </a>
+                            @endif
                         </form>
                     </div>
                 </div>
+
+                <div class="modal fade" id="mercatinoRulesModal" tabindex="-1" aria-labelledby="mercatinoRulesModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="mercatinoRulesModalLabel">Note Importanti per gli Utenti</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p class="mb-3">
+                                    Benvenuti nel nostro mercatino. Per garantire una convivenza serena e sicura, vi preghiamo di leggere quanto segue:
+                                </p>
+
+                                <p class="mb-3">
+                                    <strong>Esclusione di Responsabilità:</strong>
+                                    Il sito agisce esclusivamente come piattaforma di incontro. Non siamo parte delle transazioni, non verifichiamo la qualità degli oggetti e non ci assumiamo alcuna responsabilità per l'esito degli acquisti, eventuali vizi della merce o dispute tra gli utenti.
+                                </p>
+
+                                <p class="mb-3">
+                                    <strong>Legalità e Pertinenza:</strong>
+                                    È severamente vietata la pubblicazione di annunci riguardanti prodotti illegali, contraffatti o non pertinenti alle categorie del sito. Ogni utente è l'unico responsabile (civile e penale) di ciò che propone in vendita.
+                                </p>
+
+                                <p class="mb-3">
+                                    <strong>Tutela delle Parti:</strong>
+                                    Invitiamo i venditori alla massima trasparenza e gli acquirenti alla dovuta cautela. Gli scambi avvengono sotto la diretta ed esclusiva responsabilità degli interessati.
+                                </p>
+
+                                <p class="mb-0">
+                                    <strong>Promemoria:</strong>
+                                    Utilizzando questo servizio, dichiari di aver compreso e accettato che ogni rischio legato alla compravendita rimane a carico tuo e della tua controparte.
+                                </p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Chiudi</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                @if(isset($bozze) && $bozze->isNotEmpty())
+                    @php
+                        $mercatinoLblCat = [
+                            'abbigliamento' => 'Abbigliamento',
+                            'veicoli' => 'Veicoli',
+                            'casa' => 'Articoli per la casa',
+                            'sport' => 'Articoli sportivi',
+                            'elettronica_videogiochi' => 'Elettronica e videogiochi',
+                            'altro' => 'Altro',
+                        ];
+                        $mercatinoLblPrezzo = [
+                            'fisso' => 'pezzo',
+                            'gratis' => 'Gratis / omaggio',
+                            'trattabile' => 'Trattabile',
+                            'scambio' => 'Solo scambio',
+                        ];
+                        $mercatinoLblCond = [
+                            'nuovo' => 'Nuovo / mai usato',
+                            'ottimo' => 'Ottime condizioni',
+                            'buono' => 'Buone condizioni',
+                            'discreto' => 'Usato, ma funzionale',
+                        ];
+                        $mercatinoLblCont = [
+                            'excursio' => 'Messaggi tramite Excursio',
+                            'email' => 'Email',
+                            'telefono' => 'Telefono',
+                        ];
+                    @endphp
+                    <div class="mb-4">
+                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+                            <h2 class="h5 mb-0"><i class="fas fa-folder-open text-secondary me-2"></i>Le tue bozze salvate</h2>
+                            <form method="POST" action="{{ route('mercatino.bozze.delete') }}"
+                                  onsubmit="return confirm('Vuoi eliminare tutte le bozze salvate? Questa azione non si può annullare.');">
+                                @csrf
+                                <button type="submit" class="btn btn-outline-danger btn-sm">
+                                    <i class="fas fa-trash me-1"></i> Elimina bozze
+                                </button>
+                            </form>
+                        </div>
+                        <p class="small text-muted mb-3">
+                            Di seguito i dettagli degli annunci che hai già inviato come bozza (solo tu li vedi qui).
+                            Gli invii fatti <strong>prima di oggi</strong> potevano salvare solo le foto: per quelli non c’è scheda testo.
+                        </p>
+                        @foreach($bozze as $bozza)
+                            @php
+                                $d = $bozza['dati'];
+                                $folder = $bozza['cartella'] ?? '';
+                            @endphp
+                            <div class="card mb-3">
+                                <div class="card-header py-2 small text-muted d-flex flex-wrap justify-content-between align-items-center gap-2">
+                                    <span>
+                                        @if(!empty($d['inviato_il']))
+                                            Inviata il {{ \Carbon\Carbon::parse($d['inviato_il'])->timezone(config('app.timezone'))->format('d/m/Y H:i') }}
+                                        @else
+                                            Bozza
+                                        @endif
+                                    </span>
+                                    <div class="d-flex align-items-center gap-2">
+                                        @if(!empty($d['foto_caricate']))
+                                            <span class="badge bg-secondary">{{ $d['foto_caricate'] }} foto allegate</span>
+                                        @endif
+                                        @if($folder !== '')
+                                            <a class="btn btn-outline-secondary btn-sm"
+                                               href="{{ route('mercatino.index', ['edit' => $folder]) }}#mercatino-form">
+                                                <i class="fas fa-pen me-1"></i> Modifica
+                                            </a>
+                                            <form method="POST"
+                                                  action="{{ route('mercatino.bozza.destroy', ['folder' => $folder]) }}"
+                                                  onsubmit="return confirm('Vuoi eliminare questa bozza?');"
+                                                  class="d-inline">
+                                                @csrf
+                                                <button type="submit" class="btn btn-outline-danger btn-sm">
+                                                    <i class="fas fa-trash me-1"></i> Cancella
+                                                </button>
+                                            </form>
+                                        @endif
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <h3 class="h6 mb-3">{{ $d['titolo'] ?? 'Senza titolo' }}</h3>
+                                    <dl class="row small mb-0">
+                                        <dt class="col-sm-4 col-md-3">Categoria</dt>
+                                        <dd class="col-sm-8 col-md-9">{{ $mercatinoLblCat[$d['categoria'] ?? ''] ?? ($d['categoria'] ?? '—') }}</dd>
+                                        <dt class="col-sm-4 col-md-3">Prezzo</dt>
+                                        <dd class="col-sm-8 col-md-9">
+                                            {{ $mercatinoLblPrezzo[$d['tipo_prezzo'] ?? ''] ?? ($d['tipo_prezzo'] ?? '—') }}
+                                            @if(($d['tipo_prezzo'] ?? '') === 'fisso' && isset($d['prezzo']))
+                                                — <strong>{{ number_format((float) $d['prezzo'], 2, ',', '.') }} €</strong>
+                                            @endif
+                                        </dd>
+                                        <dt class="col-sm-4 col-md-3">Stato</dt>
+                                        <dd class="col-sm-8 col-md-9">{{ $mercatinoLblCond[$d['condizione'] ?? ''] ?? ($d['condizione'] ?? '—') }}</dd>
+                                        <dt class="col-sm-4 col-md-3">Zona ritiro</dt>
+                                        <dd class="col-sm-8 col-md-9">{{ $d['zona_ritiro'] ?? '—' }}</dd>
+                                        <dt class="col-sm-4 col-md-3">Contatto</dt>
+                                        <dd class="col-sm-8 col-md-9">{{ $mercatinoLblCont[$d['contatto'] ?? ''] ?? ($d['contatto'] ?? '—') }}</dd>
+                                    </dl>
+                                    <p class="small fw-semibold mt-3 mb-1">Descrizione</p>
+                                    <p class="small text-muted mb-0" style="white-space: pre-wrap;">{{ $d['descrizione'] ?? '' }}</p>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
 
                 <div class="row g-3 mb-5">
                     <div class="col-md-4">
@@ -400,6 +507,23 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            // Mercatino: titolo sempre in MAIUSCOLO (solo UI; lato server è comunque garantito)
+            var titoloEl = document.getElementById('titolo');
+            if (titoloEl) {
+                titoloEl.addEventListener('input', function () {
+                    var v = titoloEl.value || '';
+                    var up = v.toLocaleUpperCase('it-IT');
+                    if (v !== up) {
+                        var start = titoloEl.selectionStart;
+                        var end = titoloEl.selectionEnd;
+                        titoloEl.value = up;
+                        try {
+                            titoloEl.setSelectionRange(start, end);
+                        } catch (e) {}
+                    }
+                });
+            }
+
             var tipo = document.getElementById('tipo_prezzo');
             var row = document.getElementById('prezzo_row');
             var input = document.getElementById('prezzo');

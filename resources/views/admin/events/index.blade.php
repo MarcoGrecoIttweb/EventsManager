@@ -12,10 +12,10 @@
                         <i class="fas fa-calendar-alt"></i> Gestione Eventi
                     </h1>
                     <div class="d-flex gap-2">
-                        <a href="{{ route('home') }}" class="btn btn-secondary">
+                        <a href="{{ route('home') }}" class="btn btn-secondary" data-hint="Torna alla homepage">
                             <i class="fas fa-home"></i> Torna alla home
                         </a>
-                        <a href="{{ route('admin.events.create') }}" class="btn btn-success">
+                        <a href="{{ route('admin.events.create') }}" class="btn btn-success" data-hint="Crea un nuovo evento">
                             <i class="fas fa-plus"></i> Nuovo Evento
                         </a>
                     </div>
@@ -71,7 +71,7 @@
                                         <th>Titolo</th>
                                         <th>Passato</th>
                                         <th>
-                                            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-dark fw-semibold admin-events-sort" data-sort-key="data">
+                                            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-dark fw-semibold admin-events-sort" data-sort-key="data" data-hint="Ordina la tabella per data">
                                                 Data
                                                 <span class="admin-events-sort-icons" aria-hidden="true">
                                                     <i class="fas fa-sort-up"></i>
@@ -82,7 +82,7 @@
                                         <th>Luogo</th>
                                         <th>Iscritti</th>
                                         <th>
-                                            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-dark fw-semibold admin-events-sort" data-sort-key="stato">
+                                            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-dark fw-semibold admin-events-sort" data-sort-key="stato" data-hint="Ordina la tabella per stato (attivo/disattivo)">
                                                 Attiva
                                                 <span class="admin-events-sort-icons" aria-hidden="true">
                                                     <i class="fas fa-sort-up"></i>
@@ -135,19 +135,22 @@
                                                 <div class="btn-group" role="group">
                                                     <a href="{{ route('events.show', $event) }}"
                                                        class="btn btn-sm btn-outline-primary"
-                                                       title="Vedi" target="_blank">
+                                                       title="Vedi" target="_blank"
+                                                       data-hint="Apri la pagina evento in una nuova scheda">
                                                         <i class="fas fa-eye"></i>
                                                     </a>
                                                     <a href="{{ route('admin.events.edit', $event) }}"
                                                        class="btn btn-sm btn-outline-secondary"
-                                                       title="Modifica">
+                                                       title="Modifica"
+                                                       data-hint="Apri la modifica di questo evento">
                                                         <i class="fas fa-edit"></i>
                                                     </a>
                                                     <form action="{{ route('admin.events.toggle-status', $event) }}"
                                                           method="POST" class="d-inline">
                                                         @csrf
                                                         <button type="submit" class="btn btn-sm {{ $event->is_active ? 'btn-outline-brown' : 'btn-outline-success' }}"
-                                                                title="{{ $event->is_active ? 'Disattiva' : 'Attiva' }}">
+                                                                title="{{ $event->is_active ? 'Disattiva' : 'Attiva' }}"
+                                                                data-hint="{{ $event->is_active ? 'Disattiva l’evento (non sarà visibile tra i prossimi eventi)' : 'Attiva l’evento (torna visibile tra i prossimi eventi)' }}">
                                                             <i class="fas fa-{{ $event->is_active ? 'pause' : 'play' }}"></i>
                                                         </button>
                                                     </form>
@@ -157,7 +160,8 @@
                                                         @method('DELETE')
                                                         <button type="submit" class="btn btn-sm btn-outline-danger"
                                                                 onclick="return confirm('Sei sicuro di voler eliminare questo evento?')"
-                                                                title="Elimina">
+                                                                title="Elimina"
+                                                                data-hint="Elimina definitivamente questo evento">
                                                             <i class="fas fa-trash"></i>
                                                         </button>
                                                     </form>
@@ -257,6 +261,7 @@
             background-color: #b8860b;
             border-color: #b8860b;
         }
+
     </style>
 
     <script>

@@ -7,10 +7,10 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2><i class="fas fa-calendar-plus"></i> La Tua Agenda Eventi</h2>
         <div class="d-flex align-items-center gap-2 flex-wrap">
-            <a href="{{ route('home') }}" class="btn btn-outline-primary">
+            <a href="{{ route('home') }}" class="btn btn-outline-primary" data-hint="Torna alla homepage">
                 <i class="fas fa-home"></i> Home
             </a>
-            <a href="{{ route('manage.events.create') }}" class="btn btn-success">
+            <a href="{{ route('manage.events.create') }}" class="btn btn-success" data-hint="Crea un nuovo evento">
                 <i class="fas fa-plus"></i> Crea evento
             </a>
         </div>
@@ -52,7 +52,7 @@
                             @if($event->is_past_event)
                                 <span class="badge text-primary border border-primary">Scaduto</span>
                             @elseif(!$event->pubblicato)
-                                <span class="badge bg-secondary">Disattivato</span>
+                                <span class="badge bg-danger">Disattivato</span>
                             @else
                                 <span class="badge bg-success">Pubblicato</span>
                             @endif
@@ -61,16 +61,28 @@
                             @endif
                         </td>
                         <td>
-                            <a href="{{ route('events.show', $event) }}" class="btn btn-sm btn-outline-primary" title="Visualizza">
+                            <a href="{{ route('events.show', $event) }}" class="btn btn-sm btn-outline-primary" title="Visualizza" data-hint="Apri la pagina evento">
                                 <i class="fas fa-eye"></i>
                             </a>
-                            <a href="{{ route('manage.events.edit', $event) }}" class="btn btn-sm btn-outline-warning" title="Modifica">
+                            <a href="{{ route('manage.events.edit', $event) }}" class="btn btn-sm btn-outline-warning" title="Modifica" data-hint="Apri la modifica di questo evento">
                                 <i class="fas fa-edit"></i>
                             </a>
+                            @if(!$event->is_past_event)
+                                <form action="{{ route('manage.events.toggle-status', $event) }}" method="POST" class="d-inline"
+                                      onsubmit="return confirm('{{ $event->pubblicato ? 'Vuoi disattivare questo evento?' : 'Vuoi attivare questo evento?' }}')">
+                                    @csrf
+                                    <button type="submit" class="btn btn-sm manage-toggle-btn {{ $event->pubblicato ? 'btn-danger' : 'btn-success' }}"
+                                            title="{{ $event->pubblicato ? 'Disattiva' : 'Attiva' }}"
+                                            data-hint="{{ $event->pubblicato ? 'Disattiva l’evento (lo nasconde dalla homepage)' : 'Attiva l’evento (lo rende visibile in homepage)' }}">
+                                        <i class="fas {{ $event->pubblicato ? 'fa-toggle-off' : 'fa-toggle-on' }}"></i>
+                                        {{ $event->pubblicato ? 'Disattiva' : 'Attiva' }}
+                                    </button>
+                                </form>
+                            @endif
                             <form action="{{ route('manage.events.destroy', $event) }}" method="POST" class="d-inline"
                                   onsubmit="return confirm('Eliminare questo evento?')">
                                 @csrf @method('DELETE')
-                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Elimina">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Elimina" data-hint="Elimina definitivamente questo evento">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </form>
@@ -80,6 +92,14 @@
                 </tbody>
             </table>
         </div>
+
+        <style>
+            /* Pulsanti Attiva/Disattiva: stessa larghezza */
+            .manage-toggle-btn {
+                min-width: 6.8rem;
+                text-align: center;
+            }
+        </style>
 
         <div class="d-flex justify-content-center mt-3">
             {{ $events->links() }}

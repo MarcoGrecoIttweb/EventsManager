@@ -18,7 +18,7 @@
                             @if($isAdminViewer)
                                 Come amministratore puoi modificare <strong>tutti i campi</strong> dell’utente.
                             @else
-                                Puoi modificare solo <strong>email</strong> e <strong>telefono</strong>.
+                                Puoi modificare solo <strong>email</strong> e <strong>cellulare</strong>. Se vuoi modificare la foto, per questioni tecniche devi inviarla all'amministratore che provvederà ad inserirla.
                             @endif
                         </p>
 
@@ -110,7 +110,7 @@
                             </div>
 
                             <div class="mb-4">
-                                <label for="telefono" class="form-label">Telefono</label>
+                                <label for="telefono" class="form-label">Cellulare</label>
                                 <input type="text" class="form-control @error('telefono') is-invalid @enderror"
                                        id="telefono" name="telefono"
                                        value="{{ old('telefono', $user->telefono) }}" autocomplete="tel">
@@ -140,18 +140,23 @@
 
                         <hr class="my-4">
 
+                        @php
+                            $openPasswordFromQuery = request()->boolean('openPassword');
+                            $selfPwdOpen = $openPasswordFromQuery || $errors->has('current_password') || $errors->has('password');
+                        @endphp
+
                         <button type="button"
                                 class="btn btn-link btn-sm text-muted text-decoration-none p-0 d-inline-flex align-items-center gap-1"
                                 data-bs-toggle="collapse"
                                 data-bs-target="#selfPasswordCollapse"
-                                aria-expanded="{{ $errors->has('current_password') || $errors->has('password') ? 'true' : 'false' }}"
+                                aria-expanded="{{ $selfPwdOpen ? 'true' : 'false' }}"
                                 aria-controls="selfPasswordCollapse">
                             <i class="fas fa-key" style="font-size:0.85em;"></i>
                             <span>Cambia password</span>
                             <i class="fas fa-chevron-down small opacity-75" aria-hidden="true"></i>
                         </button>
 
-                        <div class="collapse {{ $errors->has('current_password') || $errors->has('password') ? 'show' : '' }}" id="selfPasswordCollapse">
+                        <div class="collapse {{ $selfPwdOpen ? 'show' : '' }}" id="selfPasswordCollapse">
                             <div class="border rounded bg-light px-3 py-3 mt-2 small">
                                 <form method="POST" action="{{ route('profile.password.self', $user) }}">
                                     @csrf
@@ -165,20 +170,20 @@
                                             <div class="invalid-feedback d-block">{{ $message }}</div>
                                             @enderror
                                         </div>
-                                        <div class="col-12 col-md-6">
+                                        <div class="col-12">
                                             <label for="new_password" class="form-label mb-0">Nuova password</label>
                                             <input type="password" id="new_password" name="password"
                                                    class="form-control form-control-sm @error('password') is-invalid @enderror"
-                                                   required minlength="8" autocomplete="new-password">
+                                                   required minlength="4" autocomplete="new-password">
                                             @error('password')
                                             <div class="invalid-feedback d-block">{{ $message }}</div>
                                             @enderror
                                         </div>
-                                        <div class="col-12 col-md-6">
+                                        <div class="col-12">
                                             <label for="new_password_confirmation" class="form-label mb-0">Conferma password</label>
                                             <input type="password" id="new_password_confirmation" name="password_confirmation"
                                                    class="form-control form-control-sm"
-                                                   required minlength="8" autocomplete="new-password">
+                                                   required minlength="4" autocomplete="new-password">
                                         </div>
                                     </div>
 
@@ -195,21 +200,33 @@
     </div>
 
     <style>
-        /* Modifica profilo: bordi campi grigio scuro + label in grassetto */
+        /* Modifica profilo: bordi verdi + label in grassetto */
         .form-label {
             font-weight: 700;
         }
         .form-control,
         .form-select {
-            border: 2px solid #adb5bd;
+            border: 2px solid #198754; /* Bootstrap success */
         }
         .form-control:focus,
         .form-select:focus {
-            border-color: #868e96;
-            box-shadow: 0 0 0 .2rem rgba(134, 142, 150, 0.25);
+            border-color: #146c43;
+            box-shadow: 0 0 0 .2rem rgba(25, 135, 84, 0.25);
         }
         .card {
-            border: 2px solid #adb5bd;
+            border: 2px solid #198754;
+        }
+        /* Box "Cambia password" */
+        #selfPasswordCollapse .border {
+            border-color: #198754 !important;
+        }
+        /* Password: campi più compatti */
+        #selfPasswordCollapse .form-control.form-control-sm {
+            height: 31px !important;
+            min-height: 31px !important;
+            padding-top: 0.1rem !important;
+            padding-bottom: 0.1rem !important;
+            line-height: 1.1;
         }
     </style>
 @endsection

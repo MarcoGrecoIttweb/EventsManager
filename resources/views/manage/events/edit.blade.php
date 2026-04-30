@@ -60,7 +60,6 @@
                         <div class="mb-3">
                             <label for="deadline" class="form-label text-primary-emphasis">Scadenza Iscrizioni</label>
                             <input type="datetime-local" name="deadline" id="deadline" class="form-control border border-2 border-primary @error('deadline') is-invalid @enderror" value="{{ old('deadline', $event->deadline ? $event->deadline->format('Y-m-d\TH:i') : '') }}">
-                            <small class="form-text text-muted">Vuoto x nessuna scadenza</small>
                             @error('deadline')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -73,34 +72,46 @@
                     <div class="col-12 col-sm-6 col-xl-3">
                         <div class="mb-3">
                             <label for="venue" class="form-label text-primary-emphasis">Nome locale</label>
-                            <input type="text" name="venue" id="venue" class="form-control border border-2 border-primary @error('venue') is-invalid @enderror" value="{{ old('venue', $event->dove) }}" maxlength="50">
+                            <input type="text" name="venue" id="venue" class="form-control form-control-sm border border-2 border-primary @error('venue') is-invalid @enderror" value="{{ old('venue', $event->dove) }}" maxlength="35">
                             @error('venue')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
                     </div>
-                    <div class="col-12 col-sm-6 col-xl-3">
+                    <div class="col-12 col-sm-6 col-xl-4">
                         <div class="mb-3">
                             <label for="address" class="form-label text-primary-emphasis">Indirizzo <span class="text-danger">*</span></label>
-                            <input type="text" name="address" id="address" class="form-control border border-2 border-primary @error('address') is-invalid @enderror" value="{{ old('address', $event->address) }}" maxlength="50" required>
+                            <input type="text" name="address" id="address" class="form-control form-control-sm border border-2 border-primary @error('address') is-invalid @enderror" value="{{ old('address', $event->address) }}" maxlength="35" required>
                             @error('address')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
                     </div>
-                    <div class="col-12 col-sm-6 col-xl-3">
+                    <div class="col-12 col-sm-6 col-xl-1">
+                        <div class="mb-3">
+                            <label for="civico" class="form-label text-primary-emphasis">Numero civico</label>
+                            <input type="text" name="civico" id="civico"
+                                   class="form-control form-control-sm border border-2 border-primary @error('civico') is-invalid @enderror"
+                                   value="{{ old('civico', $event->civico) }}" maxlength="10"
+                                   style="max-width: 6.5rem;">
+                            @error('civico')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
+                    <div class="col-12 col-sm-6 col-xl-2">
                         <div class="mb-3">
                             <label for="city" class="form-label text-primary-emphasis">Città <span class="text-danger">*</span></label>
-                            <input type="text" name="city" id="city" class="form-control border border-2 border-primary @error('city') is-invalid @enderror" value="{{ old('city', $event->city) }}" maxlength="15" required>
+                            <input type="text" name="city" id="city" class="form-control form-control-sm border border-2 border-primary @error('city') is-invalid @enderror" value="{{ old('city', $event->city) }}" maxlength="35" required>
                             @error('city')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
                     </div>
-                    <div class="col-12 col-sm-6 col-xl-3">
+                    <div class="col-12 col-sm-6 col-xl-2">
                         <div class="mb-3">
                             <label for="cost" class="form-label text-primary-emphasis mb-1">Prezzo (&euro;)</label>
-                            <input type="number" name="cost" id="cost" class="form-control border border-2 border-primary @error('cost') is-invalid @enderror" value="{{ old('cost', $event->costo) }}" step="0.01" min="0">
+                            <input type="number" name="cost" id="cost" class="form-control form-control-sm border border-2 border-primary @error('cost') is-invalid @enderror" value="{{ old('cost', $event->costo) }}" step="0.01" min="0">
                             @error('cost')
                                 <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
@@ -215,13 +226,7 @@
                             <label for="allow_guests" class="form-check-label text-primary-emphasis">Permetti ospiti</label>
                         </div>
                         <div class="form-check form-switch mb-0">
-                            @if(!(auth()->user()->isAdmin()))
-                                <input type="hidden" name="elenco_visibile" value="1">
-                            @endif
-                            <input type="checkbox" class="form-check-input" id="elenco_visibile" name="elenco_visibile" value="1"
-                                {{ auth()->user()->isAdmin() ? (old('elenco_visibile', $event->elenco_visibile) ? 'checked' : '') : 'checked' }}
-                                {{ auth()->user()->isAdmin() ? '' : 'disabled' }}>
-                            <label class="form-check-label" for="elenco_visibile">Visualizza partecipanti</label>
+                            <input type="hidden" name="elenco_visibile" value="1">
                         </div>
                     </div>
                     @error('allow_guests')

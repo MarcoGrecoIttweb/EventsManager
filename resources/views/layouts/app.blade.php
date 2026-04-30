@@ -33,6 +33,17 @@
                 max-height: 44px;
             }
         }
+
+        /* Sidebar boxes: evita tagli su smartphone */
+        @media (max-width: 767.98px) {
+            .card-sidebar.sidebar-box--green .card-body {
+                max-height: none !important;
+                overflow-y: visible !important;
+            }
+            .card-sidebar.sidebar-box--green .card-header small {
+                font-size: 0.92rem;
+            }
+        }
         .sidebar-left {
             position: sticky;
             top: 1rem;
@@ -232,7 +243,7 @@
                 @guest
                     <li class="nav-item">
                         <a class="nav-link" href="{{ route('photo-albums.index') }}">
-                            <i class="fas fa-images"></i> Album foto
+                            <i class="fas fa-images"></i> Album foto Eventi
                         </a>
                     </li>
                     <li class="nav-item">
@@ -286,11 +297,6 @@
                         <strong class="text-white">{{ auth()->user()->username }}</strong>
                     </span>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ route('photo-albums.index') }}">
-                        <i class="fas fa-images"></i> Album foto
-                    </a>
-                </li>
                 @if(session()->has('impersonator_id'))
                     <li class="nav-item d-flex align-items-center">
                         <span class="navbar-text text-warning small">
@@ -308,13 +314,13 @@
                     </li>
                 @endif
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ route('profile.show', auth()->user()) }}">
-                        <i class="fas fa-user-circle"></i> Profilo
+                    <a class="nav-link" href="{{ route('my-events.active') }}">
+                        <i class="fas fa-calendar-check"></i> I Tuoi Eventi Attivi
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ route('friends.index') }}">
-                        <i class="fas fa-user-friends"></i> Amici
+                    <a class="nav-link" href="{{ route('profile.show', auth()->user()) }}">
+                        <i class="fas fa-user-circle"></i> Profilo
                     </a>
                 </li>
                 <li class="nav-item">
@@ -323,10 +329,47 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link" href="{{ route('friends.index') }}">
+                        <i class="fas fa-user-friends"></i> Amici
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" href="{{ route('events.past') }}">
                         <i class="fas fa-history"></i> Eventi passati
                     </a>
                 </li>
+                @auth
+                    @if(auth()->user()->isAdmin())
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
+                               data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-crown"></i> Admin
+                                @if(($adminPendingUsersCount ?? 0) > 0)
+                                    <span class="badge bg-danger rounded-pill ms-1" title="Iscrizioni in attesa di approvazione">{{ $adminPendingUsersCount }}</span>
+                                @endif
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                <li><a class="dropdown-item" href="{{ route('admin.dashboard') }}">Dashboard</a></li>
+                                <li><a class="dropdown-item" href="{{ route('admin.events.index') }}">Gestione Eventi</a></li>
+                                <li><a class="dropdown-item" href="{{ route('admin.common-event.form') }}">Eventi in comune</a></li>
+                                <li><a class="dropdown-item" href="{{ route('photo-albums.index') }}">Album foto</a></li>
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center justify-content-between gap-2 {{ ($adminPendingUsersCount ?? 0) > 0 ? 'fw-semibold text-dark' : '' }}"
+                                       href="{{ route('admin.users.index') }}">
+                                        <span>Gestione Utenti</span>
+                                        @if(($adminPendingUsersCount ?? 0) > 0)
+                                            <span class="badge bg-warning text-dark">{{ $adminPendingUsersCount }} in attesa</span>
+                                        @endif
+                                    </a>
+                                </li>
+                                <li><a class="dropdown-item" href="{{ route('admin.users.gallery') }}">Admin. Immagini utenti</a></li>
+                                <li><a class="dropdown-item" href="{{ route('admin.groups.index') }}">Gestione Gruppi</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ route('admin.newsletter.create') }}">Newsletter</a></li>
+                            </ul>
+                        </li>
+                    @endif
+                @endauth
                 @if($showChatLink)
                     <li class="nav-item">
                         <a class="nav-link" href="{{ route('chat.index') }}">
@@ -355,11 +398,6 @@
                         </a>
                     </li>
                 @endif
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ route('my-events.active') }}">
-                        <i class="fas fa-calendar-check"></i> I Tuoi Eventi Attivi
-                    </a>
-                </li>
                 @auth
                     @if(auth()->user()->canManageEvents())
                         <li class="nav-item dropdown">
@@ -370,37 +408,6 @@
                             <ul class="dropdown-menu" aria-labelledby="manageDropdown">
                                 <li><a class="dropdown-item" href="{{ route('manage.events.index') }}">Gestisci eventi</a></li>
                                 <li><a class="dropdown-item" href="{{ route('manage.events.create') }}">Crea Evento</a></li>
-                            </ul>
-                        </li>
-                    @endif
-                    @if(auth()->user()->isAdmin())
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
-                               data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="fas fa-crown"></i> Admin
-                                @if(($adminPendingUsersCount ?? 0) > 0)
-                                    <span class="badge bg-danger rounded-pill ms-1" title="Iscrizioni in attesa di approvazione">{{ $adminPendingUsersCount }}</span>
-                                @endif
-                            </a>
-                            <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-                                <li><a class="dropdown-item" href="{{ route('admin.dashboard') }}">Dashboard</a></li>
-                                <li><a class="dropdown-item" href="{{ route('admin.events.index') }}">Gestione Eventi</a></li>
-                                <li><a class="dropdown-item" href="{{ route('photo-albums.index') }}">Album foto</a></li>
-                                <li>
-                                    <a class="dropdown-item d-flex align-items-center justify-content-between gap-2 {{ ($adminPendingUsersCount ?? 0) > 0 ? 'fw-semibold text-dark' : '' }}"
-                                       href="{{ route('admin.users.index') }}">
-                                        <span>Gestione Utenti</span>
-                                        @if(($adminPendingUsersCount ?? 0) > 0)
-                                            <span class="badge bg-warning text-dark">{{ $adminPendingUsersCount }} in attesa</span>
-                                        @endif
-                                    </a>
-                                </li>
-                                <li><a class="dropdown-item" href="{{ route('admin.users.gallery') }}">Admin. Immagini utenti</a></li>
-                                <li><a class="dropdown-item" href="{{ route('admin.groups.index') }}">Gestione Gruppi</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="{{ route('admin.newsletter.create') }}">Newsletter</a></li>
-                                <li><a class="dropdown-item" href="{{ route('admin.newsletter.stats') }}">Statistiche Newsletter</a></li>
-                                <li><a class="dropdown-item" href="{{ route('admin.mail-test') }}">Test invio email</a></li>
                             </ul>
                         </li>
                     @endif
@@ -469,7 +476,7 @@
                 </div>
             @endguest
 
-            {{-- Utenti online: visibile per tutti, solo elenco non cliccabile --}}
+            {{-- Utenti online: visibile per tutti, elenco cliccabile verso il profilo --}}
             <div class="card card-sidebar sidebar-box--green mb-3">
                 <div class="card-header py-2">
                     <small class="fw-bold">
@@ -482,9 +489,12 @@
                             $onlineUsers = \Illuminate\Support\Facades\DB::table('utentionline')
                                 ->join('utente', 'utentionline.id_utente', '=', 'utente.userID')
                                 ->where('utente.abilitato', 1)
-                                ->orderByDesc('utentionline.time')
+                                // Evita duplicati: 1 riga per utente (anche se in tabella ci sono più record)
+                                ->groupBy('utentionline.id_utente', 'utente.username')
+                                ->selectRaw('utentionline.id_utente as userID, utente.username as nickname, MAX(utentionline.time) as last_time')
+                                ->orderByDesc('last_time')
                                 ->limit(30)
-                                ->get(['utente.username as nickname']);
+                                ->get();
                         } catch (\Illuminate\Database\QueryException $e) {
                             $onlineUsers = collect();
                         }
@@ -497,7 +507,9 @@
                                 <li class="d-flex align-items-center online-user-row py-1">
                                     <span class="online-dot"></span>
                                     <span class="small">
-                                        {{ $online->nickname }}
+                                        <a href="{{ route('profile.show', $online->userID) }}" class="text-decoration-none">
+                                            {{ $online->nickname }}
+                                        </a>
                                     </span>
                                 </li>
                             @endforeach
@@ -647,6 +659,176 @@ document.addEventListener('DOMContentLoaded', function () {
 
         input.parentElement.appendChild(btn);
     });
+
+    // Tooltip "spiegazione breve" (solo PC/mouse).
+    // Genera automaticamente una breve descrizione per tutti i pulsanti/link
+    // (utente e admin) senza alterare il testo visibile.
+    (function setupHoverHints() {
+        try {
+            var isDesktopHover = window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+            if (!isDesktopHover) return;
+
+            function hasClassLike(el, needle) {
+                if (!el || !el.classList) return false;
+                for (var i = 0; i < el.classList.length; i++) {
+                    if (String(el.classList[i]).indexOf(needle) !== -1) return true;
+                }
+                return false;
+            }
+
+            function firstIconClass(el) {
+                try {
+                    var icon = el.querySelector('i.fas,i.far,i.fab,i.fa');
+                    if (!icon) return '';
+                    for (var i = 0; i < icon.classList.length; i++) {
+                        var c = icon.classList[i];
+                        if (c && c.indexOf('fa-') === 0) return c;
+                    }
+                } catch (e) {}
+                return '';
+            }
+
+            function getFormMethodHint(el) {
+                var form = el.closest ? el.closest('form') : null;
+                if (!form) return '';
+                // Laravel spoofed method via _method
+                var method = (form.getAttribute('method') || 'GET').toUpperCase();
+                try {
+                    var spoof = form.querySelector('input[name="_method"]');
+                    if (spoof && spoof.value) method = String(spoof.value).toUpperCase();
+                } catch (e) {}
+
+                if (method === 'DELETE') return 'Elimina';
+                if (method === 'PUT' || method === 'PATCH') return 'Aggiorna';
+                if (method === 'POST') return '';
+                return '';
+            }
+
+            function guessHint(el) {
+                if (!el || !(el instanceof HTMLElement)) return '';
+
+                // Se ha un title breve (tipico: "Vedi", "Modifica", "Elimina"), trasformalo in una frase più chiara.
+                var t = (el.getAttribute('title') || '').trim();
+                if (t) {
+                    var tl = t.toLowerCase();
+                    if (tl === 'vedi' || tl === 'visualizza') return 'Apri i dettagli';
+                    if (tl === 'modifica') return 'Apri la modifica';
+                    if (tl === 'elimina' || tl === 'cancella') return 'Elimina questo elemento';
+                    if (tl === 'attiva') return 'Attiva questo elemento';
+                    if (tl === 'disattiva') return 'Disattiva questo elemento';
+                    if (tl === 'salva') return 'Salva le modifiche';
+                    if (tl === 'invia') return 'Invia';
+                    if (tl === 'cerca') return 'Esegui la ricerca';
+                }
+
+                // Priorità: aria-label esplicito (spesso già è la funzione)
+                var aria = (el.getAttribute('aria-label') || '').trim();
+                if (aria) return aria;
+
+                // Se è un link
+                var href = (el.getAttribute('href') || '').trim();
+                if (href) {
+                    if (/\/edit\b/i.test(href)) return 'Modifica';
+                    if (/\/create\b/i.test(href)) return 'Crea nuovo';
+                    if (/\/print\b/i.test(href)) return 'Stampa';
+                    if (/\/login\b/i.test(href)) return 'Accedi';
+                    if (/\/register\b/i.test(href)) return 'Registrati';
+                    if (/\/logout\b/i.test(href)) return 'Esci';
+                    if (/chat/i.test(href)) return 'Apri la chat';
+                    if (/mercatino/i.test(href)) return 'Apri il mercatino';
+                    if (/albums?-foto|photo-albums/i.test(href)) return 'Apri album foto eventi';
+                    return 'Apri';
+                }
+
+                // Se è un bottone in una form, prova a capire il metodo
+                var methodHint = getFormMethodHint(el);
+                if (methodHint) return methodHint;
+
+                // Heuristica per icone FontAwesome
+                var icon = firstIconClass(el);
+                if (icon) {
+                    if (icon === 'fa-eye') return 'Visualizza';
+                    if (icon === 'fa-edit' || icon === 'fa-pen') return 'Modifica';
+                    if (icon === 'fa-trash') return 'Elimina';
+                    if (icon === 'fa-save') return 'Salva';
+                    if (icon === 'fa-paper-plane') return 'Invia';
+                    if (icon === 'fa-plus') return 'Crea nuovo';
+                    if (icon === 'fa-home') return 'Vai alla Home';
+                    if (icon === 'fa-search') return 'Cerca';
+                    if (icon === 'fa-times') return 'Chiudi / Annulla';
+                    if (icon === 'fa-reply') return 'Rispondi';
+                    if (icon === 'fa-upload') return 'Carica';
+                    if (icon === 'fa-download') return 'Scarica';
+                    if (icon === 'fa-play') return 'Attiva';
+                    if (icon === 'fa-pause') return 'Disattiva';
+                    if (icon === 'fa-toggle-on') return 'Attiva';
+                    if (icon === 'fa-toggle-off') return 'Disattiva';
+                    if (icon === 'fa-map') return 'Apri la mappa';
+                    if (icon === 'fa-compress-alt') return 'Riduci';
+                }
+
+                // Classi Bootstrap comuni
+                if (hasClassLike(el, 'btn-danger')) return 'Azione pericolosa';
+                if (hasClassLike(el, 'btn-success')) return 'Conferma';
+
+                return '';
+            }
+
+            // Bootstrap Tooltip (se disponibile).
+            if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+                var selectors = [
+                    '.btn',
+                    'a.nav-link',
+                    'a.dropdown-item',
+                    'button.nav-link',
+                    '.badge',
+                    '[role="status"]',
+                    '[role="note"]',
+                    '[data-hint]'
+                ].join(',');
+
+                document.querySelectorAll(selectors).forEach(function (el) {
+                    if (!el || !(el instanceof HTMLElement)) return;
+                    var hint = (el.getAttribute('data-hint') || '').trim();
+                    if (!hint) {
+                        hint = guessHint(el);
+                        if (hint) el.setAttribute('data-hint', hint);
+                    }
+                    if (hint === '') return;
+
+                    // Evita tooltip su elementi disabilitati o hidden
+                    if (el.hasAttribute('disabled')) return;
+                    if (el.getAttribute('aria-hidden') === 'true') return;
+
+                    // Non sovrascrivere altri data-bs-toggle (dropdown/collapse/modal...).
+                    // Bootstrap Tooltip può essere inizializzato anche senza data-bs-toggle="tooltip".
+                    var existingBsToggle = (el.getAttribute('data-bs-toggle') || '').trim();
+                    if (existingBsToggle !== '' && existingBsToggle !== 'tooltip') {
+                        // Non tocchiamo l'attributo, ma possiamo comunque aggiungere il testo tooltip.
+                        el.setAttribute('data-bs-title', hint);
+                    } else {
+                        el.setAttribute('data-bs-title', hint);
+                    }
+                    // Fallback: se non esiste title o è troppo generico, metti il title uguale all'hint,
+                    // così almeno il tooltip nativo del browser mostra la spiegazione.
+                    var currentTitle = (el.getAttribute('title') || '').trim();
+                    if (currentTitle === '' || currentTitle.length <= 10) {
+                        el.setAttribute('title', hint);
+                    }
+
+                    // Non duplicare tooltip se già creato
+                    if (bootstrap.Tooltip.getInstance(el)) return;
+                    bootstrap.Tooltip.getOrCreateInstance(el, {
+                        trigger: 'hover focus',
+                        container: 'body',
+                        boundary: document.body
+                    });
+                });
+            }
+        } catch (e) {
+            // no-op
+        }
+    })();
 });
 </script>
 
@@ -658,7 +840,9 @@ document.addEventListener('DOMContentLoaded', function () {
     $cookieConsent = \App\Support\CookieConsent::read(request());
 @endphp
 @if(!View::hasSection('suppress_cookie_modal'))
-    <x-cookie-consent-modal :show="$cookieBannerShouldShow ?? true" :consent="$cookieConsent" />
+    {{-- Il modale deve esistere SEMPRE per aprirlo da "Preferenze cookie". --}}
+    {{-- Si mostra automaticamente solo quando serve (primo accesso / banner attivo). --}}
+    <x-cookie-consent-modal :show="true" :autoShow="$cookieBannerShouldShow ?? true" :consent="$cookieConsent" />
 @endif
 </body>
 </html>

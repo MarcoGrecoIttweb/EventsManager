@@ -6,22 +6,22 @@
     <div class="container">
         <div class="mb-3">
             @if(!empty($profileReturnUrl))
-                <a href="{{ $profileReturnUrl }}" class="btn btn-outline-secondary btn-sm">
+                <a href="{{ $profileReturnUrl }}" class="btn btn-success btn-sm">
                     <i class="fas fa-arrow-left"></i> Torna all'elenco
                 </a>
             @else
                 @auth
                     @if(auth()->user()->isAdmin())
-                        <a href="{{ route('admin.users.index') }}" class="btn btn-outline-secondary btn-sm">
+                        <a href="{{ route('admin.users.index') }}" class="btn btn-success btn-sm">
                             <i class="fas fa-arrow-left"></i> Torna all'elenco
                         </a>
                     @else
-                        <a href="{{ url()->previous() }}" class="btn btn-outline-secondary btn-sm">
+                            <a href="{{ url()->previous() }}" class="btn btn-success btn-sm">
                             <i class="fas fa-arrow-left"></i> Torna all'elenco
                         </a>
                     @endif
                 @else
-                    <a href="{{ url()->previous() }}" class="btn btn-outline-secondary btn-sm">
+                    <a href="{{ url()->previous() }}" class="btn btn-success btn-sm">
                         <i class="fas fa-arrow-left"></i> Torna all'elenco
                     </a>
                 @endauth
@@ -40,6 +40,7 @@
                             <div class="col-12 col-md-6">
                                 @php
                                     $isAdminViewer = auth()->check() && auth()->user()->isAdmin();
+                                    $canSeePrivateContacts = auth()->check() && (auth()->id() === $user->id || $isAdminViewer);
                                 @endphp
                                 <div class="d-flex flex-column gap-2 profile-fields-compact">
                                     <div class="profile-field pt-0">
@@ -84,11 +85,11 @@
                                     </div>
                                     <div class="profile-field">
                                         <span class="profile-label">E-mail:</span>
-                                        <span class="profile-value">{{ $isAdminViewer ? ($user->email ?: '—') : '—' }}</span>
+                                        <span class="profile-value">{{ $canSeePrivateContacts ? ($user->email ?: '—') : '—' }}</span>
                                     </div>
                                     <div class="profile-field">
-                                        <span class="profile-label">Telefono:</span>
-                                        <span class="profile-value">{{ $isAdminViewer ? ($user->telefono ?: '—') : '—' }}</span>
+                                        <span class="profile-label">Cellulare:</span>
+                                        <span class="profile-value">{{ $canSeePrivateContacts ? ($user->telefono ?: '—') : '—' }}</span>
                                     </div>
                                     <div class="profile-field">
                                         <span class="profile-label">Residenza:</span>
@@ -124,7 +125,7 @@
                                                                 <label for="admin_new_password" class="form-label mb-0">Nuova password</label>
                                                                 <input type="password" id="admin_new_password" name="password"
                                                                        class="form-control form-control-sm @error('password') is-invalid @enderror"
-                                                                       required autocomplete="new-password" minlength="8">
+                                                                       required autocomplete="new-password" minlength="4">
                                                                 @error('password')
                                                                     <div class="invalid-feedback d-block">{{ $message }}</div>
                                                                 @enderror
@@ -133,7 +134,7 @@
                                                                 <label for="admin_new_password_confirmation" class="form-label mb-0">Conferma password</label>
                                                                 <input type="password" id="admin_new_password_confirmation" name="password_confirmation"
                                                                        class="form-control form-control-sm"
-                                                                       required autocomplete="new-password" minlength="8">
+                                                                       required autocomplete="new-password" minlength="4">
                                                             </div>
                                                         </div>
                                                         <button type="submit" class="btn btn-outline-secondary btn-sm mt-2">
@@ -164,7 +165,7 @@
                                     @php
                                         $roleClass = $user->isAdmin() ? 'danger' : ($user->isOrganizer() ? 'warning' : 'info');
                                     @endphp
-                                    <div class="d-flex align-items-center gap-2 flex-wrap w-100">
+                                    <div class="d-flex align-items-center gap-2 flex-nowrap w-100 profile-main-actions-row">
                                         @if($isAdminViewer)
                                             <form action="{{ route('admin.users.update-role', $user) }}" method="POST" class="d-inline-flex align-items-center gap-1">
                                                 @csrf
@@ -198,20 +199,54 @@
                                             default => 'secondary',
                                         };
                                     @endphp
-                                        <span class="badge profile-action-chip bg-{{ $statusBg }}">
-                                            {{ $statusLabel }}
-                                        </span>
                                         @auth
                                             @if(auth()->id() === $user->id || $isAdminViewer)
-                                                <a href="{{ route('profile.edit', $user) }}" class="btn btn-primary btn-sm">
-                                                    <i class="fas fa-edit"></i> Modifica Profilo
-                                                </a>
+                                                <div class="d-flex align-items-center gap-2 flex-nowrap">
+                                                    <a href="{{ route('profile.edit', $user) }}" class="btn btn-primary btn-sm profile-main-action-btn">
+                                                        <i class="fas fa-edit"></i> Modifica Profilo
+                                                    </a>
+                                                    @if(auth()->id() === $user->id)
+                                                        <a href="{{ route('profile.edit', $user) }}?openPassword=1" class="btn btn-outline-secondary btn-sm profile-main-action-btn">
+                                                            <i class="fas fa-key me-1"></i> Modifica passw
+                                                        </a>
+                                                    @elseif($isAdminViewer)
+                                                        <button type="button"
+                                                                class="btn btn-outline-secondary btn-sm profile-main-action-btn"
+                                                                data-bs-toggle="collapse"
+                                                                data-bs-target="#adminPasswordCollapse"
+                                                                aria-controls="adminPasswordCollapse"
+                                                                aria-expanded="false">
+                                                            <i class="fas fa-key me-1"></i> Modifica passw
+                                                        </button>
+                                                    @endif
+                                                </div>
+                                            @endif
+                                            @if(auth()->id() !== $user->id)
+                                                @if(auth()->user()->isFriendOf($user))
+                                                    <form action="{{ route('friends.remove', $user) }}" method="POST" class="d-inline-flex">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="btn btn-outline-danger btn-sm profile-action-chip-btn flex-shrink-0">
+                                                            <i class="fas fa-user-minus"></i> Rimuovi dagli amici
+                                                        </button>
+                                                    </form>
+                                                @else
+                                                    <form action="{{ route('friends.add', $user) }}" method="POST" class="d-inline-flex">
+                                                        @csrf
+                                                        <button type="submit" class="btn btn-outline-primary btn-sm profile-action-chip-btn flex-shrink-0">
+                                                            <i class="fas fa-user-plus"></i> Aggiungi agli amici
+                                                        </button>
+                                                    </form>
+                                                @endif
                                             @endif
                                         @endauth
                                     </div>
-                                    <div class="small w-100">
+                                    <div class="d-flex align-items-center gap-2 flex-wrap small w-100">
+                                        <span class="badge profile-action-chip bg-{{ $statusBg }}">
+                                            {{ $statusLabel }}
+                                        </span>
                                         <span class="d-inline-block px-2 py-1 rounded text-primary border border-primary">
-                                            Ultimo collegamento: {{ $user->ultimo_accesso ? $user->ultimo_accesso->format('d/m/y') : '—' }}
+                                            Ultimo collegamento: {{ $user->ultimo_accesso ? $user->ultimo_accesso->format('d/m/Y H:i') : '—' }}
                                         </span>
                                     </div>
                                     @auth
@@ -233,26 +268,6 @@
                                             @endif
                                         @endif
                                     @endauth
-                                    @auth
-                                        @if(auth()->id() !== $user->id)
-                                            @if(auth()->user()->isFriendOf($user))
-                                                <form action="{{ route('friends.remove', $user) }}" method="POST" class="d-inline">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="btn btn-outline-danger btn-sm profile-action-chip-btn">
-                                                        <i class="fas fa-user-minus"></i> Rimuovi dagli amici
-                                                    </button>
-                                                </form>
-                                            @else
-                                                <form action="{{ route('friends.add', $user) }}" method="POST" class="d-inline">
-                                                    @csrf
-                                                    <button type="submit" class="btn btn-outline-primary btn-sm profile-action-chip-btn">
-                                                        <i class="fas fa-user-plus"></i> Aggiungi agli amici
-                                                    </button>
-                                                </form>
-                                            @endif
-                                        @endif
-                                    @endauth
                                 </div>
                             </div>
                         </div>
@@ -260,6 +275,32 @@
                             <div class="profile-label">Descrizione</div>
                             <div class="profile-value profile-value--descr">{!! $user->safe_descr !== '' ? $user->safe_descr : '—' !!}</div>
                         </div>
+                        @if($isAdminViewer)
+                            <div class="profile-field profile-field--admin-note mt-3">
+                                <form action="{{ route('profile.admin-note.update', $user) }}" method="POST" class="profile-admin-note-form">
+                                    @csrf
+                                    <div class="profile-admin-note-layout">
+                                        <div class="profile-admin-note-left">
+                                            <div class="profile-label">
+                                                <i class="fas fa-sticky-note me-1"></i> Note relative
+                                            </div>
+                                            <button type="submit" class="btn btn-success btn-sm mt-2 w-auto">
+                                                <i class="fas fa-save me-1"></i> Salva nota
+                                            </button>
+                                        </div>
+                                        <div class="profile-admin-note-right">
+                                            <textarea name="note_utente"
+                                                      rows="3"
+                                                      class="form-control form-control-sm w-100 @error('note_utente', 'adminNote') is-invalid @enderror"
+                                                      placeholder="Inserisci una nota interna visibile solo agli amministratori...">{{ old('note_utente', $user->note_utente ?? '') }}</textarea>
+                                            @error('note_utente', 'adminNote')
+                                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -411,9 +452,9 @@
         .profile-action-chip {
             display: inline-flex;
             align-items: center;
-            min-height: 28px;
-            padding: 0.2rem 0.5rem;
-            font-size: 0.78rem;
+            min-height: 24px;
+            padding: 0.16rem 0.42rem;
+            font-size: 0.76rem;
             line-height: 1;
             border: 1px solid #adb5bd;
         }
@@ -424,6 +465,43 @@
             min-height: 28px;
             padding: 0.2rem 0.5rem;
             line-height: 1;
+        }
+        .profile-main-actions-row {
+            min-width: 0;
+        }
+        .profile-main-action-btn {
+            padding: 0.16rem 0.42rem !important;
+            font-size: 0.76rem !important;
+            line-height: 1.05 !important;
+            white-space: nowrap;
+        }
+        /* Box admin nota: titolo -> pulsante salva -> textarea a piena larghezza */
+        .profile-field--admin-note {
+            flex-direction: column;
+            align-items: flex-start;
+            width: 100%;
+        }
+        .profile-admin-note-form,
+        .profile-admin-note-layout,
+        .profile-admin-note-right {
+            width: 100%;
+        }
+        .profile-admin-note-layout {
+            display: grid;
+            grid-template-columns: 140px 1fr;
+            gap: 0.75rem;
+            align-items: start;
+        }
+        .profile-admin-note-left .profile-label {
+            min-width: 0;
+            white-space: normal;
+        }
+        .profile-admin-note-right {
+            min-width: 0;
+        }
+        .profile-admin-note-right textarea,
+        .profile-admin-note-right .form-control {
+            width: 100% !important;
         }
         .badge-organizzatore {
             background: #ffc107 !important;

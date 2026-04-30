@@ -215,7 +215,9 @@ class EventController extends Controller
             ->where('url_galleria', '!=', '')
             ->update(['elenco_visibile' => 1]);
 
-        $events = Event::query()
+        $q = trim((string) $request->query('q', ''));
+
+        $eventsQuery = Event::query()
             ->active()
             ->whereNotNull('url_galleria')
             ->where('url_galleria', '!=', '')
@@ -223,8 +225,14 @@ class EventController extends Controller
                 $q->where('url_galleria', 'like', 'http://%')
                     ->orWhere('url_galleria', 'like', 'https://%');
             })
-            ->ordered('desc')
-            ->paginate(20);
+            ->when($q !== '', function ($qry) use ($q) {
+                $qry->where('nome', 'like', '%' . $q . '%');
+            })
+            ->ordered('desc');
+
+        $events = $eventsQuery
+            ->paginate(20)
+            ->appends($request->query());
 
         // L’accessor `google_album_url` filtra gli URL non validi: rimuovi record “sporchi”.
         $events->setCollection(
@@ -233,7 +241,7 @@ class EventController extends Controller
             })->values()
         );
 
-        return view('events.photo-albums', compact('events'));
+        return view('events.photo-albums', compact('events', 'q'));
     }
 
     public function destroyPhotoAlbumLink(Event $event)
@@ -290,6 +298,89 @@ class EventController extends Controller
         $this->notifyNextFromWaitlistIfAny($event);
 
         return back()->with('success', 'Iscrizione annullata con successo');
+    }
+
+    /**
+     * Invia una comunicazione via email a tutti gli iscritti all'evento.
+     * Permessi: admin oppure organizzatore dell'evento.
+     */
+    public function sendCommunication(Request $request, Event $event)
+    {
+        if (!Auth::check() || !Auth::user()->isApproved()) {
+            return redirect()->route('login');
+        }
+
+        $user = Auth::user();
+        $isAllowed = $user->isAdmin() || ((int) $event->id_organizzatore === (int) $user->getKey());
+        if (!$isAllowed) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'subject' => ['required', 'string', 'max:140'],
+            'message' => ['required', 'string', 'max:4000'],
+        ]);
+
+        $subject = trim((string) $validated['subject']);
+        $body = trim((string) $validated['message']);
+
+        // Destinatari: tutti i partecipanti con email valida.
+        $participants = $event->participants()
+            ->whereNotNull('utente.email')
+            ->where('utente.email', '!=', '')
+            ->get(['utente.userID', 'utente.username', 'utente.nome', 'utente.cognome', 'utente.email']);
+
+        $sent = 0;
+        $skipped = 0;
+
+        foreach ($participants as $p) {
+            $to = trim((string) ($p->email ?? ''));
+            if ($to === '') {
+                $skipped++;
+                continue;
+            }
+
+            $recipientName = trim((string) (($p->nome ?? '') . ' ' . ($p->cognome ?? '')));
+            if ($recipientName === '') {
+                $recipientName = (string) ($p->nickname ?? $p->username ?? 'utente');
+            }
+
+            $eventUrl = route('events.show', $event);
+            $when = optional($event->date)->timezone(config('app.timezone'))->format('d/m/Y H:i');
+
+            $mailText =
+                "Comunicazione evento Excursio\n\n" .
+                "Evento: {$event->title}\n" .
+                "Quando: {$when}\n" .
+                "Link evento: {$eventUrl}\n\n" .
+                "Ciao {$recipientName},\n\n" .
+                $body . "\n\n" .
+                "— Excursio\n";
+
+            try {
+                Mail::raw($mailText, function ($message) use ($to, $subject) {
+                    $message->to($to)->subject($subject);
+                });
+                $sent++;
+            } catch (\Throwable $e) {
+                $skipped++;
+                \Log::warning('Event communication email failed: ' . $e->getMessage(), [
+                    'event_id' => $event->getKey(),
+                    'to' => $to,
+                ]);
+            }
+        }
+
+        if ($sent === 0) {
+            return back()->with('error', 'Nessuna email inviata: nessun iscritto con email valida oppure invio fallito.');
+        }
+
+        $msg = "Comunicazione inviata: {$sent} email.";
+        if ($skipped > 0) {
+            $msg .= " {$skipped} destinatari saltati (email mancante o errore invio).";
+        }
+
+        return back()->with('success', $msg);
     }
 
     public function joinWaitlist(Event $event)

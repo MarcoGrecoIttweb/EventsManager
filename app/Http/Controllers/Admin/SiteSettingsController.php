@@ -11,7 +11,7 @@ class SiteSettingsController extends Controller
 {
     public function toggleFeature(Request $request, string $featureKey): RedirectResponse
     {
-        $allowed = ['mercatino', 'chat_salottino', 'albums_foto'];
+        $allowed = ['mercatino', 'chat_salottino', 'albums_foto', 'chat_reply_email_users'];
         if (! in_array($featureKey, $allowed, true)) {
             return redirect()->route('admin.dashboard')->with('error', 'Impostazione non valida.');
         }
@@ -22,6 +22,7 @@ class SiteSettingsController extends Controller
             'mercatino' => 'Mercatino',
             'chat_salottino' => 'Salottino chat',
             'albums_foto' => 'Album foto',
+            'chat_reply_email_users' => 'Email risposta chat (utenti)',
             default => 'Funzione',
         };
 

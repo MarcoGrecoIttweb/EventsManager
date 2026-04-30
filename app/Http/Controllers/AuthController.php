@@ -121,7 +121,7 @@ class AuthController extends Controller
             'cognome' => 'required|string|max:20',
             'nickname' => 'required|string|max:20|unique:utente,username',
             'email' => ['required', 'email', 'max:255', Rule::unique('utente', 'email')],
-            'password' => 'required|min:8|confirmed',
+            'password' => 'required|min:4|confirmed',
             'sesso' => 'required|in:m,f',
             'residenza' => 'nullable|string|max:30',
             'datanascita' => 'required|date|before_or_equal:' . $adultDate,

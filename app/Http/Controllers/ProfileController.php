@@ -128,7 +128,7 @@ class ProfileController extends Controller
     public function updatePassword(Request $request, User $user)
     {
         $request->validate([
-            'password' => 'required|string|min:8|confirmed',
+            'password' => 'required|string|min:4|confirmed',
         ]);
 
         $plain = $request->input('password');
@@ -149,7 +149,7 @@ class ProfileController extends Controller
 
         $request->validate([
             'current_password' => 'required|current_password',
-            'password' => 'required|string|min:8|confirmed',
+            'password' => 'required|string|min:4|confirmed',
         ]);
 
         $plain = $request->input('password');
@@ -159,5 +159,26 @@ class ProfileController extends Controller
 
         return redirect()->route('profile.edit', $user)
             ->with('success', 'Password aggiornata.');
+    }
+
+    /**
+     * Nota amministratore associata all'utente (solo admin).
+     */
+    public function updateAdminNote(Request $request, User $user)
+    {
+        if (!$request->user() || !$request->user()->isAdmin()) {
+            abort(403);
+        }
+
+        $validated = $request->validateWithBag('adminNote', [
+            'note_utente' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $note = trim((string) ($validated['note_utente'] ?? ''));
+        $user->note_utente = $note !== '' ? $note : null;
+        $user->save();
+
+        return redirect()->route('profile.show', $user)
+            ->with('success', 'Nota utente aggiornata.');
     }
 }

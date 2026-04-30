@@ -50,6 +50,7 @@ class AppServiceProvider extends ServiceProvider
             $view->with('featureMercatinoEnabled', SiteSettings::getBool('feature.mercatino', true));
             $view->with('featureChatSalottinoEnabled', SiteSettings::getBool('feature.chat_salottino', true));
             $view->with('featureAlbumsFotoEnabled', SiteSettings::getBool('feature.albums_foto', true));
+            $view->with('featureChatReplyEmailUsersEnabled', SiteSettings::getBool('feature.chat_reply_email_users', true));
         });
 
         // Dashboard admin: serve mostrare lo stato dei toggle (oltre al layout).
@@ -57,6 +58,7 @@ class AppServiceProvider extends ServiceProvider
             $view->with('featureMercatinoEnabled', SiteSettings::getBool('feature.mercatino', true));
             $view->with('featureChatSalottinoEnabled', SiteSettings::getBool('feature.chat_salottino', true));
             $view->with('featureAlbumsFotoEnabled', SiteSettings::getBool('feature.albums_foto', true));
+            $view->with('featureChatReplyEmailUsersEnabled', SiteSettings::getBool('feature.chat_reply_email_users', true));
         });
 
         // Direttive Blade per bloccare script di terze parti finché non c'è consenso.

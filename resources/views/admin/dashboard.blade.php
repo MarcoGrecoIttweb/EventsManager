@@ -25,6 +25,12 @@
             font-size: 1.15rem;
             opacity: 0.9;
         }
+        .admin-tools-stats {
+            width: 100%;
+        }
+        .admin-tools-stats .admin-dashboard-stat-card {
+            width: 100%;
+        }
         .admin-dashboard-stats .admin-dashboard-stat-card {
             height: 100%;
         }
@@ -74,28 +80,49 @@
             flex-wrap: wrap;
             gap: 0.5rem;
             align-items: flex-start;
+            max-width: 29.5rem; /* stessa larghezza del box "mercatino" */
+            width: 100%;
+            margin-left: 0;
+            margin-right: auto;
+            padding: 0.55rem !important; /* stesso padding del box "mercatino" */
+            box-sizing: border-box;
+        }
+        .admin-quick-actions-card .card-body {
+            padding: 0 !important; /* padding lo gestiamo via .admin-quick-actions */
         }
         .admin-quick-actions .btn {
             width: 100%;
             display: inline-flex;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
             white-space: nowrap;
         }
         .admin-quick-actions-row {
             display: flex;
-            flex-wrap: wrap;
+            flex-direction: column;
             gap: 0.5rem;
-            justify-content: space-between;
+            justify-content: flex-start;
+            width: 100% !important; /* i pulsanti devono avere base uguale */
+            flex: 0 0 100% !important; /* non devono “stringersi” come flex-item */
         }
         .admin-quick-actions-row .btn {
-            flex: 1 1 100%;
-            max-width: 100%;
+            flex: 0 0 100% !important;
+            max-width: 100% !important;
+            width: 100% !important;
+        }
+        /* Box "Strumenti": testo/icone allineati a sinistra */
+        .admin-tools-btn {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: flex-start !important;
+            text-align: left !important;
+            white-space: nowrap;
         }
         @media (max-width: 575.98px) {
             .admin-quick-actions-row .btn {
                 flex: 1 1 100%;
                 max-width: 100%;
+                width: 100%;
             }
             .admin-quick-actions-row {
                 flex-wrap: wrap;
@@ -115,7 +142,7 @@
         }
         @media (min-width: 992px) {
             .admin-quick-actions-card {
-                width: auto;
+                width: 100% !important;
             }
         }
         /* Azioni rapide: rendi "outline" sempre pieno (come hover) */
@@ -133,6 +160,11 @@
             background-color: #0dcaf0 !important;
             border-color: #0dcaf0 !important;
             color: #000 !important;
+        }
+        .admin-quick-actions .btn.btn-outline-secondary {
+            background-color: #adb5bd !important;
+            border-color: #adb5bd !important;
+            color: #212529 !important;
         }
         .admin-dashboard-stat-card {
             border: 2px solid #8B4513 !important; /* stesso bordo "lista di attesa" */
@@ -256,61 +288,6 @@
             </div>
         @endif
 
-        <div class="row g-3 mb-4 admin-dashboard-stats admin-dashboard-stats-narrow">
-            <div class="col-12">
-                <div class="card border-0 shadow-sm rounded-3 bg-warning text-dark admin-dashboard-stat-card">
-                    <div class="card-body admin-dashboard-stat-card__body d-flex flex-wrap align-items-center justify-content-between gap-2 px-3">
-                        <div class="d-flex align-items-center gap-2 min-w-0">
-                            <i class="fas fa-clock admin-dashboard-stat-card__icon" aria-hidden="true"></i>
-                            <div class="min-w-0">
-                                <div class="admin-dashboard-stat-card__label admin-dashboard-stat-label-dark text-truncate">
-                                    Utenti in attesa
-                                    <span class="badge rounded-pill bg-danger text-white ms-2 admin-dashboard-stat-pill">{{ $pendingUsers }}</span>
-                                </div>
-                            </div>
-                        </div>
-                        <a href="{{ route('admin.users.index', ['registrations' => 'pending']) }}" class="btn btn-danger btn-sm flex-shrink-0 admin-dashboard-stat-btn">
-                            Approva iscrizioni
-                        </a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-12">
-                <div class="card border-0 shadow-sm rounded-3 bg-primary text-white admin-dashboard-stat-card">
-                    <div class="card-body admin-dashboard-stat-card__body d-flex flex-wrap align-items-center justify-content-between gap-2 px-3">
-                        <div class="d-flex align-items-center gap-2 min-w-0">
-                            <i class="fas fa-users admin-dashboard-stat-card__icon" aria-hidden="true"></i>
-                            <div class="min-w-0">
-                                <div class="admin-dashboard-stat-card__label admin-dashboard-stat-label-dark text-truncate">
-                                    Utenti totali <span class="admin-dashboard-stat-card__value fw-bold ms-1">{{ $usersCount }}</span>
-                                </div>
-                            </div>
-                        </div>
-                        <a href="{{ route('admin.users.index') }}" class="btn btn-secondary btn-sm text-white fw-semibold flex-shrink-0 admin-dashboard-stat-btn">
-                            Gestisci utenti
-                        </a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-12">
-                <div class="card border-0 shadow-sm rounded-3 bg-success text-white admin-dashboard-stat-card">
-                    <div class="card-body admin-dashboard-stat-card__body d-flex flex-wrap align-items-center justify-content-between gap-2 px-3">
-                        <div class="d-flex align-items-center gap-2 min-w-0">
-                            <i class="fas fa-calendar admin-dashboard-stat-card__icon" aria-hidden="true"></i>
-                            <div class="min-w-0">
-                                <div class="admin-dashboard-stat-card__label admin-dashboard-stat-label-dark text-truncate">
-                                    Eventi pubblicati <span class="admin-dashboard-stat-card__value fw-bold ms-1">{{ $eventsCount }}</span>
-                                </div>
-                            </div>
-                        </div>
-                        <a href="{{ route('admin.events.index') }}" class="btn btn-secondary btn-sm text-white fw-semibold flex-shrink-0 admin-dashboard-stat-btn">
-                            Gestisci eventi
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <div class="row g-3">
             <div class="col-lg-6 admin-quick-actions-col">
                 <div class="card border-0 shadow-sm rounded-3 h-100 admin-dashboard-panel-border admin-quick-actions-card">
@@ -336,7 +313,9 @@
                                 </a>
                             </div>
                             <div class="admin-quick-actions-row mt-2">
-                                <a href="{{ route('admin.common-event.form') }}" class="btn btn-outline-dark">
+                                <a href="{{ route('admin.common-event.form') }}"
+                                   class="btn btn-outline-secondary"
+                                   title="Serve per trovare rapidamente gli eventi in comune tra due utenti indicati tramite username.">
                                     <i class="fas fa-random me-2"></i>Trova evento in comune
                                 </a>
                             </div>
@@ -395,6 +374,21 @@
                                         <span class="badge bg-secondary">NASCOSTO</span>
                                     @endif
                                 </form>
+
+                                <form method="POST" action="{{ route('admin.site-settings.feature.toggle', ['featureKey' => 'chat_reply_email_users']) }}" class="d-flex align-items-center justify-content-between gap-2 flex-wrap admin-feature-toggle-form">
+                                    @csrf
+                                    <div class="form-check form-switch m-0 d-flex align-items-center gap-2">
+                                        <input class="form-check-input admin-feature-toggle-input" type="checkbox" role="switch" id="admin_toggle_chat_reply_email_users" {{ ($featureChatReplyEmailUsersEnabled ?? true) ? 'checked' : '' }}>
+                                        <label class="form-check-label fw-semibold" for="admin_toggle_chat_reply_email_users">
+                                            <i class="fas fa-envelope me-1"></i>Email risposta chat (utenti)
+                                        </label>
+                                    </div>
+                                    @if(($featureChatReplyEmailUsersEnabled ?? true))
+                                        <span class="badge bg-success">ATTIVO</span>
+                                    @else
+                                        <span class="badge bg-secondary">OFF</span>
+                                    @endif
+                                </form>
                             </div>
                         </div>
                     </div>
@@ -406,24 +400,67 @@
                         <i class="fas fa-toolbox text-secondary me-2"></i>Strumenti
                     </div>
                     <div class="card-body">
-                        <div class="d-grid gap-2">
-                            <a href="{{ route('admin.groups.index') }}" class="btn btn-outline-secondary">
-                                <i class="fas fa-users-cog me-2"></i>Gruppi
-                            </a>
-                            <a href="{{ route('admin.users.gallery') }}" class="btn btn-outline-secondary">
+                        <div class="d-grid gap-2 admin-tools-stats">
+                            <div class="card border-0 shadow-sm rounded-3 bg-warning text-dark admin-dashboard-stat-card">
+                                <div class="card-body admin-dashboard-stat-card__body d-flex flex-wrap align-items-center justify-content-between gap-2 px-3">
+                                    <div class="d-flex align-items-center gap-2 min-w-0">
+                                        <i class="fas fa-clock admin-dashboard-stat-card__icon" aria-hidden="true"></i>
+                                        <div class="min-w-0">
+                                            <div class="admin-dashboard-stat-card__label admin-dashboard-stat-label-dark text-truncate">
+                                                Utenti in attesa
+                                                <span class="badge rounded-pill bg-danger text-white ms-2 admin-dashboard-stat-pill">{{ $pendingUsers }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <a href="{{ route('admin.users.index', ['registrations' => 'pending']) }}" class="btn btn-danger btn-sm flex-shrink-0 admin-dashboard-stat-btn">
+                                        Approva iscrizioni
+                                    </a>
+                                </div>
+                            </div>
+
+                            <div class="card border-0 shadow-sm rounded-3 bg-primary text-white admin-dashboard-stat-card">
+                                <div class="card-body admin-dashboard-stat-card__body d-flex flex-wrap align-items-center justify-content-between gap-2 px-3">
+                                    <div class="d-flex align-items-center gap-2 min-w-0">
+                                        <i class="fas fa-users admin-dashboard-stat-card__icon" aria-hidden="true"></i>
+                                        <div class="min-w-0">
+                                            <div class="admin-dashboard-stat-card__label admin-dashboard-stat-label-dark text-truncate">
+                                                Utenti totali <span class="admin-dashboard-stat-card__value fw-bold ms-1">{{ $usersCount }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <a href="{{ route('admin.users.index') }}" class="btn btn-secondary btn-sm text-white fw-semibold flex-shrink-0 admin-dashboard-stat-btn">
+                                        Gestisci utenti
+                                    </a>
+                                </div>
+                            </div>
+
+                            <div class="card border-0 shadow-sm rounded-3 bg-success text-white admin-dashboard-stat-card">
+                                <div class="card-body admin-dashboard-stat-card__body d-flex flex-wrap align-items-center justify-content-between gap-2 px-3">
+                                    <div class="d-flex align-items-center gap-2 min-w-0">
+                                        <i class="fas fa-calendar admin-dashboard-stat-card__icon" aria-hidden="true"></i>
+                                        <div class="min-w-0">
+                                            <div class="admin-dashboard-stat-card__label admin-dashboard-stat-label-dark text-truncate">
+                                                Eventi pubblicati <span class="admin-dashboard-stat-card__value fw-bold ms-1">{{ $eventsCount }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <a href="{{ route('admin.events.index') }}" class="btn btn-secondary btn-sm text-white fw-semibold flex-shrink-0 admin-dashboard-stat-btn">
+                                        Gestisci eventi
+                                    </a>
+                                </div>
+                            </div>
+
+                            <a href="{{ route('admin.users.gallery') }}" class="btn btn-success admin-tools-btn">
                                 <i class="fas fa-images me-2"></i>Galleria avatar utenti
                             </a>
-                            <a href="{{ route('admin.newsletter.stats') }}" class="btn btn-outline-secondary">
-                                <i class="fas fa-chart-bar me-2"></i>Statistiche newsletter
-                            </a>
-                            <a href="{{ route('admin.mail-test') }}" class="btn btn-outline-secondary">
-                                <i class="fas fa-paper-plane me-2"></i>Test e-mail
-                            </a>
-                            <a href="{{ route('chat.index') }}" class="btn btn-outline-dark" target="_blank" rel="noopener">
+                            <a href="{{ route('chat.index') }}" class="btn btn-primary admin-tools-btn" target="_blank" rel="noopener">
                                 <i class="fas fa-comments me-2"></i>Apri chat
                                 @if(!($featureChatSalottinoEnabled ?? true))
                                     <span class="ms-1 badge bg-secondary">OFF per utenti</span>
                                 @endif
+                            </a>
+                            <a href="{{ route('admin.groups.index') }}" class="btn btn-warning admin-tools-btn text-dark">
+                                <i class="fas fa-users-cog me-2"></i>Gruppi
                             </a>
                         </div>
                     </div>

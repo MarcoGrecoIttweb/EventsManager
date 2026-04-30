@@ -1,6 +1,8 @@
 @php
     /** @var bool $show */
     $show = $show ?? true;
+    /** @var bool $autoShow */
+    $autoShow = $autoShow ?? false;
     /** @var array $consent */
     $consent = $consent ?? [];
 
@@ -98,16 +100,18 @@
         </div>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            var el = document.getElementById('cookieConsentModal');
-            if (!el || typeof bootstrap === 'undefined') return;
-            var modal = bootstrap.Modal.getOrCreateInstance(el, {
-                backdrop: 'static',
-                keyboard: false
+    @if($autoShow)
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                var el = document.getElementById('cookieConsentModal');
+                if (!el || typeof bootstrap === 'undefined') return;
+                var modal = bootstrap.Modal.getOrCreateInstance(el, {
+                    backdrop: 'static',
+                    keyboard: false
+                });
+                modal.show();
             });
-            modal.show();
-        });
-    </script>
+        </script>
+    @endif
 @endif
 

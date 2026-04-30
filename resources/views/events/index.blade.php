@@ -30,6 +30,36 @@
     </div>
 @endsection
 
+@section('sidebar_after_my_events')
+    @auth
+        @php $me = auth()->user(); @endphp
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-body p-2">
+                <div class="small fw-bold mb-2">
+                    <i class="fas fa-calendar-plus text-success me-1"></i> Vuoi organizzare eventi?
+                </div>
+                <div class="d-grid">
+                    @if($me->canManageEvents())
+                        @if($me->isAdmin())
+                            <a href="{{ route('admin.events.create') }}" class="btn btn-success btn-sm">
+                                Crea evento
+                            </a>
+                        @else
+                            <a href="{{ route('manage.events.create') }}" class="btn btn-success btn-sm">
+                                Crea evento
+                            </a>
+                        @endif
+                    @else
+                        <a href="{{ route('organizer.request') }}" class="btn btn-outline-success btn-sm">
+                            Richiedi abilitazione
+                        </a>
+                    @endif
+                </div>
+            </div>
+        </div>
+    @endauth
+@endsection
+
 @php
     // Ordine e didascalie come nel vecchio sito (html.it / xfade); solo file presenti in public/slide
     $slideCatalog = [
@@ -208,6 +238,22 @@
                                                     / {{ $event->max_participants }}
                                                 @endif
                                             </span>
+                                            @if($event->deadline)
+                                                @php
+                                                    $iscrOpen = $event->isRegistrationOpen();
+                                                    $deadline = $event->deadline;
+                                                    $secondsToDeadline = $deadline ? $deadline->diffInSeconds(now(), false) * -1 : null; // futuro = positivo
+                                                    $iscrSoon = $iscrOpen && is_int($secondsToDeadline) && $secondsToDeadline > 0 && $secondsToDeadline <= 86400; // 24h
+                                                    $iscrClass = $iscrOpen
+                                                        ? ($iscrSoon ? 'event-card-iscr--soon' : 'event-card-iscr--open')
+                                                        : 'event-card-iscr--closed';
+                                                @endphp
+                                                <span class="badge event-meta-badges__badge event-card-iscr-badge {{ $iscrClass }}">
+                                                    <i class="fas fa-clock"></i>
+                                                    Iscrizioni {{ $iscrOpen ? 'entro' : 'chiuse' }}:
+                                                    {{ $event->deadline->format('d/m/Y H:i') }}
+                                                </span>
+                                            @endif
                                         </div>
                                         <p class="card-text mb-2">
                                             <i class="fas fa-map-marker-alt"></i>
@@ -572,6 +618,40 @@
         }
         .event-meta-badges__badge i {
             margin-right: 0.35rem;
+        }
+
+        /* Iscrizioni: verde/rosso + lampeggio nelle 24h (lista eventi) */
+        .event-card-iscr-badge {
+            background: rgba(255, 255, 255, 0.92);
+            border: 2px solid currentColor;
+        }
+        .event-card-iscr--open {
+            color: #198754;
+            font-weight: 800;
+        }
+        .event-card-iscr--closed {
+            color: #dc3545;
+            font-weight: 900;
+        }
+        .event-card-iscr--soon {
+            color: #198754;
+            font-weight: 900;
+            animation: eventCardIscrBlink 0.85s ease-in-out infinite;
+        }
+        @keyframes eventCardIscrBlink {
+            0%, 100% {
+                box-shadow: 0 0 0 rgba(25,135,84,0);
+                transform: scale(1);
+                background: rgba(255, 255, 255, 0.92);
+            }
+            50% {
+                box-shadow:
+                    0 0 0 3px rgba(25,135,84,0.35),
+                    0 0 22px rgba(25,135,84,0.9);
+                transform: scale(1.03);
+                /* Giallo attenzione (più evidente del verde) */
+                background: rgba(255, 193, 7, 0.55);
+            }
         }
 
         .alert-sm {

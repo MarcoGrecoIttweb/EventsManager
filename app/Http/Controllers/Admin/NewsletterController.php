@@ -586,24 +586,4 @@ class NewsletterController extends Controller
         ]);
     }
 
-    public function stats()
-    {
-        $totalUsers = User::nonAdmin()->count();
-        $approvedUsers = User::nonAdmin()->where('abilitato', 1)->count();
-        $pendingUsers = User::nonAdmin()->where('abilitato', 3)->count();
-        $participants = User::nonAdmin()
-            ->where('abilitato', 1)
-            ->has('events')
-            ->count();
-        $newsSubscribers = User::nonAdmin()
-            ->where('abilitato', 1)
-            ->where('invia', true)
-            ->whereNotNull('email')
-            ->where('email', '!=', '')
-            ->count();
-
-        return view('admin.newsletter.stats', compact(
-            'totalUsers', 'approvedUsers', 'pendingUsers', 'participants', 'newsSubscribers'
-        ));
-    }
 }

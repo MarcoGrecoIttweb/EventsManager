@@ -96,18 +96,33 @@
                                     <div class="mb-3">
                                         <label for="venue" class="form-label text-primary-emphasis">Nome locale</label>
                                         <input type="text" class="form-control border border-2 border-primary @error('venue') is-invalid @enderror"
-                                               id="venue" name="venue" value="{{ old('venue') }}" placeholder="es. Ristorante Da Mario">
+                                               id="venue" name="venue" value="{{ old('venue') }}" placeholder="es. Ristorante Da Mario" maxlength="35">
                                         @error('venue')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
                                 </div>
-                                <div class="col-12 col-md-6 col-lg-7">
+                                <div class="col-12 col-md-6 col-lg-5">
                                     <div class="mb-3">
                                         <label for="address" class="form-label text-primary-emphasis">Indirizzo *</label>
                                         <input type="text" class="form-control border border-2 border-primary @error('address') is-invalid @enderror"
-                                               id="address" name="address" value="{{ old('address') }}" required>
+                                               id="address" name="address" value="{{ old('address') }}" required maxlength="35">
                                         @error('address')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+                                <div class="col-12 col-md-6 col-lg-2">
+                                    <div class="mb-3">
+                                        <label for="civico" class="form-label text-primary-emphasis">Numero civico</label>
+                                        <input type="text"
+                                               class="form-control border border-2 border-primary @error('civico') is-invalid @enderror"
+                                               id="civico"
+                                               name="civico"
+                                               value="{{ old('civico') }}"
+                                               maxlength="10"
+                                               placeholder="es. 12">
+                                        @error('civico')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
@@ -119,7 +134,7 @@
                                     <div class="mb-3">
                                         <label for="city" class="form-label text-primary-emphasis">Città *</label>
                                         <input type="text" class="form-control border border-2 border-primary @error('city') is-invalid @enderror"
-                                               id="city" name="city" value="{{ old('city') }}" required maxlength="15">
+                                               id="city" name="city" value="{{ old('city') }}" required maxlength="35">
                                         @error('city')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
@@ -195,15 +210,14 @@
                                 </div>
                                 <div id="event_create_switches_cell" class="event-create-media-switches d-flex flex-wrap align-items-center gap-2 gap-lg-3 pb-1">
                                     <div class="form-check form-switch mb-0">
-                                        @if(!(auth()->user()->isAdmin()))
-                                            <input type="hidden" name="elenco_visibile" value="1">
-                                        @endif
-                                        <input type="checkbox" class="form-check-input" id="elenco_visibile" name="elenco_visibile" value="1"
-                                            {{ auth()->user()->isAdmin() ? (old('elenco_visibile', true) ? 'checked' : '') : 'checked' }}
-                                            {{ auth()->user()->isAdmin() ? '' : 'disabled' }}>
-                                        <label class="form-check-label text-primary-emphasis text-nowrap small" for="elenco_visibile">
-                                            Visualizza partecipanti
+                                        <input type="checkbox" class="form-check-input" id="is_active" name="is_active" value="1"
+                                            {{ old('is_active', true) ? 'checked' : '' }}>
+                                        <label class="form-check-label text-primary-emphasis text-nowrap small" for="is_active">
+                                            Evento attivo
                                         </label>
+                                    </div>
+                                    <div class="form-check form-switch mb-0">
+                                        <input type="hidden" name="elenco_visibile" value="1">
                                     </div>
                                     <div class="form-check form-switch mb-0">
                                         <input type="checkbox" class="form-check-input" id="allow_guests" name="allow_guests" value="1"

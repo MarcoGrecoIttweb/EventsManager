@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ChatMessage;
 use App\Models\User;
 use App\Support\SafeRichText;
+use App\Support\SiteSettings;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
@@ -12,6 +13,8 @@ use Illuminate\Support\Str;
 
 class ChatController extends Controller
 {
+    private const REMOVED_NOTICE = 'Messaggio rimosso: è vietato inviare Email e numero di telefono.';
+
     public function index()
     {
         $messages = ChatMessage::with('user')
@@ -19,6 +22,21 @@ class ChatController extends Controller
             ->limit(100)
             ->get()
             ->reverse();
+
+        // Moderazione soft: se per qualche motivo esistono già messaggi con contatti,
+        // rimuovi il contenuto e sostituiscilo con un avviso (così non viene mai mostrato).
+        foreach ($messages as $msg) {
+            $raw = (string) ($msg->content ?? '');
+            $checkText = strip_tags($raw);
+            if ($raw !== '' && $raw !== self::REMOVED_NOTICE && $this->containsForbiddenContacts($checkText)) {
+                try {
+                    $msg->content = self::REMOVED_NOTICE;
+                    $msg->save();
+                } catch (\Throwable $e) {
+                    \Log::warning('Chat moderation scrub failed: ' . $e->getMessage(), ['message_id' => $msg->id]);
+                }
+            }
+        }
 
         $mentionAlerts = collect();
         if (Auth::check()) {
@@ -71,7 +89,8 @@ class ChatController extends Controller
             'reply_to_when' => 'nullable|string|max:64',
         ]);
 
-        $content = (string) $validated['content'];
+        $originalContent = (string) $validated['content'];
+        $content = $originalContent;
 
         $replyNick = trim((string) ($validated['reply_to_nickname'] ?? ''));
         $replyWhen = trim((string) ($validated['reply_to_when'] ?? ''));
@@ -81,17 +100,26 @@ class ChatController extends Controller
             $content = $prefix . $content;
         }
 
-        if ($isAdmin) {
+        // Blocca con rimozione se contiene email o numeri di telefono.
+        $checkText = strip_tags($content);
+        if ($this->containsForbiddenContacts($checkText)) {
+            $content = self::REMOVED_NOTICE;
+        } elseif ($isAdmin) {
             $content = SafeRichText::sanitize($content, true);
         }
 
-        ChatMessage::create([
+        $created = ChatMessage::create([
             'user_id' => Auth::id(),
             'content' => $content,
         ]);
 
+        // Se è una risposta, invia email al destinatario (se presente).
+        if ($replyNick !== '' && $content !== self::REMOVED_NOTICE) {
+            $this->notifyChatReply(Auth::user(), $replyNick, $originalContent, $replyWhen, (int) $created->id);
+        }
+
         // Evita di auto-notificare l'admin su propri messaggi ricchi.
-        if (!$isAdmin) {
+        if (!$isAdmin && $content !== self::REMOVED_NOTICE) {
             $this->notifyAdminChatMessage(Auth::user(), $content);
         }
 
@@ -116,7 +144,10 @@ class ChatController extends Controller
         ]);
 
         $content = (string) $validated['content'];
-        if ($isAdmin) {
+        $checkText = strip_tags($content);
+        if ($this->containsForbiddenContacts($checkText)) {
+            $content = self::REMOVED_NOTICE;
+        } elseif ($isAdmin) {
             $content = SafeRichText::sanitize($content, true);
         }
 
@@ -171,17 +202,7 @@ class ChatController extends Controller
     private function notifyAdminChatMessage(User $author, string $content): void
     {
         try {
-            $adminId = (int) env('ADMIN_NOTIFY_ADMIN_ID', 0);
-            $adminUsername = trim((string) env('ADMIN_NOTIFY_ADMIN_USERNAME', ''));
-
-            $admin = User::query()
-                ->where('ruolo', 0)
-                ->when($adminId > 0, fn ($q) => $q->whereKey($adminId))
-                ->when($adminId <= 0 && $adminUsername !== '', fn ($q) => $q->where('username', $adminUsername))
-                ->when($adminId <= 0 && $adminUsername === '', fn ($q) => $q->where('username', 'scintilla'))
-                ->first();
-
-            $notifyEmail = trim((string) ($admin?->email ?? ''));
+            $notifyEmail = $this->resolveAdminNotifyEmail();
             if ($notifyEmail === '') {
                 return;
             }
@@ -217,6 +238,135 @@ class ChatController extends Controller
         } catch (\Throwable $e) {
             \Log::warning('Notify admin chat message failed: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Restituisce l'email admin da notificare (stesse regole usate per eventi/commenti/chat).
+     */
+    private function resolveAdminNotifyEmail(): string
+    {
+        try {
+            $adminId = (int) env('ADMIN_NOTIFY_ADMIN_ID', 0);
+            $adminUsername = trim((string) env('ADMIN_NOTIFY_ADMIN_USERNAME', ''));
+
+            $admin = User::query()
+                ->where('ruolo', 0)
+                ->when($adminId > 0, fn ($q) => $q->whereKey($adminId))
+                ->when($adminId <= 0 && $adminUsername !== '', fn ($q) => $q->where('username', $adminUsername))
+                ->when($adminId <= 0 && $adminUsername === '', fn ($q) => $q->where('username', 'scintilla'))
+                ->first();
+
+            return trim((string) ($admin?->email ?? ''));
+        } catch (\Throwable $e) {
+            return '';
+        }
+    }
+
+    /**
+     * Notifica via email l'utente destinatario di una risposta in chat.
+     * Il destinatario viene risolto partendo dal nickname (o username) mostrato in chat.
+     */
+    private function notifyChatReply(User $author, string $replyToNick, string $messageBody, string $replyWhen, int $messageId): void
+    {
+        try {
+            $usersEmailEnabled = SiteSettings::getBool('feature.chat_reply_email_users', true);
+
+            $replyToNick = trim($replyToNick);
+            if ($replyToNick === '') {
+                return;
+            }
+
+            $authorNick = trim((string) ($author->nickname ?? $author->username ?? ''));
+            if ($authorNick === '') {
+                $authorNick = (string) $author->getKey();
+            }
+
+            // Nel DB legacy non esiste una colonna "nickname": nickname è un accessor su username.
+            // Quindi risolviamo il destinatario usando username (case-insensitive).
+            $needle = mb_strtolower($replyToNick, 'UTF-8');
+            $recipient = User::query()
+                ->whereRaw('LOWER(username) = ?', [$needle])
+                ->first();
+
+            // Email destinatario (se risolto e presente).
+            $toEmail = '';
+            $destNick = $replyToNick;
+            if ($recipient && (int) $recipient->getKey() !== (int) $author->getKey()) {
+                if ($usersEmailEnabled) {
+                    $toEmail = trim((string) ($recipient->email ?? ''));
+                }
+                $tmpNick = trim((string) ($recipient->nickname ?? $recipient->username ?? ''));
+                if ($tmpNick !== '') {
+                    $destNick = $tmpNick;
+                }
+            }
+
+            // Testo pulito "senza" prefissi/HTML.
+            $plainBody = strip_tags((string) $messageBody);
+            $plainBody = preg_replace('/\s+/', ' ', trim($plainBody)) ?? trim($plainBody);
+
+            $whenSuffix = $replyWhen !== '' ? " ({$replyWhen})" : '';
+            $whenNow = now()->timezone(config('app.timezone'))->format('d/m/Y H:i');
+            $chatUrl = route('chat.index') . '#msg-' . $messageId;
+
+            $subject = 'Excursio - Nuova risposta nel Salottino';
+            $body =
+                "Ciao {$destNick},\n\n" .
+                "{$authorNick} ti ha risposto nel Salottino{$whenSuffix}.\n" .
+                "Orario: {$whenNow}\n\n" .
+                "Messaggio:\n" .
+                $plainBody . "\n\n" .
+                "Apri la chat: {$chatUrl}\n";
+
+            $adminEmail = $this->resolveAdminNotifyEmail();
+
+            // Invia al destinatario (se ha email) e in BCC all'admin.
+            if ($toEmail !== '') {
+                Mail::raw($body, function ($message) use ($toEmail, $adminEmail, $subject) {
+                    $message->to($toEmail)->subject($subject);
+                    if (is_string($adminEmail) && trim($adminEmail) !== '' && trim($adminEmail) !== trim($toEmail)) {
+                        $message->bcc(trim($adminEmail));
+                    }
+                });
+            } elseif (is_string($adminEmail) && trim($adminEmail) !== '') {
+                // Se il destinatario non è risolvibile o non ha email, invia comunque all'admin.
+                Mail::raw($body, function ($message) use ($adminEmail, $subject) {
+                    $message->to(trim($adminEmail))->subject($subject);
+                });
+            }
+        } catch (\Throwable $e) {
+            \Log::warning('Notify chat reply failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Rileva email o numeri di telefono nel testo (best-effort).
+     */
+    private function containsForbiddenContacts(string $text): bool
+    {
+        $text = trim((string) $text);
+        if ($text === '') {
+            return false;
+        }
+
+        // Email (case-insensitive)
+        if (preg_match('/[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}/i', $text) === 1) {
+            return true;
+        }
+
+        // Telefono: cerca sequenze con almeno 8 cifre totali.
+        // Accetta +39, spazi, trattini, punti, parentesi.
+        if (preg_match('/(?:\+?\s*\d[\d\s().\-]{6,}\d)/', $text) === 1) {
+            // Conta cifre complessive della prima occorrenza.
+            if (preg_match('/(?:\+?\s*\d[\d\s().\-]{6,}\d)/', $text, $m) === 1) {
+                $digits = preg_replace('/\D+/', '', $m[0]);
+                if (is_string($digits) && strlen($digits) >= 8) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 }
 

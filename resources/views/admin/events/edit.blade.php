@@ -76,7 +76,6 @@
                                         <label for="deadline" class="form-label text-primary-emphasis">Scadenza Iscrizioni</label>
                                         <input type="datetime-local" class="form-control border border-2 border-primary @error('deadline') is-invalid @enderror"
                                                id="deadline" name="deadline" value="{{ old('deadline', $event->deadline ? $event->deadline->format('Y-m-d\TH:i') : '') }}">
-                                        <small class="form-text text-muted">Vuoto x nessuna scadenza</small>
                                         @error('deadline')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
@@ -84,42 +83,62 @@
                                 </div>
                             </div>
 
-                            {{-- Riga 2: Nome locale, Indirizzo, Città, Prezzo --}}
+                            {{-- Riga 2: Nome locale, Indirizzo --}}
                             <div class="row g-2 event-edit-row-place">
                                 <div class="col-12 col-sm-6 col-xl-3">
                                     <div class="mb-3">
                                         <label for="venue" class="form-label text-primary-emphasis">Nome locale</label>
-                                        <input type="text" class="form-control border border-2 border-primary @error('venue') is-invalid @enderror"
-                                               id="venue" name="venue" value="{{ old('venue', $event->dove) }}" placeholder="es. Ristorante Da Mario">
+                                        <input type="text" class="form-control form-control-sm border border-2 border-primary @error('venue') is-invalid @enderror"
+                                               id="venue" name="venue" value="{{ old('venue', $event->dove) }}" placeholder="es. Ristorante Da Mario" maxlength="35">
                                         @error('venue')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
                                 </div>
-                                <div class="col-12 col-sm-6 col-xl-3">
+                                <div class="col-12 col-sm-6 col-xl-4">
                                     <div class="mb-3">
                                         <label for="address" class="form-label text-primary-emphasis">Indirizzo *</label>
-                                        <input type="text" class="form-control border border-2 border-primary @error('address') is-invalid @enderror"
-                                               id="address" name="address" value="{{ old('address', $event->address) }}" required>
+                                        <input type="text" class="form-control form-control-sm border border-2 border-primary @error('address') is-invalid @enderror"
+                                               id="address" name="address" value="{{ old('address', $event->address) }}" required maxlength="35">
                                         @error('address')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
                                 </div>
-                                <div class="col-12 col-sm-6 col-xl-3">
+                            </div>
+
+                            {{-- Riga 3: Civico, Città, Prezzo (sempre stessa linea) --}}
+                            <div class="row g-2 event-edit-row-place">
+                                <div class="col-4 col-md-2 col-xl-2">
+                                    <div class="mb-3">
+                                        <label for="civico" class="form-label text-primary-emphasis">Civico</label>
+                                        <input type="text"
+                                               class="form-control form-control-sm border border-2 border-primary @error('civico') is-invalid @enderror"
+                                               id="civico"
+                                               name="civico"
+                                               value="{{ old('civico', $event->civico) }}"
+                                               maxlength="10"
+                                               placeholder="12"
+                                               style="max-width: 6.5rem;">
+                                        @error('civico')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+                                <div class="col-4 col-md-6 col-xl-6">
                                     <div class="mb-3">
                                         <label for="city" class="form-label text-primary-emphasis">Città *</label>
-                                        <input type="text" class="form-control border border-2 border-primary @error('city') is-invalid @enderror"
-                                               id="city" name="city" value="{{ old('city', $event->city) }}" required>
+                                        <input type="text" class="form-control form-control-sm border border-2 border-primary @error('city') is-invalid @enderror"
+                                               id="city" name="city" value="{{ old('city', $event->city) }}" required maxlength="35">
                                         @error('city')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
                                 </div>
-                                <div class="col-12 col-sm-6 col-xl-3">
+                                <div class="col-4 col-md-4 col-xl-4">
                                     <div class="mb-3">
                                         <label for="cost" class="form-label text-primary-emphasis mb-1">Prezzo (€)</label>
-                                        <input type="number" step="0.01" min="0" class="form-control border border-2 border-primary @error('cost') is-invalid @enderror"
+                                        <input type="number" step="0.01" min="0" class="form-control form-control-sm border border-2 border-primary @error('cost') is-invalid @enderror"
                                                id="cost" name="cost" value="{{ old('cost', $event->costo) }}" placeholder="0.00">
                                         @error('cost')
                                         <div class="invalid-feedback d-block">{{ $message }}</div>
@@ -232,9 +251,7 @@
                                             <label class="form-check-label" for="allow_guests">Permetti ospiti</label>
                                         </div>
                                         <div class="form-check form-switch mb-0">
-                                            <input type="checkbox" class="form-check-input" id="elenco_visibile" name="elenco_visibile" value="1"
-                                                {{ old('elenco_visibile', $event->elenco_visibile) ? 'checked' : '' }}>
-                                            <label class="form-check-label" for="elenco_visibile">Visualizza partecipanti</label>
+                                            <input type="hidden" name="elenco_visibile" value="1">
                                         </div>
                                     </div>
                                 </div>

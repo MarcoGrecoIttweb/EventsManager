@@ -18,6 +18,9 @@ class UserController extends Controller
         if ($request->query('registrations') === 'pending') {
             $query->where('abilitato', 3)->where('ruolo', '!=', 0)
                 ->orderBy('userID');
+        } elseif ($request->query('status') === 'approved') {
+            $query->where('abilitato', 1)
+                ->orderBy('userID');
         } elseif ($request->query('status') === 'suspended') {
             $query->where('abilitato', 0)->where('ruolo', '!=', 0)
                 ->orderBy('userID');
@@ -174,5 +177,25 @@ class UserController extends Controller
         $user->save();
 
         return back()->with('success', "Ruolo di {$user->nickname} aggiornato a {$user->role_name}.");
+    }
+
+    /**
+     * Toggle newsletter subscription (utente.invia) for a user.
+     */
+    public function updateNewsletter(Request $request, User $user)
+    {
+        $validated = $request->validate([
+            'invia' => 'required|in:0,1',
+        ]);
+
+        if ($user->isAdmin()) {
+            return back()->with('error', 'Non puoi modificare la newsletter di un amministratore.');
+        }
+
+        $user->invia = (int) $validated['invia'] === 1;
+        $user->save();
+
+        $label = $user->invia ? 'attivata' : 'disattivata';
+        return back()->with('success', "Newsletter {$label} per {$user->nickname}.");
     }
 }

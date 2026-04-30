@@ -46,12 +46,13 @@ class EventController extends Controller
             'incipit' => 'nullable|string|max:500',
             'description' => 'required|string|min:10',
             'date' => 'required|date|after:now',
-            'city' => 'required|string|max:15',
-            'venue' => 'nullable|string|max:50',
-            'address' => 'required|string|max:50',
+            'city' => 'required|string|max:35',
+            'venue' => 'nullable|string|max:35',
+            'address' => 'required|string|max:35',
+            'civico' => 'nullable|string|max:10',
             'cost' => 'nullable|numeric|min:0',
             'deadline' => 'nullable|date',
-            'elenco_visibile' => 'sometimes|boolean',
+            'is_active' => 'sometimes|boolean',
             'max_participants' => 'nullable|integer|min:1',
             'allow_guests' => 'sometimes|boolean',
             'max_guests_per_user' => 'nullable|integer|min:1|max:10',
@@ -61,6 +62,7 @@ class EventController extends Controller
         ]);
 
         $allowGuests = $request->boolean('allow_guests');
+        $isActive = $request->has('is_active') ? 1 : 0;
 
         // Create event with legacy column names
         $event = Event::create([
@@ -71,12 +73,13 @@ class EventController extends Controller
             'citta' => $validated['city'],
             'dove' => $validated['venue'] ?? '',
             'via' => $validated['address'],
-            'civico' => '',
+            'civico' => (string) ($validated['civico'] ?? ''),
             'costo' => $validated['cost'] ?? null,
             'numeromax' => $validated['max_participants'] ?? null,
             'id_organizzatore' => Auth::id(),
-            'pubblicato' => 1,
-            'elenco_visibile' => $request->has('elenco_visibile') ? 1 : 0,
+            'pubblicato' => $isActive,
+            // Lista partecipanti sempre visibile
+            'elenco_visibile' => 1,
             'sondaggio' => '',
             'url_galleria' => (string) ($validated['google_album_url'] ?? ''),
             'datascadenza' => $validated['deadline'] ?? $validated['date'],
@@ -142,11 +145,8 @@ class EventController extends Controller
                     'numeromax' => $event->numeromax,
                     'id_organizzatore' => $event->id_organizzatore,
                     'pubblicato' => $event->pubblicato,
-                    'elenco_visibile' => (function () use ($event) {
-                        $raw = $event->getAttributes()['elenco_visibile'] ?? null;
-
-                        return ($raw === null || (int) $raw === 1) ? 1 : 0;
-                    })(),
+                    // Lista partecipanti sempre visibile
+                    'elenco_visibile' => 1,
                     'sondaggio' => $event->sondaggio ?? '',
                     'url_galleria' => $event->url_galleria ?? '',
                     'datascadenza' => $event->datascadenza,
@@ -197,12 +197,12 @@ class EventController extends Controller
             'incipit' => 'nullable|string|max:500',
             'description' => 'required|string|min:10',
             'date' => 'required|date',
-            'city' => 'required|string|max:15',
-            'venue' => 'nullable|string|max:50',
-            'address' => 'required|string|max:50',
+            'city' => 'required|string|max:35',
+            'venue' => 'nullable|string|max:35',
+            'address' => 'required|string|max:35',
+            'civico' => 'nullable|string|max:10',
             'cost' => 'nullable|numeric|min:0',
             'deadline' => 'nullable|date',
-            'elenco_visibile' => 'sometimes|boolean',
             'max_participants' => 'nullable|integer|min:1',
             'allow_guests' => 'sometimes|boolean',
             'max_guests_per_user' => 'nullable|integer|min:1|max:10',
@@ -237,11 +237,11 @@ class EventController extends Controller
             'citta' => $validated['city'],
             'dove' => $validated['venue'] ?? '',
             'via' => $validated['address'],
-            // Se nel DB legacy esisteva un civico separato, lo azzeriamo: l'input "Indirizzo" salva la stringa completa in "via".
-            'civico' => '',
+            'civico' => (string) ($validated['civico'] ?? ''),
             'costo' => $validated['cost'] ?? null,
             'datascadenza' => $validated['deadline'] ?? $validated['date'],
-            'elenco_visibile' => $request->has('elenco_visibile') ? 1 : 0,
+            // Lista partecipanti sempre visibile
+            'elenco_visibile' => 1,
             'numeromax' => $validated['max_participants'] ?? null,
             'pubblicato' => $isActive ? 1 : 0,
             'allow_guests' => $allowGuests,

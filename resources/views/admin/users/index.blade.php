@@ -31,7 +31,7 @@
                 <div class="card">
                     <div class="card-header admin-users-list-header">
                         <div class="d-flex align-items-center gap-2 admin-users-header-inline">
-                            <h5 class="mb-0">Lista di tutti gli Utenti Registrati</h5>
+                            <h5 class="mb-0">Lista Utenti</h5>
                             <div class="admin-user-stats-grid">
                                 {{-- Riga 1: Attivi + In attesa --}}
                                 <div class="admin-user-stats-grid__item">
@@ -78,8 +78,11 @@
                                     <a href="{{ route('admin.users.index', ['registrations' => 'pending']) }}" class="btn btn-warning btn-sm btn-border-brown text-dark">
                                         <i class="fas fa-list me-1"></i> Vedi solo in attesa
                                     </a>
+                                    <a href="{{ route('admin.users.index', ['status' => 'approved']) }}" class="btn btn-success btn-sm btn-border-brown text-white">
+                                        <i class="fas fa-check-circle me-1"></i> Visualizza Attivi
+                                    </a>
                                     <a href="{{ route('admin.users.index', ['status' => 'suspended']) }}" class="btn btn-danger btn-sm btn-border-brown text-white">
-                                        <i class="fas fa-pause-circle me-1"></i> Visualizza solo sospesi
+                                        <i class="fas fa-pause-circle me-1"></i> Visualizza sospesi
                                     </a>
                                     <a href="{{ route('admin.users.index') }}" class="btn btn-success btn-sm btn-border-brown text-white">Vista completa</a>
                                     <a href="{{ route('admin.users.logins') }}" class="btn btn-primary btn-sm btn-border-brown">
@@ -304,11 +307,23 @@
                                                 <span class="admin-date-small">{{ $user->ultimo_accesso ? $user->ultimo_accesso->format('d/m/Y') : '—' }}</span>
                                             </td>
                                             <td>
-                                                @if($user->invia)
-                                                    <span class="badge bg-success admin-user-news-pill">Sì</span>
-                                                @else
-                                                    <span class="badge bg-danger admin-user-news-pill">No</span>
-                                                @endif
+                                                @php
+                                                    $newsletterDisabled = $user->isAdmin();
+                                                    $newsletterId = 'news_toggle_' . $user->userID;
+                                                @endphp
+                                                <div class="d-inline-flex align-items-center gap-2">
+                                                    <form action="{{ route('admin.users.update-newsletter', $user) }}" method="POST" class="d-inline m-0 admin-user-news-toggle-form">
+                                                        @csrf
+                                                        <input type="hidden" name="invia" value="{{ $user->invia ? 0 : 1 }}">
+                                                        <button type="submit"
+                                                                class="btn btn-sm {{ $user->invia ? 'btn-success' : 'btn-outline-danger' }}"
+                                                                @if($newsletterDisabled) disabled aria-disabled="true" @endif
+                                                                title="{{ $user->invia ? 'Disattiva newsletter' : 'Attiva newsletter' }}">
+                                                            <i class="fas {{ $user->invia ? 'fa-envelope-open' : 'fa-envelope' }}"></i>
+                                                            {{ $user->invia ? 'Sì' : 'No' }}
+                                                        </button>
+                                                    </form>
+                                                </div>
                                             </td>
                                             <td>
                                                 @if($user->status === 'awaiting')

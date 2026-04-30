@@ -513,12 +513,15 @@ class Event extends Model
 
     public function scopeUpcoming($query)
     {
-        return $query->where('dataevento', '>', now());
+        // Un evento resta "in programma" per tutto il giorno della sua data.
+        // Diventa "passato" solo dal giorno successivo (dopo mezzanotte).
+        return $query->where('dataevento', '>=', now()->startOfDay());
     }
 
     public function scopePast($query)
     {
-        return $query->where('dataevento', '<=', now());
+        // Considera "passati" solo gli eventi con data precedente a oggi.
+        return $query->where('dataevento', '<', now()->startOfDay());
     }
 
     /**
@@ -530,7 +533,8 @@ class Event extends Model
             return false;
         }
 
-        return $this->date->lte(now());
+        // Un evento è "passato" solo dal giorno successivo alla sua data.
+        return $this->date->lt(now()->startOfDay());
     }
 
     public function scopeOrdered($query, $direction = 'asc')

@@ -42,7 +42,10 @@
                             <div id="newsletterExcludeHiddenInputs"></div>
 
                             <div class="mb-3">
-                                <label for="target" class="form-label newsletter-target-label">Destinatari</label>
+                                <label for="target" class="form-label newsletter-target-label">
+                                    Destinatari
+                                    <span class="text-danger fw-bold ms-2">Seleziona qui sotto il gruppo a cui inviare email</span>
+                                </label>
                                 <select class="form-select" id="target" name="target" required onchange="toggleUserSelection()">
                                     <option value="all" style="color:#6c757d; font-weight:800;">Tutti gli utenti</option>
                                     <option value="approved" style="color:#198754; font-weight:800;">Solo Utenti Attivati</option>
@@ -51,14 +54,10 @@
                                     <option value="never_participated" style="color:#6f42c1; font-weight:800;">Solo utenti che non hanno mai partecipato ad eventi</option>
                                     <option value="pending" style="color:#fd7e14; font-weight:800;">Solo utenti in attesa di approvazione</option>
                                 </select>
-                                <small class="form-text text-muted">
-                                    Seleziona il gruppo a cui inviare email
-                                </small>
-                                <div id="targetInfoBox" class="alert alert-secondary py-2 px-3 mt-2 mb-0 small" role="status"></div>
                             </div>
 
                             <div class="mb-3 border rounded p-3 bg-light" id="newsGroupPanel">
-                                <h6 class="mb-2"><i class="fas fa-layer-group me-1"></i> Invio a gruppi (solo con destinatari «News attiva»)</h6>
+                                <h6 class="mb-2"><i class="fas fa-layer-group me-1"></i> Invio a gruppi (solo con destinatari «<span class="text-success fw-bold">News attiva</span>»</h6>
                                 <div id="newsGroupPanelHint" class="alert alert-info py-2 px-3 small mb-3 d-none" role="status">
                                     Seleziona <strong>“Solo utenti con News attiva”</strong> in <strong>Destinatari</strong> per attivare l’invio a gruppi.
                                 </div>
@@ -157,11 +156,6 @@
                                 </div>
                             </div>
 
-                            <button type="submit" class="btn btn-primary btn-sm"
-                                    onclick="return confirm('Sei sicuro di voler inviare la newsletter?')">
-                                <i class="fas fa-paper-plane"></i> Invia Newsletter
-                            </button>
-
                             <!-- Selezione utenti specifici -->
                             <div class="mb-3" id="userSelection" style="display: none;">
                                 <label class="form-label">Seleziona Utenti</label>
@@ -218,19 +212,23 @@
                             </div>
 
                             <div class="mb-3">
-                                <label for="subject" class="form-label">Oggetto</label>
                                 <input type="text" class="form-control" id="subject" name="subject"
                                        placeholder="Oggetto della newsletter" required>
                             </div>
 
                             <div class="mb-3">
-                                <label for="message" class="form-label">Messaggio</label>
                                 <textarea class="form-control" id="message" name="message"
                                           rows="10" placeholder="Scrivi il contenuto della newsletter..."
                                           required></textarea>
-                                <small class="form-text text-muted">
-                                    Puoi usare HTML base per formattare il testo.
-                                </small>
+                                <div class="d-flex justify-content-between align-items-end gap-2 mt-2 flex-wrap">
+                                    <small class="form-text text-muted mb-0">
+                                        Puoi usare HTML base per formattare il testo.
+                                    </small>
+                                    <button type="submit" class="btn btn-primary btn-sm"
+                                            onclick="return confirm('Sei sicuro di voler inviare la newsletter?')">
+                                        <i class="fas fa-paper-plane"></i> Invia Newsletter
+                                    </button>
+                                </div>
                             </div>
 
                             <div class="alert py-1 px-2 mt-2 mb-3 small" id="newsletterWarningBox" role="status">
@@ -244,6 +242,18 @@
             </div>
 
             <div class="col-md-4">
+                <!-- Anteprima selezione -->
+                <div class="card mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">Anteprima Selezione</h5>
+                    </div>
+                    <div class="card-body bg-light">
+                        <div id="selectionPreview">
+                            <p class="text-muted">Seleziona un'opzione per vedere l'anteprima</p>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Statistiche -->
                 <div class="card mb-4">
                     <div class="card-header bg-info text-white">
@@ -280,18 +290,6 @@
                         <small class="text-muted">
                             <i class="fas fa-info-circle"></i> I numeri si aggiornano in tempo reale.
                         </small>
-                    </div>
-                </div>
-
-                <!-- Anteprima selezione -->
-                <div class="card mb-4">
-                    <div class="card-header bg-success text-white">
-                        <h5 class="mb-0">Anteprima Selezione</h5>
-                    </div>
-                    <div class="card-body">
-                        <div id="selectionPreview">
-                            <p class="text-muted">Seleziona un'opzione per vedere l'anteprima</p>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -807,7 +805,7 @@
                 const sz = document.getElementById('news_group_size');
                 const s = sz ? sz.value : '';
                 const ex = countNewsletterManualExclusions();
-                groupsExtra = '<br><small class="text-muted">Modalità gruppi: <strong>' + s + '</strong> persone/gruppo · ' +
+                groupsExtra = '<br><small>Modalità gruppi: <strong>' + s + '</strong> persone/gruppo · ' +
                     n + ' gruppi selezionati in questo invio';
                 if (ex > 0) {
                     groupsExtra += ' · <strong>' + ex + '</strong> destinatari esclusi manualmente';
@@ -817,24 +815,24 @@
 
             switch(target) {
                 case 'all':
-                    message = '<span class="text-success"><i class="fas fa-users"></i> Tutti gli utenti' + groupsExtra + '</span>';
+                    message = '<span><i class="fas fa-users"></i> Tutti gli utenti' + groupsExtra + '</span>';
                     break;
                 case 'approved':
-                    message = '<span class="text-success"><i class="fas fa-check-circle"></i> Solo utenti approvati' + groupsExtra + '</span>';
+                    message = '<span><i class="fas fa-check-circle"></i> Solo utenti approvati' + groupsExtra + '</span>';
                     break;
                 case 'news':
                     {
-                        message = '<span class="text-info"><i class="fas fa-newspaper"></i> Iscritti newsletter (News attiva)' + groupsExtra + '</span>';
+                        message = '<span><i class="fas fa-newspaper"></i> Iscritti newsletter (News attiva)' + groupsExtra + '</span>';
                     }
                     break;
                 case 'participants':
-                    message = '<span class="text-warning"><i class="fas fa-calendar-check"></i> Solo partecipanti ad eventi' + groupsExtra + '</span>';
+                    message = '<span><i class="fas fa-calendar-check"></i> Solo partecipanti ad eventi' + groupsExtra + '</span>';
                     break;
                 case 'never_participated':
-                    message = '<span class="text-info"><i class="fas fa-user-slash"></i> Solo utenti che non hanno mai partecipato ad eventi' + groupsExtra + '</span>';
+                    message = '<span><i class="fas fa-user-slash"></i> Solo utenti che non hanno mai partecipato ad eventi' + groupsExtra + '</span>';
                     break;
                 case 'pending':
-                    message = '<span class="text-warning"><i class="fas fa-clock"></i> Solo utenti in attesa' + groupsExtra + '</span>';
+                    message = '<span><i class="fas fa-clock"></i> Solo utenti in attesa' + groupsExtra + '</span>';
                     break;
             }
 
@@ -1151,22 +1149,18 @@
         }
 
         /* Titoli/anteprime: colori in base al target */
-        #selectionPreview.target-theme-all,
+        #selectionPreview {
+            color: #8b5a2b !important;
+        }
+        #selectionPreview small {
+            color: #8b5a2b !important;
+        }
+
         #newsletterPreviewRecipientsModalLabel.target-theme-all { color: #6c757d; }
-
-        #selectionPreview.target-theme-approved,
         #newsletterPreviewRecipientsModalLabel.target-theme-approved { color: #198754; }
-
-        #selectionPreview.target-theme-news,
         #newsletterPreviewRecipientsModalLabel.target-theme-news { color: #0aa2c0; }
-
-        #selectionPreview.target-theme-participants,
         #newsletterPreviewRecipientsModalLabel.target-theme-participants { color: #b88400; }
-
-        #selectionPreview.target-theme-never,
         #newsletterPreviewRecipientsModalLabel.target-theme-never { color: #6f42c1; }
-
-        #selectionPreview.target-theme-pending,
         #newsletterPreviewRecipientsModalLabel.target-theme-pending { color: #fd7e14; }
 
     </style>

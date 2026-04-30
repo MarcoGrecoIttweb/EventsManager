@@ -21,13 +21,57 @@
     <form method="GET" action="{{ route('users.search') }}" class="mb-4">
         <div class="input-group">
             <input type="text" name="q" class="form-control" placeholder="Cerca per username, nome o cognome..."
-                   value="{{ $query }}" autofocus>
+                   value="{{ $query }}" autofocus autocomplete="off" list="users-search-datalist">
             <button type="submit" class="btn btn-primary">
                 <i class="fas fa-search"></i> Cerca
             </button>
         </div>
         <small class="text-muted">Inserisci almeno 2 caratteri</small>
     </form>
+
+    <datalist id="users-search-datalist"></datalist>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const input = document.querySelector('input[name="q"]');
+            const datalist = document.getElementById('users-search-datalist');
+            if (!input || !datalist) return;
+
+            const url = @json(route('users.autocomplete'));
+            let timer = null;
+
+            function clearList() {
+                while (datalist.firstChild) datalist.removeChild(datalist.firstChild);
+            }
+
+            function fillList(results) {
+                clearList();
+                for (const item of results) {
+                    const opt = document.createElement('option');
+                    opt.value = item.username;
+                    opt.label = item.label || item.username;
+                    datalist.appendChild(opt);
+                }
+            }
+
+            async function fetchUsers(q) {
+                const res = await fetch(url + '?q=' + encodeURIComponent(q), { headers: { 'Accept': 'application/json' } });
+                const data = await res.json();
+                fillList(data.results || []);
+            }
+
+            input.addEventListener('input', function () {
+                const q = (input.value || '').trim();
+                clearList();
+                if (q.length < 2) return;
+
+                if (timer) clearTimeout(timer);
+                timer = setTimeout(() => {
+                    fetchUsers(q).catch(() => clearList());
+                }, 250);
+            });
+        });
+    </script>
 
     @if(strlen(trim($query)) >= 2)
         @if($users->count() > 0)
