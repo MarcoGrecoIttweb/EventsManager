@@ -44,23 +44,26 @@ class EventController extends Controller
             }
         }
 
-        // "Utenti attivi" = utenti approvati/abilitati (non admin)
-        $activeUsersCount = User::query()
-            ->nonAdmin()
-            ->where('abilitato', 1)
-            ->count();
+        // Box statistiche in home: solo per admin (non esporre numeri a guest/utenti).
+        $activeUsersCount = 0;
+        $todayVisitsCount = 0;
+        $visitVsActivePct = 0.0;
+        if (Auth::check() && Auth::user()->isAdmin()) {
+            $activeUsersCount = User::query()
+                ->nonAdmin()
+                ->where('abilitato', 1)
+                ->count();
 
-        // Nel progetto esiste già il tracciamento accessi giornalieri via tabella user_login_events.
-        // Lo usiamo come "Visite odierne" (accessi di oggi).
-        $todayStart = now()->startOfDay();
-        $todayEnd = now()->endOfDay();
-        $todayVisitsCount = UserLoginEvent::query()
-            ->whereBetween('logged_in_at', [$todayStart, $todayEnd])
-            ->count();
+            $todayStart = now()->startOfDay();
+            $todayEnd = now()->endOfDay();
+            $todayVisitsCount = UserLoginEvent::query()
+                ->whereBetween('logged_in_at', [$todayStart, $todayEnd])
+                ->count();
 
-        $visitVsActivePct = $activeUsersCount > 0
-            ? round(($todayVisitsCount / $activeUsersCount) * 100, 2)
-            : 0;
+            $visitVsActivePct = $activeUsersCount > 0
+                ? round(($todayVisitsCount / $activeUsersCount) * 100, 2)
+                : 0.0;
+        }
 
         $adminPendingRegistrationBanner = null;
         if (Auth::check() && Auth::user()->isAdmin()) {
@@ -323,6 +326,7 @@ class EventController extends Controller
 
         $subject = trim((string) $validated['subject']);
         $body = trim((string) $validated['message']);
+        $senderIsAdmin = $user->isAdmin();
 
         // Destinatari: tutti i partecipanti con email valida.
         $participants = $event->participants()
@@ -340,9 +344,17 @@ class EventController extends Controller
                 continue;
             }
 
-            $recipientName = trim((string) (($p->nome ?? '') . ' ' . ($p->cognome ?? '')));
-            if ($recipientName === '') {
-                $recipientName = (string) ($p->nickname ?? $p->username ?? 'utente');
+            // Saluto: se invia l'amministratore, non mostrare il cognome (solo nome o nickname).
+            if ($senderIsAdmin) {
+                $recipientName = trim((string) ($p->nome ?? ''));
+                if ($recipientName === '') {
+                    $recipientName = (string) ($p->nickname ?? $p->username ?? 'utente');
+                }
+            } else {
+                $recipientName = trim((string) (($p->nome ?? '') . ' ' . ($p->cognome ?? '')));
+                if ($recipientName === '') {
+                    $recipientName = (string) ($p->nickname ?? $p->username ?? 'utente');
+                }
             }
 
             $eventUrl = route('events.show', $event);

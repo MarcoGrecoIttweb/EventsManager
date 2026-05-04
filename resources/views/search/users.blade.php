@@ -20,13 +20,13 @@
 
     <form method="GET" action="{{ route('users.search') }}" class="mb-4">
         <div class="input-group">
-            <input type="text" name="q" class="form-control" placeholder="Cerca per username, nome o cognome..."
+            <input type="text" name="q" class="form-control" placeholder="Cerca per nickname (username)…"
                    value="{{ $query }}" autofocus autocomplete="off" list="users-search-datalist">
             <button type="submit" class="btn btn-primary">
                 <i class="fas fa-search"></i> Cerca
             </button>
         </div>
-        <small class="text-muted">Inserisci almeno 2 caratteri</small>
+        <small class="text-muted">Solo username: inserisci almeno 2 caratteri del nickname.</small>
     </form>
 
     <datalist id="users-search-datalist"></datalist>

@@ -675,7 +675,7 @@ Route::middleware(['auth', 'approved'])->group(function () {
     Route::post('/friends/{user}/add', [FriendController::class, 'add'])->name('friends.add');
     Route::delete('/friends/{user}/remove', [FriendController::class, 'remove'])->name('friends.remove');
 
-    // Ricerca utenti
+    // Ricerca utenti (solo per username; link nella barra per tutti gli utenti approvati)
     Route::get('/users/search', [SearchController::class, 'users'])->name('users.search');
     Route::get('/users/autocomplete', [SearchController::class, 'usersAutocomplete'])->name('users.autocomplete');
 

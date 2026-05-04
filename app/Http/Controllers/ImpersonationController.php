@@ -19,11 +19,6 @@ class ImpersonationController extends Controller
             return redirect()->route('home')->with('error', 'Accesso non autorizzato.');
         }
 
-        // Se vuoi limitarlo al solo admin "Scintilla"
-        if (strtolower(trim((string) $actor->username)) !== 'scintilla') {
-            return redirect()->back()->with('error', 'Solo Scintilla può impersonare utenti.');
-        }
-
         if ($request->session()->has('impersonator_id')) {
             return redirect()->back()->with('error', 'Stai già impersonando un utente.');
         }

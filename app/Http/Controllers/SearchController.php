@@ -13,11 +13,8 @@ class SearchController extends Controller
         $users = collect();
 
         if (strlen(trim($query)) >= 2) {
-            $users = User::where(function ($q) use ($query) {
-                    $q->where('username', 'like', "%{$query}%")
-                      ->orWhere('nome', 'like', "%{$query}%")
-                      ->orWhere('cognome', 'like', "%{$query}%");
-                })
+            $users = User::query()
+                ->where('username', 'like', '%' . $query . '%')
                 ->where('abilitato', 1)
                 ->orderBy('username')
                 ->get();
@@ -36,11 +33,7 @@ class SearchController extends Controller
         $users = User::query()
             ->select(['userID', 'username', 'nome', 'cognome'])
             ->where('abilitato', 1)
-            ->where(function ($query) use ($q) {
-                $query->where('username', 'like', $q . '%')
-                    ->orWhere('nome', 'like', $q . '%')
-                    ->orWhere('cognome', 'like', $q . '%');
-            })
+            ->where('username', 'like', '%' . $q . '%')
             ->orderBy('username')
             ->limit(10)
             ->get();

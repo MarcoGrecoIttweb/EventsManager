@@ -4,6 +4,11 @@
 
 @section('content')
     <div class="container">
+        @php
+            $isAdminViewer = auth()->check() && auth()->user()->isAdmin();
+            $canSeePrivateContacts = auth()->check() && (auth()->id() === $user->id || $isAdminViewer);
+            $adminViewingOtherUser = $isAdminViewer && auth()->check() && (int) auth()->id() !== (int) $user->getKey();
+        @endphp
         <div class="mb-3">
             @if(!empty($profileReturnUrl))
                 <a href="{{ $profileReturnUrl }}" class="btn btn-success btn-sm">
@@ -36,12 +41,97 @@
             <div class="col-12 mb-3">
                 <div class="card profile-upcoming-events">
                     <div class="card-body">
+                        @if($adminViewingOtherUser)
+                            @php
+                                $adminPwdOpenToolbar = $errors->has('password');
+                            @endphp
+                            <div class="profile-admin-actions-toolbar d-flex flex-wrap align-items-center gap-2 mb-3">
+                                @if(!$user->isAdmin() && !session()->has('impersonator_id'))
+                                    <form action="{{ route('admin.users.impersonate', $user) }}" method="POST" class="d-inline m-0 flex-shrink-0">
+                                        @csrf
+                                        <button type="submit"
+                                                class="btn btn-outline-primary btn-sm profile-action-chip-btn"
+                                                onclick="return confirm('Impersonare {{ $user->username }}? Vedrai il sito come questo utente fino a «Torna admin».')">
+                                            <i class="fas fa-user-secret me-1"></i>Impersona utente
+                                        </button>
+                                    </form>
+                                @endif
+                                @if(auth()->user()->isFriendOf($user))
+                                    <form action="{{ route('friends.remove', $user) }}" method="POST" class="d-inline-flex m-0 flex-shrink-0">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-outline-danger btn-sm profile-action-chip-btn">
+                                            <i class="fas fa-user-minus me-1"></i>Rimuovi dagli amici
+                                        </button>
+                                    </form>
+                                @else
+                                    <form action="{{ route('friends.add', $user) }}" method="POST" class="d-inline-flex m-0 flex-shrink-0">
+                                        @csrf
+                                        <button type="submit" class="btn btn-outline-primary btn-sm profile-action-chip-btn">
+                                            <i class="fas fa-user-plus me-1"></i>Aggiungi agli amici
+                                        </button>
+                                    </form>
+                                @endif
+                                @if(!$user->isAdmin())
+                                    @if($user->status === 'banned')
+                                        <form action="{{ route('admin.users.unban', $user) }}" method="POST" class="d-inline m-0 flex-shrink-0">
+                                            @csrf
+                                            <button type="submit" class="btn btn-warning btn-sm profile-action-chip-btn">
+                                                <i class="fas fa-unlock me-1"></i>Ripristina utente
+                                            </button>
+                                        </form>
+                                    @else
+                                        <form action="{{ route('admin.users.ban', $user) }}" method="POST" class="d-inline m-0 flex-shrink-0">
+                                            @csrf
+                                            <button type="submit" class="btn btn-danger btn-sm profile-action-chip-btn">
+                                                <i class="fas fa-ban me-1"></i>Banna utente
+                                            </button>
+                                        </form>
+                                    @endif
+                                @endif
+                                <button type="button"
+                                        class="btn btn-outline-secondary btn-sm profile-action-chip-btn flex-shrink-0"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#adminPasswordCollapse"
+                                        aria-expanded="{{ $adminPwdOpenToolbar ? 'true' : 'false' }}"
+                                        aria-controls="adminPasswordCollapse"
+                                        id="adminPasswordToolbarToggle">
+                                    <i class="fas fa-key me-1"></i>Modifica password
+                                </button>
+                            </div>
+                            <div class="collapse {{ $adminPwdOpenToolbar ? 'show' : '' }} mb-3" id="adminPasswordCollapse">
+                                <div class="border rounded bg-light px-3 py-3 small">
+                                    <p class="text-muted mb-2 mb-md-3">
+                                        Account: <strong>{{ $user->username }}</strong>
+                                    </p>
+                                    <form method="POST" action="{{ route('profile.password.update', $user) }}">
+                                        @csrf
+                                        <div class="row g-2">
+                                            <div class="col-12 col-md-6">
+                                                <label for="admin_new_password" class="form-label mb-0">Nuova password</label>
+                                                <input type="password" id="admin_new_password" name="password"
+                                                       class="form-control form-control-sm @error('password') is-invalid @enderror"
+                                                       required autocomplete="new-password" minlength="4">
+                                                @error('password')
+                                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                                @enderror
+                                            </div>
+                                            <div class="col-12 col-md-6">
+                                                <label for="admin_new_password_confirmation" class="form-label mb-0">Conferma password</label>
+                                                <input type="password" id="admin_new_password_confirmation" name="password_confirmation"
+                                                       class="form-control form-control-sm"
+                                                       required autocomplete="new-password" minlength="4">
+                                            </div>
+                                        </div>
+                                        <button type="submit" class="btn btn-outline-secondary btn-sm mt-2">
+                                            <i class="fas fa-save"></i> Salva password
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        @endif
                         <div class="row g-3 align-items-start">
                             <div class="col-12 col-md-6">
-                                @php
-                                    $isAdminViewer = auth()->check() && auth()->user()->isAdmin();
-                                    $canSeePrivateContacts = auth()->check() && (auth()->id() === $user->id || $isAdminViewer);
-                                @endphp
                                 <div class="d-flex flex-column gap-2 profile-fields-compact">
                                     <div class="profile-field pt-0">
                                         <span class="profile-label">Username:</span>
@@ -97,7 +187,7 @@
                                     </div>
                                 </div>
                                 @auth
-                                    @if($isAdminViewer)
+                                    @if($isAdminViewer && !$adminViewingOtherUser)
                                         @php
                                             $adminPwdOpen = $errors->has('password');
                                         @endphp
@@ -209,7 +299,7 @@
                                                         <a href="{{ route('profile.edit', $user) }}?openPassword=1" class="btn btn-outline-secondary btn-sm profile-main-action-btn">
                                                             <i class="fas fa-key me-1"></i> Modifica passw
                                                         </a>
-                                                    @elseif($isAdminViewer)
+                                                    @elseif($isAdminViewer && !$adminViewingOtherUser)
                                                         <button type="button"
                                                                 class="btn btn-outline-secondary btn-sm profile-main-action-btn"
                                                                 data-bs-toggle="collapse"
@@ -221,7 +311,7 @@
                                                     @endif
                                                 </div>
                                             @endif
-                                            @if(auth()->id() !== $user->id)
+                                            @if(auth()->id() !== $user->id && !$adminViewingOtherUser)
                                                 @if(auth()->user()->isFriendOf($user))
                                                     <form action="{{ route('friends.remove', $user) }}" method="POST" class="d-inline-flex">
                                                         @csrf
@@ -250,7 +340,7 @@
                                         </span>
                                     </div>
                                     @auth
-                                        @if(auth()->user()->isAdmin() && !$user->isAdmin())
+                                        @if(auth()->user()->isAdmin() && !$user->isAdmin() && !$adminViewingOtherUser)
                                             @if($user->status === 'banned')
                                                 <form action="{{ route('admin.users.unban', $user) }}" method="POST" class="d-inline">
                                                     @csrf

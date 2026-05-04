@@ -83,6 +83,13 @@
         @if($events->count() > 0)
             <div class="row">
                 @foreach($events as $event)
+                    @php
+                        $rawMaxPast = $event->max_participants;
+                        $maxPostiPast = ($rawMaxPast !== null && $rawMaxPast !== '') ? (int) $rawMaxPast : null;
+                        $cntPartPast = (int) $event->participants_count;
+                        $postiLiberiPast = ($maxPostiPast !== null && !$event->isFull()) ? max(0, $maxPostiPast - $cntPartPast) : null;
+                        $pastPartGapBlink = $postiLiberiPast !== null && $postiLiberiPast >= 1 && $postiLiberiPast <= 2;
+                    @endphp
                     <div class="col-md-6 col-lg-4 mb-4">
                         <div class="card event-box h-100">
                             {{-- Badge Evento Passato --}}
@@ -117,23 +124,26 @@
                             <div class="card-body">
                                 <h5 class="card-title text-muted">{{ $event->title }}</h5>
                                 <div class="mb-3">
-                                    <span class="badge bg-secondary">
+                                    <span class="badge bg-secondary event-past-meta--hint"
+                                          title="Indica data e ora in cui si è svolto l’evento (evento concluso).">
                                         <i class="fas fa-calendar"></i>
                                         {{ $event->italian_event_date ?? ($event->date ? $event->date->format('d/m/Y H:i') : '') }}
                                     </span>
-                                    <span class="badge bg-info ms-1">
-                                        <i class="fas fa-users"></i>
-                                        {{ $event->participants_count }}
-                                        @if($event->max_participants)
-                                            / {{ $event->max_participants }}
-                                        @endif
+                                    <span class="badge ms-1 text-white event-past-meta--hint {{ $event->isFull() ? 'bg-danger' : 'bg-secondary' }} {{ $pastPartGapBlink ? 'event-past-meta--part-gap' : '' }}"
+                                          title="{{ $pastPartGapBlink
+                                              ? 'Capacità quasi raggiunta: risultavano solo 1 o 2 posti liberi rispetto al massimo (stessa evidenziazione visiva degli eventi futuri).'
+                                              : ($maxPostiPast !== null
+                                                  ? 'Mostra quanti partecipanti c’erano (iscritti più eventuali ospiti) rispetto al numero massimo di posti previsto.'
+                                                  : 'Mostra il numero di partecipanti (iscritti più eventuali ospiti); non era indicato un numero massimo di posti.') }}">
+                                        <i class="fas fa-users" aria-hidden="true"></i>
+                                        <strong>{{ $event->participants_count }}</strong>@if($maxPostiPast !== null)<span class="text-white-50 fw-normal"> / </span><strong>{{ $maxPostiPast }}</strong>@endif
                                     </span>
                                 </div>
                                 <p class="card-text">
                                     <i class="fas fa-map-marker-alt"></i>
                                     <strong>{{ $event->city }}</strong>
                                 </p>
-                                <div class="card-text text-muted small event-preview">
+                                <div class="card-text small event-preview event-public-desc-preview">
                                     {{ $event->getHomepagePreview() }}
                                 </div>
 
@@ -190,6 +200,33 @@
     </div>
 
     <style>
+        .event-past-meta--hint {
+            cursor: help;
+        }
+        .event-past-meta--part-gap,
+        .event-past-meta--part-gap i,
+        .event-past-meta--part-gap strong {
+            color: #fff !important;
+        }
+        .event-past-meta--part-gap {
+            font-weight: 800;
+            border: 2px solid rgba(114, 10, 10, 0.85);
+            animation: eventPastPartGapBlink 1s ease-in-out infinite;
+        }
+        @keyframes eventPastPartGapBlink {
+            0%, 100% {
+                background-color: #b02a37 !important;
+                box-shadow: 0 0 0 rgba(220, 53, 69, 0);
+            }
+            50% {
+                background-color: #dc3545 !important;
+                box-shadow: 0 0 14px rgba(220, 53, 69, 0.95);
+            }
+        }
+
+        .event-public-desc-preview {
+            color: #000;
+        }
         .event-preview {
             line-height: 1.4;
             display: -webkit-box;

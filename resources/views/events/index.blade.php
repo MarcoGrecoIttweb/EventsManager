@@ -5,29 +5,33 @@
 @section('suppress_admin_pending_box', true)
 
 @section('sidebar_after_online')
-    <div class="card card-sidebar mb-3 home-stats-card">
-        <div class="card-header py-2">
-            <small class="fw-bold">
-                <i class="fas fa-chart-column me-1"></i> Statistiche
-            </small>
-        </div>
-        <div class="card-body p-2">
-            <div class="small">
-                <div class="mb-1">
-                    <span class="fw-semibold">Ad oggi siamo</span>
-                    <span class="home-stats-value">{{ number_format((int)($activeUsersCount ?? 0), 0, ',', '.') }}</span>
+    @auth
+        @if(auth()->user()->isAdmin())
+            <div class="card card-sidebar mb-3 home-stats-card">
+                <div class="card-header py-2">
+                    <small class="fw-bold">
+                        <i class="fas fa-chart-column me-1"></i> Statistiche
+                    </small>
                 </div>
-                <div class="mb-1">
-                    <span class="fw-semibold">Visite odierne</span>
-                    <span class="home-stats-value">{{ number_format((int)($todayVisitsCount ?? 0), 0, ',', '.') }}</span>
-                </div>
-                <div>
-                    <span class="fw-semibold">Rapporto visite/iscritti</span>
-                    <span class="home-stats-value">{{ number_format((float)($visitVsActivePct ?? 0), 2, ',', '.') }}%</span>
+                <div class="card-body p-2">
+                    <div class="small">
+                        <div class="mb-1">
+                            <span class="fw-semibold">Ad oggi siamo</span>
+                            <span class="home-stats-value">{{ number_format((int)($activeUsersCount ?? 0), 0, ',', '.') }}</span>
+                        </div>
+                        <div class="mb-1">
+                            <span class="fw-semibold">Visite odierne</span>
+                            <span class="home-stats-value">{{ number_format((int)($todayVisitsCount ?? 0), 0, ',', '.') }}</span>
+                        </div>
+                        <div>
+                            <span class="fw-semibold">Rapporto visite/iscritti</span>
+                            <span class="home-stats-value">{{ number_format((float)($visitVsActivePct ?? 0), 2, ',', '.') }}%</span>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-    </div>
+        @endif
+    @endauth
 @endsection
 
 @section('sidebar_after_my_events')
@@ -226,17 +230,28 @@
                                 <div class="col-md-8 d-flex flex-column h-100 event-card-content">
                                     <div class="card-body">
                                         <h5 class="card-title {{ $event->isFull() ? 'text-muted' : '' }}">{{ $event->title }}</h5>
+                                        @php
+                                            $rawMaxPart = $event->max_participants;
+                                            $maxPosti = ($rawMaxPart !== null && $rawMaxPart !== '') ? (int) $rawMaxPart : null;
+                                            $cntPart = (int) $event->participants_count;
+                                            $postiLiberiEv = ($maxPosti !== null && !$event->isFull()) ? max(0, $maxPosti - $cntPart) : null;
+                                            /* Lampeggio solo quando restano 1 o 2 posti al completamento */
+                                            $mancanoPerCompletareMax = $postiLiberiEv !== null && $postiLiberiEv >= 1 && $postiLiberiEv <= 2;
+                                        @endphp
                                         <div class="mb-3 d-flex flex-wrap gap-2 event-meta-badges">
-                                            <span class="badge bg-primary event-meta-badges__badge">
+                                            <span class="badge bg-primary event-meta-badges__badge event-meta-badges__badge--hint"
+                                                  title="Indica data e ora di inizio dell’evento.">
                                                 <i class="fas fa-calendar"></i>
                                                 {{ $event->italian_event_date ?? ($event->date ? $event->date->format('d/m/Y H:i') : '') }}
                                             </span>
-                                            <span class="badge bg-{{ $event->isFull() ? 'danger' : 'secondary' }} event-meta-badges__badge">
-                                                <i class="fas fa-users"></i>
-                                                {{ $event->participants_count }}
-                                                @if($event->max_participants)
-                                                    / {{ $event->max_participants }}
-                                                @endif
+                                            <span class="badge event-meta-badges__badge event-meta-badges__badge--hint {{ $event->isFull() ? 'bg-danger' : 'bg-secondary' }} {{ $mancanoPerCompletareMax ? 'event-meta-badges__badge--part-gap' : '' }}"
+                                                  title="{{ $mancanoPerCompletareMax
+                                                      ? 'Restano 1 o 2 posti liberi rispetto al massimo: il box lampeggia per segnalare che l’evento è quasi al completo.'
+                                                      : ($maxPosti !== null
+                                                          ? 'Mostra quanti partecipanti ci sono (iscritti più eventuali ospiti) rispetto al numero massimo di posti previsto dall’organizzatore.'
+                                                          : 'Mostra il numero di partecipanti (iscritti più eventuali ospiti); l’organizzatore non ha indicato un numero massimo di posti.') }}">
+                                                <i class="fas fa-users" aria-hidden="true"></i>
+                                                <strong>{{ $event->participants_count }}</strong>@if($maxPosti !== null)<span class="text-white-50 fw-normal"> / </span><strong>{{ $maxPosti }}</strong>@endif
                                             </span>
                                             @if($event->deadline)
                                                 @php
@@ -263,7 +278,7 @@
                                                 {{ $event->user->nickname ?? $event->user->nome ?? '—' }}
                                             </span>
                                         </p>
-                                        <div class="card-text text-muted small event-preview">
+                                        <div class="card-text small event-preview event-public-desc-preview">
                                             {{ $event->getHomepagePreview(100) }}
                                         </div>
 
@@ -567,6 +582,10 @@
         .intro-actions {
             margin-top: 1rem;
         }
+        /* Anteprima descrizione: nero come in dettaglio evento */
+        .event-box .event-public-desc-preview {
+            color: #000;
+        }
         /* Anteprima: max 3 righe + puntini (altezza contenuta, card uniformi) */
         .event-box .event-preview {
             line-height: 1.4;
@@ -618,6 +637,30 @@
         }
         .event-meta-badges__badge i {
             margin-right: 0.35rem;
+        }
+        .event-meta-badges__badge--hint {
+            cursor: help;
+        }
+        /* Quasi al completo: lampeggio rosso solo se restano 1–2 posti liberi */
+        .event-meta-badges__badge--part-gap,
+        .event-meta-badges__badge--part-gap i,
+        .event-meta-badges__badge--part-gap strong {
+            color: #fff !important;
+        }
+        .event-meta-badges__badge--part-gap {
+            font-weight: 800;
+            border: 2px solid rgba(114, 10, 10, 0.85);
+            animation: eventPartGapBlink 1s ease-in-out infinite;
+        }
+        @keyframes eventPartGapBlink {
+            0%, 100% {
+                background-color: #b02a37 !important;
+                box-shadow: 0 0 0 rgba(220, 53, 69, 0);
+            }
+            50% {
+                background-color: #dc3545 !important;
+                box-shadow: 0 0 14px rgba(220, 53, 69, 0.95);
+            }
         }
 
         /* Iscrizioni: verde/rosso + lampeggio nelle 24h (lista eventi) */

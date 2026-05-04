@@ -116,6 +116,24 @@
                     </div>
                 @endif
 
+                @if(session('error'))
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        {{ session('error') }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Chiudi"></button>
+                    </div>
+                @endif
+
+                @if($errors->any())
+                    <div class="alert alert-danger" role="alert">
+                        <div class="fw-semibold mb-1">Controlla i campi evidenziati.</div>
+                        <ul class="mb-0 ps-3">
+                            @foreach($errors->all() as $err)
+                                <li>{{ $err }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
                 @php
                     $isEditingDraft = isset($editDraft) && is_array($editDraft) && !empty($editFolder);
                 @endphp

@@ -4,6 +4,26 @@
 
 @section('content')
     <div class="container">
+        <style>
+            .event-box .event-public-desc-preview {
+                color: #000;
+            }
+            .event-public-meta--hint { cursor: help; }
+            .event-public-meta--part-gap,
+            .event-public-meta--part-gap i,
+            .event-public-meta--part-gap strong {
+                color: #fff !important;
+            }
+            .event-public-meta--part-gap {
+                font-weight: 800;
+                border: 2px solid rgba(114, 10, 10, 0.85);
+                animation: eventPublicPartGapBlink 1s ease-in-out infinite;
+            }
+            @keyframes eventPublicPartGapBlink {
+                0%, 100% { background-color: #b02a37 !important; box-shadow: 0 0 0 rgba(220, 53, 69, 0); }
+                50% { background-color: #dc3545 !important; box-shadow: 0 0 14px rgba(220, 53, 69, 0.95); }
+            }
+        </style>
         <div class="row mb-4">
             <div class="col-md-8">
                 <h1 class="display-4">Prossimi Eventi</h1>
@@ -30,6 +50,13 @@
         @if($events->count() > 0)
             <div class="row">
                 @foreach($events as $event)
+                    @php
+                        $rawMaxHome = $event->max_participants;
+                        $maxPostiHome = ($rawMaxHome !== null && $rawMaxHome !== '') ? (int) $rawMaxHome : null;
+                        $cntPartHome = (int) $event->participants_count;
+                        $postiLiberiHome = ($maxPostiHome !== null && !$event->isFull()) ? max(0, $maxPostiHome - $cntPartHome) : null;
+                        $mancanoPerCompletareMaxHome = $postiLiberiHome !== null && $postiLiberiHome >= 1 && $postiLiberiHome <= 2;
+                    @endphp
                     <div class="col-md-6 col-lg-4 mb-4">
                         <div class="card event-box h-100">
                             @if($event->isFull())
@@ -40,16 +67,19 @@
                             <div class="card-body">
                                 <h5 class="card-title {{ $event->isFull() ? 'text-muted' : '' }}">{{ $event->title }}</h5>
                                 <div class="mb-3">
-                            <span class="badge bg-primary">
+                            <span class="badge bg-primary event-public-meta--hint"
+                                  title="Indica data e ora di inizio dell’evento.">
                                 <i class="fas fa-calendar"></i>
                                 {{ $event->italian_event_date ?? ($event->date ? $event->date->format('d/m/Y H:i') : '') }}
                             </span>
-                                    <span class="badge bg-{{ $event->isFull() ? 'danger' : 'secondary' }} ms-1">
-                                <i class="fas fa-users"></i>
-                                {{ $event->participants_count }}
-                                        @if($event->max_participants)
-                                            / {{ $event->max_participants }}
-                                        @endif
+                                    <span class="badge ms-1 event-public-meta--hint {{ $event->isFull() ? 'bg-danger' : 'bg-secondary' }} {{ $mancanoPerCompletareMaxHome ? 'event-public-meta--part-gap' : '' }}"
+                                          title="{{ $mancanoPerCompletareMaxHome
+                                              ? 'Restano 1 o 2 posti liberi rispetto al massimo: il box lampeggia per segnalare che l’evento è quasi al completo.'
+                                              : ($maxPostiHome !== null
+                                                  ? 'Mostra quanti partecipanti ci sono (iscritti più eventuali ospiti) rispetto al numero massimo di posti previsto dall’organizzatore.'
+                                                  : 'Mostra il numero di partecipanti (iscritti più eventuali ospiti); l’organizzatore non ha indicato un numero massimo di posti.') }}">
+                                <i class="fas fa-users" aria-hidden="true"></i>
+                                <strong>{{ $event->participants_count }}</strong>@if($maxPostiHome !== null)<span class="text-white-50 fw-normal"> / </span><strong>{{ $maxPostiHome }}</strong>@endif
                                         @if($event->isFull())
                                             <i class="fas fa-lock ms-1"></i>
                                         @endif
@@ -59,7 +89,7 @@
                                     <i class="fas fa-map-marker-alt"></i>
                                     <strong>{{ $event->city }}</strong>
                                 </p>
-                                <p class="card-text text-muted small">
+                                <p class="card-text small event-public-desc-preview">
                                     {{ $event->short_preview }}
                                 </p>
 

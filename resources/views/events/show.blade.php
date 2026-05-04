@@ -15,6 +15,26 @@
             display: block;
             margin: 8px auto;
         }
+
+        /* Dettagli evento: corpo descrizione in nero (link restano riconoscibili) */
+        .event-main-card .card-body .mb-4 > h5 {
+            color: #000;
+        }
+        .event-main-card .event-description {
+            color: #000 !important;
+        }
+        .event-main-card .event-description :where(p, li, td, th, div, span, h1, h2, h3, h4, h5, h6, blockquote, figcaption, font, em, strong, b, i) {
+            color: inherit !important;
+        }
+        .event-main-card .event-description a {
+            color: #0a58ca !important;
+        }
+        .event-main-card .event-description a:hover {
+            color: #084298 !important;
+        }
+        .event-main-card .event-description blockquote {
+            color: #000 !important;
+        }
     </style>
     @php
         $eventProfileBackQuery = http_build_query(['return' => route('events.show', $event)]);
@@ -154,8 +174,11 @@
                         <div class="mb-4">
                             @php
                                 $iscrittiCount = $event->participants_count;
-                                $postiTotali = $event->max_participants ? (int) $event->max_participants : null;
+                                $rawMaxShow = $event->max_participants;
+                                $postiTotali = ($rawMaxShow !== null && $rawMaxShow !== '') ? (int) $rawMaxShow : null;
                                 $postiLiberi = $postiTotali !== null ? max(0, $postiTotali - $iscrittiCount) : null;
+                                $postiLiberiBlink = ($postiTotali !== null && !$event->isFull()) ? max(0, $postiTotali - $iscrittiCount) : null;
+                                $eventMetaPostiGapBlink = $postiLiberiBlink !== null && $postiLiberiBlink >= 1 && $postiLiberiBlink <= 2;
                             @endphp
                             <div class="mb-2 event-organizer-strip">
                                 <div class="event-organizer-actions event-organizer-strip__cell">
@@ -408,7 +431,8 @@
                             <div class="event-meta-stack mb-1">
                                 {{-- Riga 1: Data evento | Nome locale --}}
                                 <div class="event-meta-row event-meta-row--line1">
-                                    <div class="event-meta-date-box event-meta-row__cell">
+                                    <div class="event-meta-date-box event-meta-row__cell event-meta-date-box--hint"
+                                         title="Indica data e ora di inizio dell’evento.">
                                         <i class="fas fa-calendar"></i>
                                         <span class="event-meta-date-line">
                                             <span class="fw-semibold">Data Evento</span>
@@ -454,7 +478,7 @@
                                         <i class="fas fa-euro-sign"></i>
                                         <span class="event-meta-price-line">
                                             <span class="fw-semibold">€</span>
-                                            <span class="ms-1">{{ $event->formatted_cost ?? '0' }}</span>
+                                            <span class="ms-1">{{ $event->formatted_cost ?? '0,00' }}</span>
                                         </span>
                                     </div>
                                     <div class="event-meta-map-slot event-meta-row__cell">
@@ -499,7 +523,12 @@
                                             </span>
                                         </div>
                                     @endif
-                                    <div class="event-meta-posti-box event-meta-row__cell">
+                                    <div class="event-meta-posti-box event-meta-row__cell event-meta-posti-box--hint {{ $eventMetaPostiGapBlink ? 'event-meta-posti-box--part-gap' : '' }}"
+                                         title="{{ $eventMetaPostiGapBlink
+                                             ? 'Restano 1 o 2 posti liberi rispetto al massimo: il box lampeggia per segnalare che l’evento è quasi al completo.'
+                                             : ($postiTotali !== null
+                                                 ? 'Iscritti (Iscr.), posti ancora liberi (Lib.) e numero massimo di posti previsto (Tot.).'
+                                                 : 'Conteggio partecipanti (iscritti più eventuali ospiti). Senza un massimo definito, Lib. e Tot. non si applicano.') }}">
                                         <i class="fas fa-users"></i>
                                         <span class="event-meta-posti-line">
                                             <span class="event-meta-label-iscritti">Iscr.</span> <strong>{{ $iscrittiCount }}</strong>
@@ -643,9 +672,13 @@
                     <div class="event-participants-box mb-3">
                         <h5 class="mb-2">
                             <i class="fas fa-users"></i> Partecipanti
-                            <span class="badge rounded-pill bg-dark text-white"
-                                  title="Iscritti all'evento più ospiti inseriti (amici)">
-                                {{ $event->participants_count }}
+                            <span class="badge rounded-pill text-white event-show-part-pill--hint {{ $event->isFull() ? 'bg-danger' : 'bg-secondary' }} {{ $eventMetaPostiGapBlink ? 'event-show-part-pill--gap' : '' }}"
+                                  title="{{ $eventMetaPostiGapBlink
+                                      ? 'Restano 1 o 2 posti liberi rispetto al massimo: il box lampeggia per segnalare che l’evento è quasi al completo.'
+                                      : ($postiTotali !== null
+                                          ? 'Mostra quanti partecipanti ci sono (iscritti più eventuali ospiti) rispetto al numero massimo di posti previsto dall’organizzatore.'
+                                          : 'Mostra il numero di partecipanti (iscritti più eventuali ospiti); l’organizzatore non ha indicato un numero massimo di posti.') }}">
+                                <i class="fas fa-users me-1" aria-hidden="true"></i><strong>{{ $event->participants_count }}</strong>@if($postiTotali !== null)<span class="text-white-50 fw-normal"> / </span><strong>{{ $postiTotali }}</strong>@endif
                             </span>
                             @auth
                                 @if(auth()->user()->isAdmin())
@@ -1031,9 +1064,13 @@
                 <div class="event-participants-box mb-3 d-none d-md-block">
                 <h5 class="mb-2">
                     <i class="fas fa-users"></i> Partecipanti
-                    <span class="badge rounded-pill bg-dark text-white"
-                          title="Iscritti all'evento più ospiti inseriti (amici)">
-                        {{ $event->participants_count }}
+                    <span class="badge rounded-pill text-white event-show-part-pill--hint {{ $event->isFull() ? 'bg-danger' : 'bg-secondary' }} {{ $eventMetaPostiGapBlink ? 'event-show-part-pill--gap' : '' }}"
+                          title="{{ $eventMetaPostiGapBlink
+                              ? 'Restano 1 o 2 posti liberi rispetto al massimo: il box lampeggia per segnalare che l’evento è quasi al completo.'
+                              : ($postiTotali !== null
+                                  ? 'Mostra quanti partecipanti ci sono (iscritti più eventuali ospiti) rispetto al numero massimo di posti previsto dall’organizzatore.'
+                                  : 'Mostra il numero di partecipanti (iscritti più eventuali ospiti); l’organizzatore non ha indicato un numero massimo di posti.') }}">
+                        <i class="fas fa-users me-1" aria-hidden="true"></i><strong>{{ $event->participants_count }}</strong>@if($postiTotali !== null)<span class="text-white-50 fw-normal"> / </span><strong>{{ $postiTotali }}</strong>@endif
                     </span>
                     @auth
                         @if(auth()->user()->isAdmin())
@@ -1698,6 +1735,50 @@
             font-weight: normal;
         }
 
+        .event-meta-date-box--hint,
+        .event-meta-posti-box--hint,
+        .event-show-part-pill--hint {
+            cursor: help;
+        }
+
+        /* Quasi al completo: solo sfondo lampeggiante; Iscr./Lib./Tot. restano rosso/verde/arancio come prima */
+        .event-meta-posti-box--part-gap {
+            border: 2px solid rgba(114, 10, 10, 0.85) !important;
+            font-weight: 600;
+            animation: eventShowPostiGapBlink 1s ease-in-out infinite;
+        }
+        @keyframes eventShowPostiGapBlink {
+            0%, 100% {
+                background-color: #b02a37 !important;
+                box-shadow: 0 0 0 rgba(220, 53, 69, 0);
+            }
+            50% {
+                background-color: #dc3545 !important;
+                box-shadow: 0 0 14px rgba(220, 53, 69, 0.95);
+            }
+        }
+
+        .event-show-part-pill--gap,
+        .event-show-part-pill--gap i,
+        .event-show-part-pill--gap strong {
+            color: #fff !important;
+        }
+        .event-show-part-pill--gap {
+            font-weight: 800;
+            border: 2px solid rgba(114, 10, 10, 0.85);
+            animation: eventShowPartPillGapBlink 1s ease-in-out infinite;
+        }
+        @keyframes eventShowPartPillGapBlink {
+            0%, 100% {
+                background-color: #b02a37 !important;
+                box-shadow: 0 0 0 rgba(220, 53, 69, 0);
+            }
+            50% {
+                background-color: #dc3545 !important;
+                box-shadow: 0 0 14px rgba(220, 53, 69, 0.95);
+            }
+        }
+
         .event-meta-posti-sep {
             color: #adb5bd;
         }
@@ -1863,6 +1944,7 @@
              line-height: 1.6;
              font-size: 14px;
          }
+
 
         /* Immagini nei commenti: sempre responsive, mai sproporzionate */
         .comment-content img {

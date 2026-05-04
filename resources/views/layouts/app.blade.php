@@ -238,14 +238,21 @@
                 $showChatLink = auth()->check() ? true : (($featureChatSalottinoEnabled ?? true) || $isAdmin);
                 // Mostra sempre il link mercatino agli utenti loggati: se la feature è OFF, verrà mostrata la pagina "in arrivo".
                 $showMercatinoLink = auth()->check() ? true : (($featureMercatinoEnabled ?? true) || $isAdmin);
+                // Stessa logica degli album foto: in passato il link c'era solo per @guest e nel menu Admin — così spariva dopo il login.
+                $showAlbumsFotoLink = auth()->check() ? true : (($featureAlbumsFotoEnabled ?? true) || $isAdmin);
             @endphp
             <ul class="navbar-nav excursio-navbar__main-nav mb-2 w-100">
                 @guest
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ route('photo-albums.index') }}">
-                            <i class="fas fa-images"></i> Album foto Eventi
-                        </a>
-                    </li>
+                    @if($showAlbumsFotoLink)
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ route('photo-albums.index') }}">
+                                <i class="fas fa-images"></i> Album foto Eventi
+                                @if(!($featureAlbumsFotoEnabled ?? true))
+                                    <span class="ms-1 badge bg-warning text-dark">IN ARRIVO</span>
+                                @endif
+                            </a>
+                        </li>
+                    @endif
                     <li class="nav-item">
                         <a class="nav-link" href="{{ route('login') }}">
                             <i class="fas fa-sign-in-alt"></i> Accedi
@@ -313,92 +320,145 @@
                         </form>
                     </li>
                 @endif
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ route('my-events.active') }}">
-                        <i class="fas fa-calendar-check"></i> I Tuoi Eventi Attivi
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ route('profile.show', auth()->user()) }}">
-                        <i class="fas fa-user-circle"></i> Profilo
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ route('users.search') }}">
-                        <i class="fas fa-search"></i> Cerca utenti
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ route('friends.index') }}">
-                        <i class="fas fa-user-friends"></i> Amici
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ route('events.past') }}">
-                        <i class="fas fa-history"></i> Eventi passati
-                    </a>
-                </li>
-                @auth
-                    @if(auth()->user()->isAdmin())
+                {{-- Nav autenticato: ordine separato admin / utente (`resources/views/layouts/app.blade.php`) --}}
+                @if($isAdmin)
+                    {{-- Amministratore: ordine richiesto (benvenuto + impersonazione sopra) --}}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
+                           data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-crown"></i> Admin
+                            @if(($adminPendingUsersCount ?? 0) > 0)
+                                <span class="badge bg-danger rounded-pill ms-1" title="Iscrizioni in attesa di approvazione">{{ $adminPendingUsersCount }}</span>
+                            @endif
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                            <li><a class="dropdown-item" href="{{ route('admin.dashboard') }}">Dashboard</a></li>
+                            <li><a class="dropdown-item" href="{{ route('users.search') }}"><i class="fas fa-search me-1"></i>Cerca utenti</a></li>
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center justify-content-between gap-2 {{ ($adminPendingUsersCount ?? 0) > 0 ? 'fw-semibold text-dark' : '' }}"
+                                   href="{{ route('admin.users.index') }}">
+                                    <span>Gestione utenti</span>
+                                    @if(($adminPendingUsersCount ?? 0) > 0)
+                                        <span class="badge bg-warning text-dark">{{ $adminPendingUsersCount }} in attesa</span>
+                                    @endif
+                                </a>
+                            </li>
+                            <li><a class="dropdown-item" href="{{ route('admin.events.index') }}">Gestione Eventi</a></li>
+                            <li><a class="dropdown-item" href="{{ route('admin.users.gallery') }}">Admin immagini utenti</a></li>
+                            <li><a class="dropdown-item" href="{{ route('admin.common-event.form') }}">Eventi in comune</a></li>
+                            <li><a class="dropdown-item" href="{{ route('admin.groups.index') }}">Gestione gruppi</a></li>
+                            <li><a class="dropdown-item" href="{{ route('admin.newsletter.create') }}">Newsletter</a></li>
+                        </ul>
+                    </li>
+                    @if(auth()->user()->canManageEvents())
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
+                            <a class="nav-link dropdown-toggle" href="#" id="manageDropdownAdmin" role="button"
                                data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="fas fa-crown"></i> Admin
-                                @if(($adminPendingUsersCount ?? 0) > 0)
-                                    <span class="badge bg-danger rounded-pill ms-1" title="Iscrizioni in attesa di approvazione">{{ $adminPendingUsersCount }}</span>
-                                @endif
+                                <i class="fas fa-calendar-plus"></i> Gestione Eventi
                             </a>
-                            <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-                                <li><a class="dropdown-item" href="{{ route('admin.dashboard') }}">Dashboard</a></li>
-                                <li><a class="dropdown-item" href="{{ route('admin.events.index') }}">Gestione Eventi</a></li>
-                                <li><a class="dropdown-item" href="{{ route('admin.common-event.form') }}">Eventi in comune</a></li>
-                                <li><a class="dropdown-item" href="{{ route('photo-albums.index') }}">Album foto</a></li>
-                                <li>
-                                    <a class="dropdown-item d-flex align-items-center justify-content-between gap-2 {{ ($adminPendingUsersCount ?? 0) > 0 ? 'fw-semibold text-dark' : '' }}"
-                                       href="{{ route('admin.users.index') }}">
-                                        <span>Gestione Utenti</span>
-                                        @if(($adminPendingUsersCount ?? 0) > 0)
-                                            <span class="badge bg-warning text-dark">{{ $adminPendingUsersCount }} in attesa</span>
-                                        @endif
-                                    </a>
-                                </li>
-                                <li><a class="dropdown-item" href="{{ route('admin.users.gallery') }}">Admin. Immagini utenti</a></li>
-                                <li><a class="dropdown-item" href="{{ route('admin.groups.index') }}">Gestione Gruppi</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="{{ route('admin.newsletter.create') }}">Newsletter</a></li>
+                            <ul class="dropdown-menu" aria-labelledby="manageDropdownAdmin">
+                                <li><a class="dropdown-item" href="{{ route('manage.events.index') }}">Gestisci eventi</a></li>
+                                <li><a class="dropdown-item" href="{{ route('manage.events.create') }}">Crea Evento</a></li>
                             </ul>
                         </li>
                     @endif
-                @endauth
-                @if($showChatLink)
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('chat.index') }}">
-                            <i class="fas fa-comments"></i> Salottino delle chat
-                            @if(!($featureChatSalottinoEnabled ?? true))
-                                @if($isAdmin)
-                                    <span class="ms-1 badge bg-secondary">OFF</span>
-                                @else
-                                    <span class="ms-1 badge bg-warning text-dark">IN ARRIVO</span>
-                                @endif
-                            @endif
+                        <a class="nav-link" href="{{ route('my-events.active') }}">
+                            <i class="fas fa-calendar-check"></i> I Tuoi Eventi Attivi
                         </a>
                     </li>
-                @endif
-                @if($showMercatinoLink)
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('mercatino.index') }}">
-                            <i class="fas fa-store"></i> Mercatino
-                            @if(!($featureMercatinoEnabled ?? true))
-                                @if($isAdmin)
-                                    <span class="ms-1 badge bg-secondary">OFF</span>
-                                @else
-                                    <span class="ms-1 badge bg-warning text-dark">IN ARRIVO</span>
-                                @endif
-                            @endif
+                        <a class="nav-link" href="{{ route('events.past') }}">
+                            <i class="fas fa-history"></i> Eventi passati
                         </a>
                     </li>
-                @endif
-                @auth
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('profile.show', auth()->user()) }}">
+                            <i class="fas fa-user-circle"></i> Profilo
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('friends.index') }}">
+                            <i class="fas fa-user-friends"></i> Amici
+                        </a>
+                    </li>
+                    @if($showChatLink)
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ route('chat.index') }}">
+                                <i class="fas fa-comments"></i> Salottino delle chat
+                                @if(!($featureChatSalottinoEnabled ?? true))
+                                    <span class="ms-1 badge bg-secondary">OFF</span>
+                                @endif
+                            </a>
+                        </li>
+                    @endif
+                    @if($showAlbumsFotoLink)
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ route('photo-albums.index') }}">
+                                <i class="fas fa-images"></i> Album foto Eventi
+                                @if(!($featureAlbumsFotoEnabled ?? true))
+                                    <span class="ms-1 badge bg-secondary">OFF</span>
+                                @endif
+                            </a>
+                        </li>
+                    @endif
+                @else
+                    {{-- Utente non admin: ordine classico community --}}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('my-events.active') }}">
+                            <i class="fas fa-calendar-check"></i> I Tuoi Eventi Attivi
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('profile.show', auth()->user()) }}">
+                            <i class="fas fa-user-circle"></i> Profilo
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('users.search') }}">
+                            <i class="fas fa-search"></i> Cerca utenti
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('friends.index') }}">
+                            <i class="fas fa-user-friends"></i> Amici
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('events.past') }}">
+                            <i class="fas fa-history"></i> Eventi passati
+                        </a>
+                    </li>
+                    @if($showAlbumsFotoLink)
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ route('photo-albums.index') }}">
+                                <i class="fas fa-images"></i> Album foto Eventi
+                                @if(!($featureAlbumsFotoEnabled ?? true))
+                                    <span class="ms-1 badge bg-warning text-dark">IN ARRIVO</span>
+                                @endif
+                            </a>
+                        </li>
+                    @endif
+                    @if($showChatLink)
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ route('chat.index') }}">
+                                <i class="fas fa-comments"></i> Salottino delle chat
+                                @if(!($featureChatSalottinoEnabled ?? true))
+                                    <span class="ms-1 badge bg-warning text-dark">IN ARRIVO</span>
+                                @endif
+                            </a>
+                        </li>
+                    @endif
+                    @if($showMercatinoLink)
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ route('mercatino.index') }}">
+                                <i class="fas fa-store"></i> Mercatino
+                                @if(!($featureMercatinoEnabled ?? true))
+                                    <span class="ms-1 badge bg-warning text-dark">IN ARRIVO</span>
+                                @endif
+                            </a>
+                        </li>
+                    @endif
                     @if(auth()->user()->canManageEvents())
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="manageDropdown" role="button"
@@ -411,7 +471,7 @@
                             </ul>
                         </li>
                     @endif
-                @endauth
+                @endif
                 @endguest
             </ul>
             @auth

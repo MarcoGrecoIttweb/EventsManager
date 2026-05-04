@@ -107,6 +107,9 @@
                                     <strong>Niente Spam</strong>: Evita di inondare il Salottino con pubblicità, link esterni non richiesti o messaggi ripetitivi.
                                 </li>
                                 <li class="mb-1">
+                                    <strong>Indirizzare un messaggio (solo amministratore)</strong>: l’admin può cercare un utente abilitato e scegliere se inviare anche l’email di notifica o solo il messaggio in chat.
+                                </li>
+                                <li class="mb-1">
                                     <strong>La tua firma</strong>: Ricorda che sei l'unico responsabile di ciò che scrivi.
                                 </li>
                                 <li class="mb-0">
@@ -342,6 +345,42 @@
                         @csrf
                         <input type="hidden" name="reply_to_nickname" id="reply_to_nickname" value="">
                         <input type="hidden" name="reply_to_when" id="reply_to_when" value="">
+                        @if(auth()->user()->isAdmin())
+                        <div class="mb-3 p-2 p-md-3 border border-success border-2 rounded bg-white small chat-addressed-user-box">
+                            <label for="chatAddressedUserSearch" class="form-label fw-semibold mb-1 d-flex align-items-center gap-2">
+                                <i class="fas fa-user-tag text-success" aria-hidden="true"></i>
+                                Indirizza il messaggio a un utente (facoltativo, solo amministratore)
+                            </label>
+                            <div class="position-relative">
+                                <input type="text"
+                                       id="chatAddressedUserSearch"
+                                       class="form-control form-control-sm"
+                                       autocomplete="off"
+                                       placeholder="Scrivi almeno 2 lettere del nickname (username)…"
+                                       aria-describedby="chatAddressedUserHelp"
+                                       maxlength="64">
+                                <div id="chatAddressedUserSuggestions"
+                                     class="list-group position-absolute w-100 shadow-sm d-none mt-1 rounded overflow-hidden border"
+                                     style="z-index: 25; max-height: 11rem; overflow-y: auto;"
+                                     role="listbox"
+                                     aria-label="Utenti trovati"></div>
+                            </div>
+                            <div id="chatAddressedUserHelp" class="form-text mt-1">
+                                Cerca tra gli utenti abilitati: dopo la scelta il nickname resta visibile nel campo. Il messaggio sarà intestato in chat; di default non parte l’email (puoi attivarla sotto). Per «Rispondi» a un messaggio vale sempre la notifica email come prima.
+                            </div>
+                            <div class="mt-2 pt-2 border-top border-success-subtle">
+                                <div class="fw-semibold small mb-1">Notifica email al destinatario</div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="addressed_notify_email" id="chat_addr_email_0" value="0" checked>
+                                    <label class="form-check-label" for="chat_addr_email_0">No, solo messaggio in chat</label>
+                                </div>
+                                <div class="form-check mb-0">
+                                    <input class="form-check-input" type="radio" name="addressed_notify_email" id="chat_addr_email_1" value="1">
+                                    <label class="form-check-label" for="chat_addr_email_1">Sì, invia anche l’email</label>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
                         <div class="mb-3">
                             <label for="content" class="form-label mb-2 d-block text-center w-100"
                                    style="font-family: 'Curlz MT', 'Brush Script MT', cursive; font-style: italic; color: #0f5132; font-weight: 600; letter-spacing: 0.02em; font-size: 1.75rem; line-height: 1.3; text-shadow: 0 1px 3px rgba(15, 81, 50, 0.22);">
@@ -514,6 +553,15 @@
             border-radius: 0.5rem;
             font-weight: 700;
         }
+
+        .chat-addressed-user-box .list-group-item {
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        .chat-addressed-user-box .list-group-item:hover,
+        .chat-addressed-user-box .list-group-item:focus {
+            background: rgba(25, 135, 84, 0.12);
+        }
     </style>
 @endsection
 @section('scripts')
@@ -522,6 +570,121 @@
         document.addEventListener('DOMContentLoaded', function () {
             const textarea = document.getElementById('content');
             const adminTextarea = document.getElementById('chat_admin_content');
+            const chatUsersAutocompleteUrl = @json(route('users.autocomplete'));
+
+            const replyNickInput = document.getElementById('reply_to_nickname');
+            const replyWhenInput = document.getElementById('reply_to_when');
+            const replyBadge = document.getElementById('replyBadge');
+            const replyBadgeText = document.getElementById('replyBadgeText');
+
+            function resetAddressedEmailRadios() {
+                var r1 = document.getElementById('chat_addr_email_1');
+                var r0 = document.getElementById('chat_addr_email_0');
+                if (r0) r0.checked = true;
+                if (r1) r1.checked = false;
+            }
+
+            function applyChatReplyTarget(nick, when) {
+                var n = (nick || '').trim();
+                var w = (when || '').trim();
+                if (replyNickInput) replyNickInput.value = n;
+                if (replyWhenInput) replyWhenInput.value = w;
+                if (replyBadgeText) {
+                    if (!n) {
+                        replyBadgeText.textContent = '';
+                    } else {
+                        replyBadgeText.textContent = '@ Risponde a ' + n + (w ? (' (' + w + ')') : '');
+                    }
+                }
+                if (replyBadge) {
+                    if (n) replyBadge.classList.remove('d-none');
+                    else replyBadge.classList.add('d-none');
+                }
+                if (!n) {
+                    resetAddressedEmailRadios();
+                    var addrClear = document.getElementById('chatAddressedUserSearch');
+                    if (addrClear) addrClear.value = '';
+                }
+            }
+
+            (function setupChatAddressedUserSearch() {
+                var input = document.getElementById('chatAddressedUserSearch');
+                var box = document.getElementById('chatAddressedUserSuggestions');
+                if (!input || !box) return;
+
+                var timer = null;
+
+                function hideSuggestions() {
+                    box.classList.add('d-none');
+                    box.innerHTML = '';
+                }
+
+                function renderResults(rows) {
+                    box.innerHTML = '';
+                    if (!rows || !rows.length) {
+                        hideSuggestions();
+                        return;
+                    }
+                    rows.forEach(function (row) {
+                        var un = (row.username || '').toString();
+                        if (!un) return;
+                        var a = document.createElement('button');
+                        a.type = 'button';
+                        a.className = 'list-group-item list-group-item-action border-0 rounded-0 text-start';
+                        a.setAttribute('role', 'option');
+                        a.dataset.username = un;
+                        var lab = (row.label || un).toString();
+                        a.textContent = lab;
+                        a.addEventListener('mousedown', function (e) {
+                            e.preventDefault();
+                            applyChatReplyTarget(un, '');
+                            input.value = un;
+                            hideSuggestions();
+                            if (adminTextarea && typeof CKEDITOR !== 'undefined' && CKEDITOR.instances && CKEDITOR.instances['chat_admin_content']) {
+                                CKEDITOR.instances['chat_admin_content'].focus();
+                            } else if (adminTextarea) {
+                                adminTextarea.focus();
+                            } else if (textarea) {
+                                textarea.focus();
+                                textarea.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                            }
+                        });
+                        box.appendChild(a);
+                    });
+                    box.classList.remove('d-none');
+                }
+
+                input.addEventListener('input', function () {
+                    if (timer) clearTimeout(timer);
+                    var q = (input.value || '').trim();
+                    if (q.length < 2) {
+                        hideSuggestions();
+                        return;
+                    }
+                    timer = setTimeout(function () {
+                        var url = chatUsersAutocompleteUrl + '?q=' + encodeURIComponent(q);
+                        fetch(url, {
+                            headers: { Accept: 'application/json' },
+                            credentials: 'same-origin',
+                        })
+                            .then(function (r) { return r.json(); })
+                            .then(function (data) {
+                                renderResults(data.results || []);
+                            })
+                            .catch(function () {
+                                hideSuggestions();
+                            });
+                    }, 250);
+                });
+
+                input.addEventListener('keydown', function (e) {
+                    if (e.key === 'Escape') hideSuggestions();
+                });
+
+                document.addEventListener('click', function (e) {
+                    if (!box.contains(e.target) && e.target !== input) hideSuggestions();
+                });
+            })();
 
             document.querySelectorAll('.chat-emoji-btn').forEach(function (btn) {
                 btn.addEventListener('click', function () {
@@ -554,18 +717,10 @@
                     if (!box) return;
                     const nick = box.getAttribute('data-nickname') || 'Utente';
                     const when = box.getAttribute('data-message-when') || '';
-                    const suffix = when ? (' (' + when + ')') : '';
-                    const prefix = '@ Risponde a ' + nick + suffix + ' ';
-
-                    // Reply badge non cancellabile: salva metadati in hidden inputs.
-                    const replyNickInput = document.getElementById('reply_to_nickname');
-                    const replyWhenInput = document.getElementById('reply_to_when');
-                    const replyBadge = document.getElementById('replyBadge');
-                    const replyBadgeText = document.getElementById('replyBadgeText');
-                    if (replyNickInput) replyNickInput.value = nick;
-                    if (replyWhenInput) replyWhenInput.value = when;
-                    if (replyBadgeText) replyBadgeText.textContent = '@ Risponde a ' + nick + suffix;
-                    if (replyBadge) replyBadge.classList.remove('d-none');
+                    var addr = document.getElementById('chatAddressedUserSearch');
+                    if (addr) addr.value = '';
+                    resetAddressedEmailRadios();
+                    applyChatReplyTarget(nick, when);
 
                     // Focus editor/textarea
                     if (adminTextarea && typeof CKEDITOR !== 'undefined' && CKEDITOR.instances && CKEDITOR.instances['chat_admin_content']) {
@@ -582,14 +737,14 @@
             const clearBtn = document.getElementById('replyBadgeClear');
             if (clearBtn) {
                 clearBtn.addEventListener('click', function () {
-                    const replyNickInput = document.getElementById('reply_to_nickname');
-                    const replyWhenInput = document.getElementById('reply_to_when');
-                    const replyBadge = document.getElementById('replyBadge');
-                    const replyBadgeText = document.getElementById('replyBadgeText');
-                    if (replyNickInput) replyNickInput.value = '';
-                    if (replyWhenInput) replyWhenInput.value = '';
-                    if (replyBadgeText) replyBadgeText.textContent = '';
-                    if (replyBadge) replyBadge.classList.add('d-none');
+                    applyChatReplyTarget('', '');
+                    var addr = document.getElementById('chatAddressedUserSearch');
+                    if (addr) addr.value = '';
+                    var sug = document.getElementById('chatAddressedUserSuggestions');
+                    if (sug) {
+                        sug.innerHTML = '';
+                        sug.classList.add('d-none');
+                    }
                 });
             }
 

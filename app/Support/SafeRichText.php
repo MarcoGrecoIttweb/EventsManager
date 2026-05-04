@@ -125,7 +125,8 @@ class SafeRichText
     }
 
     /**
-     * Rimuove style/onclick ecc. da p, span, … lasciando intatti img e a già ripuliti.
+     * Rimuove onclick/class ecc. da p, span, … lasciando intatti img e a già ripuliti.
+     * Conserva solo dichiarazioni CSS sicure su color / background-color (es. testo blu da CKEditor).
      */
     private static function stripAttributesFromNonMediaTags(string $html): string
     {
@@ -135,9 +136,71 @@ class SafeRichText
                 return $m[0];
             }
 
-            return '<' . $tag . '>';
+            $attrs = $m[2];
+            if (! preg_match('/\bstyle\s*=\s*(["\'])(.*?)\1/is', $attrs, $sm)) {
+                return '<' . $tag . '>';
+            }
+
+            $styleRaw = html_entity_decode($sm[2], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            $safeStyle = self::sanitizeCssDeclarationsForRichText($styleRaw);
+            if ($safeStyle === '') {
+                return '<' . $tag . '>';
+            }
+
+            return '<' . $tag . ' style="' . e($safeStyle) . '">';
         }, $html);
 
         return $result ?? '';
+    }
+
+    /**
+     * Estrae solo color e background-color con valori considerati sicuri (niente url(), var(), ecc.).
+     */
+    private static function sanitizeCssDeclarationsForRichText(string $style): string
+    {
+        $out = [];
+        foreach (preg_split('/;/', $style) as $chunk) {
+            if (! preg_match('/^\s*([a-zA-Z-]+)\s*:\s*(.+?)\s*$/s', $chunk, $cm)) {
+                continue;
+            }
+            $prop = strtolower($cm[1]);
+            if ($prop !== 'color' && $prop !== 'background-color') {
+                continue;
+            }
+            $val = trim($cm[2]);
+            if (self::isSafeCssColorValue($val)) {
+                $out[] = $prop . ': ' . $val;
+            }
+        }
+
+        return implode('; ', $out);
+    }
+
+    private static function isSafeCssColorValue(string $v): bool
+    {
+        $v = trim($v);
+        if ($v === '' || strlen($v) > 200) {
+            return false;
+        }
+        $lower = strtolower($v);
+        foreach (['url(', 'expression', 'javascript:', '@import', 'behavior', 'binding', '<', '>', '/*', 'var('] as $bad) {
+            if (str_contains($lower, $bad)) {
+                return false;
+            }
+        }
+        if (preg_match('/^#([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i', $v)) {
+            return true;
+        }
+        if (preg_match('/^rgba?\(\s*[0-9.]+%?\s*,\s*[0-9.]+%?\s*,\s*[0-9.]+%?\s*(,\s*[0-9.]+%?\s*)?\)$/i', $v)) {
+            return true;
+        }
+        if (preg_match('/^hsla?\(\s*[0-9.]+\s*,\s*[0-9.]+%\s*,\s*[0-9.]+%\s*(,\s*[0-9.]+%?\s*)?\)$/i', $v)) {
+            return true;
+        }
+        if (preg_match('/^[a-zA-Z][a-zA-Z0-9-]{0,79}$/', $v)) {
+            return true;
+        }
+
+        return false;
     }
 }

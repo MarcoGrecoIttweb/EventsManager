@@ -87,6 +87,7 @@ class ChatController extends Controller
                 : 'required|string|max:1000',
             'reply_to_nickname' => 'nullable|string|max:255',
             'reply_to_when' => 'nullable|string|max:64',
+            'addressed_notify_email' => 'nullable|in:0,1',
         ]);
 
         $originalContent = (string) $validated['content'];
@@ -113,9 +114,16 @@ class ChatController extends Controller
             'content' => $content,
         ]);
 
-        // Se è una risposta, invia email al destinatario (se presente).
+        // Email di notifica: sempre per risposta «normale» (con data messaggio); per admin che indirizza dalla sola ricerca (senza data) rispetta la scelta chat/email.
         if ($replyNick !== '' && $content !== self::REMOVED_NOTICE) {
-            $this->notifyChatReply(Auth::user(), $replyNick, $originalContent, $replyWhen, (int) $created->id);
+            $isAddressedAdminOnly = $isAdmin && $replyWhen === '';
+            $sendEmailNotify = true;
+            if ($isAddressedAdminOnly) {
+                $sendEmailNotify = isset($validated['addressed_notify_email']) && (string) $validated['addressed_notify_email'] === '1';
+            }
+            if ($sendEmailNotify) {
+                $this->notifyChatReply(Auth::user(), $replyNick, $originalContent, $replyWhen, (int) $created->id);
+            }
         }
 
         // Evita di auto-notificare l'admin su propri messaggi ricchi.

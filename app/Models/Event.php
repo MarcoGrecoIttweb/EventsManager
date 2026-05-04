@@ -180,10 +180,11 @@ class Event extends Model
 
     public function getFormattedCostAttribute(): ?string
     {
-        if ($this->costo === null || $this->costo == 0) {
+        if ($this->costo === null || (float) $this->costo == 0.0) {
             return null;
         }
-        return number_format($this->costo, 2, ',', '.') . ' €';
+        // Solo importo formattato; il simbolo € è mostrato una sola volta nella vista (es. dettaglio evento).
+        return number_format((float) $this->costo, 2, ',', '.');
     }
 
     /**

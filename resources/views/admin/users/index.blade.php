@@ -379,7 +379,7 @@
                                             <td>
                                                 {{-- Identificazione Attivo/Sospeso/Bannato (pulsanti) + azioni sulla stessa riga --}}
                                                 <div class="d-inline-flex align-items-center gap-0 admin-users-azioni-inline">
-                                                    @if(auth()->check() && auth()->user()->isAdmin() && strtolower(trim((string) auth()->user()->username)) === 'scintilla' && !$user->isAdmin() && (int) $user->userID !== (int) auth()->id())
+                                                    @if(auth()->check() && auth()->user()->isAdmin() && !session()->has('impersonator_id') && !$user->isAdmin() && (int) $user->userID !== (int) auth()->id())
                                                         <form action="{{ route('admin.users.impersonate', $user) }}" method="POST" class="d-inline m-0">
                                                             @csrf
                                                             <button type="submit"

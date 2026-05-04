@@ -240,7 +240,17 @@
                             </div>
 
                             <div class="mb-3">
-                                <label for="description" class="form-label text-primary-emphasis">Descrizione *</label>
+                                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                                    <label for="description" class="form-label text-primary-emphasis mb-0">Descrizione *</label>
+                                    @if(auth()->check() && auth()->user()->isAdmin())
+                                        <button type="button"
+                                                class="btn btn-outline-warning btn-sm"
+                                                id="btnInsertCancellationRule"
+                                                style="color:#8B4513; border-color:#8B4513;">
+                                            <i class="fas fa-stamp me-1"></i> Gli eventi proposti
+                                        </button>
+                                    @endif
+                                </div>
                                 <textarea class="form-control @error('description') is-invalid @enderror"
                                           id="description" name="description" rows="8">{{ old('description') }}</textarea>
                                 @error('description')
@@ -288,6 +298,39 @@
 
             allowGuestsCheckbox.addEventListener('change', toggleMaxGuests);
             toggleMaxGuests();
+
+            // Inserisce la regola annullamento in fondo alla descrizione (solo admin)
+            const btnRule = document.getElementById('btnInsertCancellationRule');
+            const ruleHtml =
+                '<blockquote>' +
+                '<p>Gli eventi proposti sono momenti di piacevole convivialità se c\\u2019è partecipazione, mancando questa viene meno lo spirito del divertimento, quindi per tutti gli eventi proposti incluso questo vale la regola che, se non raggiunge un minimo di 6/8 partrcipanti nei 2 gg. che precedono l\\u2019evento lo stesso sarà annullato.</p>' +
+                '<p>Pertanto se tua intenzione partecipare ti consiglio di iscriverti.</p>' +
+                '</blockquote>';
+            function appendRuleToDescription() {
+                if (typeof CKEDITOR !== 'undefined' && CKEDITOR.instances && CKEDITOR.instances.description) {
+                    const editor = CKEDITOR.instances.description;
+                    const current = editor.getData() || '';
+                    editor.setData((current ? current + '<p><br></p>' : '') + ruleHtml);
+                    editor.focus();
+                    return;
+                }
+                const ta = document.getElementById('description');
+                if (ta) {
+                    const current = ta.value || '';
+                    const plain =
+                        "\n\n" +
+                        "Gli eventi proposti sono momenti di piacevole convivialità se c'è partecipazione, mancando questa viene meno lo spirito del divertimento, quindi per tutti gli eventi proposti incluso questo vale la regola che, se non raggiunge un minimo di 6/8 partrcipanti nei 2 gg. che precedono l'evento lo stesso sarà annullato.\n" +
+                        "Pertanto se tua intenzione partecipare ti consiglio di iscriverti.\n";
+                    ta.value = current + plain;
+                    ta.focus();
+                }
+            }
+            if (btnRule) {
+                btnRule.addEventListener('click', function () {
+                    if (!confirm('Inserire il testo standard in fondo alla descrizione?')) return;
+                    appendRuleToDescription();
+                });
+            }
         });
     </script>
 @endsection

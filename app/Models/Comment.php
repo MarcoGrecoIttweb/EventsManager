@@ -77,7 +77,16 @@ class Comment extends Model
             return '';
         }
 
-        $decoded = html_entity_decode($raw, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        // In alcuni casi il testo arriva "doppiamente encodato" (es. &amp;#39;).
+        // Decodifica a passaggi (max 3) per arrivare al testo reale senza loop infiniti.
+        $decoded = $raw;
+        for ($i = 0; $i < 3; $i++) {
+            $next = html_entity_decode($decoded, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            if ($next === $decoded) {
+                break;
+            }
+            $decoded = $next;
+        }
 
         $cleanContent = SafeRichText::sanitize($decoded, false);
 

@@ -81,7 +81,7 @@
                     <div class="col-12 col-sm-6 col-xl-4">
                         <div class="mb-3">
                             <label for="address" class="form-label text-primary-emphasis">Indirizzo <span class="text-danger">*</span></label>
-                            <input type="text" name="address" id="address" class="form-control form-control-sm border border-2 border-primary @error('address') is-invalid @enderror" value="{{ old('address', $event->address) }}" maxlength="35" required>
+                            <input type="text" name="address" id="address" class="form-control form-control-sm border border-2 border-primary @error('address') is-invalid @enderror" value="{{ old('address', $event->via) }}" maxlength="35" required>
                             @error('address')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -139,7 +139,17 @@
 
                 {{-- Descrizione (editor): box bordo blu --}}
                 <div class="mb-3 manage-event-description-editor-box">
-                    <label for="description" class="form-label text-primary-emphasis">Descrizione <span class="text-danger">*</span></label>
+                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                        <label for="description" class="form-label text-primary-emphasis mb-0">Descrizione <span class="text-danger">*</span></label>
+                        @if(auth()->check() && auth()->user()->isAdmin())
+                            <button type="button"
+                                    class="btn btn-outline-warning btn-sm"
+                                    id="btnInsertCancellationRule"
+                                    style="color:#8B4513; border-color:#8B4513;">
+                                <i class="fas fa-stamp me-1"></i> Gli eventi proposti
+                            </button>
+                        @endif
+                    </div>
                     <textarea name="description" id="description" class="form-control border border-2 border-primary @error('description') is-invalid @enderror" rows="10">{{ old('description', $event->description) }}</textarea>
                     @error('description')
                         <div class="invalid-feedback">{{ $message }}</div>
@@ -280,6 +290,39 @@
         if (allowGuestsCheckbox) {
             allowGuestsCheckbox.addEventListener('change', syncManageGuests);
             syncManageGuests();
+        }
+
+        // Inserisce la regola annullamento in fondo alla descrizione (solo admin)
+        const btnRule = document.getElementById('btnInsertCancellationRule');
+        const ruleHtml =
+            '<blockquote>' +
+            '<p>Gli eventi proposti sono momenti di piacevole convivialità se c\\u2019è partecipazione, mancando questa viene meno lo spirito del divertimento, quindi per tutti gli eventi proposti incluso questo vale la regola che, se non raggiunge un minimo di 6/8 partrcipanti nei 2 gg. che precedono l\\u2019evento lo stesso sarà annullato.</p>' +
+            '<p>Pertanto se tua intenzione partecipare ti consiglio di iscriverti.</p>' +
+            '</blockquote>';
+        function appendRuleToDescription() {
+            if (typeof CKEDITOR !== 'undefined' && CKEDITOR.instances && CKEDITOR.instances.description) {
+                const editor = CKEDITOR.instances.description;
+                const current = editor.getData() || '';
+                editor.setData((current ? current + '<p><br></p>' : '') + ruleHtml);
+                editor.focus();
+                return;
+            }
+            const ta = document.getElementById('description');
+            if (ta) {
+                const current = ta.value || '';
+                const plain =
+                    "\n\n" +
+                    "Gli eventi proposti sono momenti di piacevole convivialità se c'è partecipazione, mancando questa viene meno lo spirito del divertimento, quindi per tutti gli eventi proposti incluso questo vale la regola che, se non raggiunge un minimo di 6/8 partrcipanti nei 2 gg. che precedono l'evento lo stesso sarà annullato.\n" +
+                    "Pertanto se tua intenzione partecipare ti consiglio di iscriverti.\n";
+                ta.value = current + plain;
+                ta.focus();
+            }
+        }
+        if (btnRule) {
+            btnRule.addEventListener('click', function () {
+                if (!confirm('Inserire il testo standard in fondo alla descrizione?')) return;
+                appendRuleToDescription();
+            });
         }
     });
 </script>

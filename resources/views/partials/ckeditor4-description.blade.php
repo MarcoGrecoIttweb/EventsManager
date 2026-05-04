@@ -13,6 +13,9 @@
     $ckCssParts = [
         '.cke_editable{font-size:14px;line-height:' . $ckLh . ';color:#212529!important;background:#fff!important;}',
         '.cke_editable p,.cke_editable li,.cke_editable td,.cke_editable th{color:#212529;}',
+        // Nota admin "Gli eventi proposti..." inserita come blockquote: mostrala marrone anche in editor, senza linea a sinistra.
+        '.cke_editable blockquote{color:#8B4513;border-left:0!important;padding-left:0!important;margin-left:0!important;}',
+        '.cke_editable blockquote p,.cke_editable blockquote li{color:#8B4513;}',
         '.cke_editable ::selection{background:rgba(13,110,253,.35);}',
     ];
     if ($ckPMargin !== null) {
