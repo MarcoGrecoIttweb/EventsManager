@@ -87,8 +87,8 @@ class EventManageController extends Controller
             'numeromax' => $validated['max_participants'] ?? null,
             'id_organizzatore' => Auth::id(),
             'pubblicato' => $isActive,
-            // Lista partecipanti sempre visibile
-            'elenco_visibile' => 1,
+            // Valore fisso per DB condiviso con sito legacy (non c’è toggle in form Laravel)
+            'elenco_visibile' => 0,
             'sondaggio' => '',
             'url_galleria' => (string) ($validated['google_album_url'] ?? ''),
             'datascadenza' => $validated['deadline'] ?? $validated['date'],
@@ -166,8 +166,7 @@ class EventManageController extends Controller
             'civico' => (string) ($validated['civico'] ?? ''),
             'costo' => $validated['cost'] ?? null,
             'datascadenza' => $validated['deadline'] ?? $validated['date'],
-            // Lista partecipanti sempre visibile
-            'elenco_visibile' => 1,
+            'elenco_visibile' => 0,
             'numeromax' => $validated['max_participants'] ?? null,
             'allow_guests' => $allowGuests,
             'max_guests_per_user' => $allowGuests ? ($validated['max_guests_per_user'] ?? 3) : 0,

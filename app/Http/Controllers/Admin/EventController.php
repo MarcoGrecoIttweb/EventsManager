@@ -78,8 +78,7 @@ class EventController extends Controller
             'numeromax' => $validated['max_participants'] ?? null,
             'id_organizzatore' => Auth::id(),
             'pubblicato' => $isActive,
-            // Lista partecipanti sempre visibile
-            'elenco_visibile' => 1,
+            'elenco_visibile' => 0,
             'sondaggio' => '',
             'url_galleria' => (string) ($validated['google_album_url'] ?? ''),
             'datascadenza' => $validated['deadline'] ?? $validated['date'],
@@ -145,8 +144,7 @@ class EventController extends Controller
                     'numeromax' => $event->numeromax,
                     'id_organizzatore' => $event->id_organizzatore,
                     'pubblicato' => $event->pubblicato,
-                    // Lista partecipanti sempre visibile
-                    'elenco_visibile' => 1,
+                    'elenco_visibile' => 0,
                     'sondaggio' => $event->sondaggio ?? '',
                     'url_galleria' => $event->url_galleria ?? '',
                     'datascadenza' => $event->datascadenza,
@@ -240,8 +238,7 @@ class EventController extends Controller
             'civico' => (string) ($validated['civico'] ?? ''),
             'costo' => $validated['cost'] ?? null,
             'datascadenza' => $validated['deadline'] ?? $validated['date'],
-            // Lista partecipanti sempre visibile
-            'elenco_visibile' => 1,
+            'elenco_visibile' => 0,
             'numeromax' => $validated['max_participants'] ?? null,
             'pubblicato' => $isActive ? 1 : 0,
             'allow_guests' => $allowGuests,

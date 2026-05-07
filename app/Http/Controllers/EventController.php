@@ -211,12 +211,11 @@ class EventController extends Controller
             return redirect()->route('home')->with('error', 'Devi essere un utente approvato per vedere gli album foto.');
         }
 
-        // Garantisci che gli eventi mostrati qui abbiano l'elenco partecipanti visibile.
-        // Così, aprendo il titolo dell'evento, la lista partecipanti risulta sempre abilitata.
+        // Allinea elenco_visibile al valore usato da Laravel su eventi con link galleria (DB condiviso con legacy).
         Event::query()
             ->whereNotNull('url_galleria')
             ->where('url_galleria', '!=', '')
-            ->update(['elenco_visibile' => 1]);
+            ->update(['elenco_visibile' => 0]);
 
         $q = trim((string) $request->query('q', ''));
 

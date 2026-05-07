@@ -236,7 +236,7 @@
                             <label for="allow_guests" class="form-check-label text-primary-emphasis">Permetti ospiti</label>
                         </div>
                         <div class="form-check form-switch mb-0">
-                            <input type="hidden" name="elenco_visibile" value="1">
+                            <input type="hidden" name="elenco_visibile" value="0">
                         </div>
                     </div>
                     @error('allow_guests')
