@@ -19,3 +19,6 @@ yarn-error.log
 
 # Chiavi SSH, script e file solo per deploy in produzione (cartella locale)
 /deploy/
+
+# Immagini caricate (utenti, eventi, mercatino, ecc.): solo su server / backup, non in repository
+/public/upload_immagini/
