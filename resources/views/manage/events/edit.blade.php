@@ -38,7 +38,7 @@
             <div class="card-body">
                 {{-- Riga 1: Titolo, Data evento, Scadenza iscrizioni --}}
                 <div class="row g-2 event-edit-row-primary">
-                    <div class="col-12 col-lg-4">
+                    <div class="col-12 col-lg-6">
                         <div class="mb-3">
                             <label for="title" class="form-label text-primary-emphasis">Titolo Evento <span class="text-danger">*</span></label>
                             <input type="text" name="title" id="title" class="form-control border border-2 border-primary @error('title') is-invalid @enderror" value="{{ old('title', $event->title) }}" maxlength="120" required>
@@ -47,16 +47,31 @@
                             @enderror
                         </div>
                     </div>
-                    <div class="col-12 col-lg-4">
+                    <div class="col-12 col-lg-3">
                         <div class="mb-3">
-                            <label for="date" class="form-label text-primary-emphasis">Data Evento <span class="text-danger">*</span></label>
-                            <input type="datetime-local" name="date" id="date" class="form-control border border-2 border-primary @error('date') is-invalid @enderror" value="{{ old('date', $event->date->format('Y-m-d\TH:i')) }}" required>
+                            <label class="form-label text-primary-emphasis">Data evento / ora inizio <span class="text-danger">*</span></label>
+                            <div class="d-flex gap-2">
+                                <input type="date"
+                                       id="date_only"
+                                       name="date_only"
+                                       class="form-control border border-2 border-primary @error('date') is-invalid @enderror"
+                                       value="{{ old('date') ? \Carbon\Carbon::parse(old('date'))->format('Y-m-d') : $event->date->format('Y-m-d') }}"
+                                       required>
+                                <input type="time"
+                                       id="time_only"
+                                       name="time_only"
+                                       class="form-control border border-2 border-primary @error('date') is-invalid @enderror"
+                                       value="{{ old('date') ? \Carbon\Carbon::parse(old('date'))->format('H:i') : $event->date->format('H:i') }}"
+                                       required
+                                       style="max-width: 10rem;">
+                            </div>
+                            <input type="hidden" name="date" id="date" value="{{ old('date', $event->date->format('Y-m-d\\TH:i')) }}" required>
                             @error('date')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
                     </div>
-                    <div class="col-12 col-lg-4">
+                    <div class="col-12 col-lg-3">
                         <div class="mb-3">
                             <label for="deadline" class="form-label text-primary-emphasis">Scadenza Iscrizioni</label>
                             <input type="datetime-local" name="deadline" id="deadline" class="form-control border border-2 border-primary @error('deadline') is-invalid @enderror" value="{{ old('deadline', $event->deadline ? $event->deadline->format('Y-m-d\TH:i') : '') }}">
@@ -262,6 +277,30 @@
 @include('partials.ckeditor4-description', ['height' => 400])
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        // Data+ora: combina `date_only` + `time_only` nel campo hidden `date`
+        (function setupDateTimeCombine() {
+            var d = document.getElementById('date_only');
+            var t = document.getElementById('time_only');
+            var hidden = document.getElementById('date');
+            if (!d || !t || !hidden) return;
+
+            function sync() {
+                var dv = (d.value || '').trim();
+                var tv = (t.value || '').trim();
+                if (!dv || !tv) {
+                    hidden.value = '';
+                    return;
+                }
+                hidden.value = dv + 'T' + tv;
+            }
+
+            d.addEventListener('change', sync);
+            d.addEventListener('input', sync);
+            t.addEventListener('change', sync);
+            t.addEventListener('input', sync);
+            sync();
+        })();
+
         var manageForm = document.getElementById('manage-event-edit-form');
         if (manageForm) {
             manageForm.addEventListener('submit', function () {
@@ -437,6 +476,12 @@
     #manage-event-edit-form #title.form-control,
     #manage-event-edit-form #date.form-control {
         border-color: #8B4513 !important;
+    }
+
+    /* Switch "Evento attivo" + "Permetti ospiti" sempre in una riga */
+    #manage-event-edit-form .event-edit-event-switches-row {
+        flex-wrap: nowrap !important;
+        white-space: nowrap;
     }
     #manage-event-edit-form #title.form-control:focus,
     #manage-event-edit-form #date.form-control:focus {

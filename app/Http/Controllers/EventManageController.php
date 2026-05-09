@@ -44,6 +44,13 @@ class EventManageController extends Controller
 
     public function store(Request $request)
     {
+        // Supporto UI con campi separati data/ora: compone `date` (datetime) che finirà in `dataevento`.
+        if (!$request->filled('date') && $request->filled('date_only') && $request->filled('time_only')) {
+            $request->merge([
+                'date' => trim((string) $request->input('date_only')) . ' ' . trim((string) $request->input('time_only')),
+            ]);
+        }
+
         $request->merge([
             'google_album_url' => ($g = trim((string) $request->input('google_album_url', ''))) !== '' ? $g : null,
         ]);
@@ -120,6 +127,13 @@ class EventManageController extends Controller
     public function update(Request $request, Event $event)
     {
         $this->authorizeEvent($event);
+
+        // Supporto UI con campi separati data/ora: compone `date` (datetime) che finirà in `dataevento`.
+        if (!$request->filled('date') && $request->filled('date_only') && $request->filled('time_only')) {
+            $request->merge([
+                'date' => trim((string) $request->input('date_only')) . ' ' . trim((string) $request->input('time_only')),
+            ]);
+        }
 
         if ($request->input('cover_image_selected') == '1' && !$request->hasFile('cover_image')) {
             return back()->with('error', 'La nuova copertina non è stata ricevuta dal server. Probabile file troppo grande o limite PHP (upload_max_filesize / post_max_size). Prova con un file più piccolo.');

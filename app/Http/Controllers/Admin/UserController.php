@@ -47,16 +47,16 @@ class UserController extends Controller
     }
 
     /**
-     * Elenco ingressi giornalieri (ultimi 10 giorni).
+     * Elenco ingressi giornalieri (default 1 giorno, fino a 10).
      */
     public function logins(Request $request)
     {
-        $days = (int) $request->query('days', 10);
+        $days = (int) $request->query('days', 1);
         if ($days < 1) {
             $days = 1;
         }
-        if ($days > 30) {
-            $days = 30;
+        if ($days > 10) {
+            $days = 10;
         }
 
         // Il sito legacy (parallelo) tipicamente aggiorna solo `utente.ultimo_accesso`,

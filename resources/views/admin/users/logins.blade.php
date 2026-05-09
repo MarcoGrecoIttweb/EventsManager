@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Ingressi giornalieri ultimi gg - Admin')
+@section('title', 'Ingressi giornalieri - Admin')
 @section('no_sidebar', '1')
 
 @section('content')
@@ -10,7 +10,7 @@
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h1 class="h4 mb-0 fw-semibold">
                         <i class="fas fa-sign-in-alt me-2"></i>
-                        Ingressi giornalieri ultimi gg
+                        Ingressi giornalieri
                     </h1>
                     <div class="d-flex gap-2">
                         <a href="{{ route('admin.users.index') }}" class="btn btn-secondary btn-sm">
@@ -26,14 +26,14 @@
                     <div class="card-header bg-dark text-white">
                         <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
                             <h5 class="mb-0">
-                                <i class="fas fa-list me-2"></i> Lista ingressi — ultimi {{ (int) ($days ?? 10) }} giorni
+                                <i class="fas fa-list me-2"></i> Lista ingressi — ultimi {{ (int) ($days ?? 1) }} giorni
                             </h5>
 
                             <form method="GET" action="{{ route('admin.users.logins') }}" class="d-flex align-items-center gap-2">
                                 <label for="days" class="small mb-0">Giorni</label>
                                 <select id="days" name="days" class="form-select form-select-sm" style="width: 6rem;" onchange="this.form.submit()">
-                                    @for($i = 1; $i <= 30; $i++)
-                                        <option value="{{ $i }}" {{ (int) ($days ?? 10) === $i ? 'selected' : '' }}>
+                                    @for($i = 1; $i <= 10; $i++)
+                                        <option value="{{ $i }}" {{ (int) ($days ?? 1) === $i ? 'selected' : '' }}>
                                             {{ $i }}
                                         </option>
                                     @endfor

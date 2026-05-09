@@ -51,7 +51,7 @@
 
                             {{-- Riga 1: Titolo, Data evento, Scadenza iscrizioni --}}
                             <div class="row g-2 event-edit-row-primary">
-                                <div class="col-12 col-lg-4">
+                                <div class="col-12 col-lg-6">
                                     <div class="mb-3">
                                         <label for="title" class="form-label">Titolo Evento *</label>
                                         <input type="text" class="form-control @error('title') is-invalid @enderror"
@@ -61,17 +61,31 @@
                                         @enderror
                                     </div>
                                 </div>
-                                <div class="col-12 col-lg-4">
+                                <div class="col-12 col-lg-3">
                                     <div class="mb-3">
-                                        <label for="date" class="form-label">Data Evento *</label>
-                                        <input type="datetime-local" class="form-control @error('date') is-invalid @enderror"
-                                               id="date" name="date" value="{{ old('date', $event->date->format('Y-m-d\TH:i')) }}" required>
+                                        <label class="form-label">Data evento / ora inizio *</label>
+                                        <div class="d-flex gap-2">
+                                            <input type="date"
+                                                   class="form-control @error('date') is-invalid @enderror"
+                                                   id="date_only"
+                                                   name="date_only"
+                                                   value="{{ old('date') ? \Carbon\Carbon::parse(old('date'))->format('Y-m-d') : $event->date->format('Y-m-d') }}"
+                                                   required>
+                                            <input type="time"
+                                                   class="form-control @error('date') is-invalid @enderror"
+                                                   id="time_only"
+                                                   name="time_only"
+                                                   value="{{ old('date') ? \Carbon\Carbon::parse(old('date'))->format('H:i') : $event->date->format('H:i') }}"
+                                                   required
+                                                   style="max-width: 10rem;">
+                                        </div>
+                                        <input type="hidden" id="date" name="date" value="{{ old('date', $event->date->format('Y-m-d\\TH:i')) }}" required>
                                         @error('date')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
                                 </div>
-                                <div class="col-12 col-lg-4">
+                                <div class="col-12 col-lg-3">
                                     <div class="mb-3">
                                         <label for="deadline" class="form-label text-primary-emphasis">Scadenza Iscrizioni</label>
                                         <input type="datetime-local" class="form-control border border-2 border-primary @error('deadline') is-invalid @enderror"
@@ -314,6 +328,30 @@
     @include('partials.ckeditor4-description', ['height' => 400])
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Data+ora: combina `date_only` + `time_only` nel campo hidden `date`
+            (function setupDateTimeCombine() {
+                var d = document.getElementById('date_only');
+                var t = document.getElementById('time_only');
+                var hidden = document.getElementById('date');
+                if (!d || !t || !hidden) return;
+
+                function sync() {
+                    var dv = (d.value || '').trim();
+                    var tv = (t.value || '').trim();
+                    if (!dv || !tv) {
+                        hidden.value = '';
+                        return;
+                    }
+                    hidden.value = dv + 'T' + tv;
+                }
+
+                d.addEventListener('change', sync);
+                d.addEventListener('input', sync);
+                t.addEventListener('change', sync);
+                t.addEventListener('input', sync);
+                sync();
+            })();
+
             // Titolo evento: forza MAIUSCOLO in tempo reale
             const titleInput = document.getElementById('title');
             if (titleInput) {
@@ -499,6 +537,12 @@
         #admin-event-edit-form .event-edit-cover-google-row #cover_image.form-control,
         #admin-event-edit-form .event-edit-cover-google-row #google_album_url.form-control {
             max-width: 100%;
+        }
+
+        /* Switch "Evento attivo" + "Permetti ospiti" sempre in una riga */
+        #admin-event-edit-form .event-edit-event-switches-row {
+            flex-wrap: nowrap !important;
+            white-space: nowrap;
         }
 
         /* Card esterna "Modifica Evento": bordo verde */

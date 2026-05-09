@@ -42,6 +42,14 @@ return [
             'visibility' => 'public',
         ],
 
+        /* File serviti direttamente da /upload_immagini/... (senza symlink storage) */
+        'upload_immagini' => [
+            'driver' => 'local',
+            'root' => public_path('upload_immagini'),
+            'url' => env('APP_URL').'/upload_immagini',
+            'visibility' => 'public',
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

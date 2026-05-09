@@ -23,11 +23,104 @@ class EventController extends Controller
 
     public function index()
     {
+        $request = request();
+        $term = trim((string) $request->query('q', ''));
+        $field = (string) $request->query('field', 'nome');
+        if (!in_array($field, ['nome', 'locale', 'indirizzo'], true)) {
+            $field = 'nome';
+        }
+
         $events = Event::with(['user', 'participants'])
+            ->when($term !== '', function ($q) use ($term, $field) {
+                $like = '%' . $term . '%';
+
+                if ($field === 'nome') {
+                    $q->where('nome', 'like', $like);
+                    return;
+                }
+
+                if ($field === 'locale') {
+                    // "Locale" nel DB legacy è `dove` (nome del posto)
+                    $q->where('dove', 'like', $like);
+                    return;
+                }
+
+                // indirizzo: cerca su via / civico / città (utile quando l'utente scrive "Marostica 9" o "Milano")
+                $q->where(function ($qq) use ($like) {
+                    $qq->where('via', 'like', $like)
+                        ->orWhere('civico', 'like', $like)
+                        ->orWhere('citta', 'like', $like);
+                });
+            })
             ->orderBy('dataevento', 'desc')
             ->paginate(20);
 
         return view('admin.events.index', compact('events'));
+    }
+
+    /**
+     * Suggerimenti autocomplete per il box ricerca Admin Events.
+     */
+    public function suggestions(Request $request)
+    {
+        $term = trim((string) $request->query('q', ''));
+        $field = (string) $request->query('field', 'nome');
+        if (!in_array($field, ['nome', 'locale', 'indirizzo'], true)) {
+            $field = 'nome';
+        }
+
+        if ($term === '' || mb_strlen($term, 'UTF-8') < 2) {
+            return response()->json([]);
+        }
+
+        $like = $term . '%';
+
+        if ($field === 'nome') {
+            $items = Event::query()
+                ->select('nome')
+                ->whereNotNull('nome')
+                ->where('nome', 'like', $like)
+                ->distinct()
+                ->orderBy('nome')
+                ->limit(12)
+                ->pluck('nome')
+                ->map(fn ($v) => trim((string) $v))
+                ->filter()
+                ->values();
+
+            return response()->json($items);
+        }
+
+        if ($field === 'locale') {
+            $items = Event::query()
+                ->select('dove')
+                ->whereNotNull('dove')
+                ->where('dove', 'like', $like)
+                ->distinct()
+                ->orderBy('dove')
+                ->limit(12)
+                ->pluck('dove')
+                ->map(fn ($v) => trim((string) $v))
+                ->filter()
+                ->values();
+
+            return response()->json($items);
+        }
+
+        // indirizzo: suggerisci SOLO la via (non civico/città)
+        $items = Event::query()
+            ->select('via')
+            ->whereNotNull('via')
+            ->where('via', 'like', $like)
+            ->distinct()
+            ->orderBy('via')
+            ->limit(12)
+            ->pluck('via')
+            ->map(fn ($v) => trim((string) $v))
+            ->filter()
+            ->values();
+
+        return response()->json($items);
     }
 
     public function create()
@@ -37,6 +130,13 @@ class EventController extends Controller
 
     public function store(Request $request)
     {
+        // Supporto UI con campi separati data/ora: compone `date` (datetime) che finirà in `dataevento`.
+        if (!$request->filled('date') && $request->filled('date_only') && $request->filled('time_only')) {
+            $request->merge([
+                'date' => trim((string) $request->input('date_only')) . ' ' . trim((string) $request->input('time_only')),
+            ]);
+        }
+
         $request->merge([
             'google_album_url' => ($g = trim((string) $request->input('google_album_url', ''))) !== '' ? $g : null,
         ]);
@@ -131,6 +231,11 @@ class EventController extends Controller
 
         try {
             $newEvent = DB::transaction(function () use ($event) {
+                // `datascadenza` in legacy può contenere "0000-00-00 00:00:00" che Carbon normalizza a year <= 1
+                // (es. "-0001-11-30 00:00:00"), valore non inseribile in MySQL. Usiamo l'accessor `deadline` che
+                // torna `null` in quei casi e facciamo fallback su `dataevento`.
+                $safeDeadline = $event->deadline ?? $event->dataevento;
+
                 return Event::create([
                     'nome' => Str::upper($event->nome) . ' (copia)',
                     'incipit' => $event->incipit,
@@ -147,7 +252,7 @@ class EventController extends Controller
                     'elenco_visibile' => 0,
                     'sondaggio' => $event->sondaggio ?? '',
                     'url_galleria' => $event->url_galleria ?? '',
-                    'datascadenza' => $event->datascadenza,
+                    'datascadenza' => $safeDeadline,
                     'allow_guests' => (bool) $event->allow_guests,
                     'max_guests_per_user' => (int) ($event->max_guests_per_user ?? 0),
                     'immagine' => null,
@@ -171,6 +276,13 @@ class EventController extends Controller
 
     public function update(Request $request, Event $event)
     {
+        // Supporto UI con campi separati data/ora: compone `date` (datetime) che finirà in `dataevento`.
+        if (!$request->filled('date') && $request->filled('date_only') && $request->filled('time_only')) {
+            $request->merge([
+                'date' => trim((string) $request->input('date_only')) . ' ' . trim((string) $request->input('time_only')),
+            ]);
+        }
+
         // Se l'utente ha selezionato un file in UI ma PHP non lo ha ricevuto, spesso è un limite di upload.
         if ($request->input('cover_image_selected') == '1' && !$request->hasFile('cover_image')) {
             return back()->with('error', 'La nuova copertina non è stata ricevuta dal server. Probabile file troppo grande o limite PHP (upload_max_filesize / post_max_size). Prova con un file più piccolo.');

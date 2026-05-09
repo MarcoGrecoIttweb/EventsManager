@@ -68,14 +68,72 @@
                 </div>
 
                 <div class="mb-3">
-                    <button type="button"
-                            class="btn btn-success w-100 chat-howto-toggle"
-                            data-bs-toggle="collapse"
-                            data-bs-target="#chatHowtoCollapse"
-                            aria-expanded="false"
-                            aria-controls="chatHowtoCollapse">
-                        <i class="fas fa-circle-info me-1"></i> Come funziona
-                    </button>
+                    <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                        <button type="button"
+                                class="btn btn-sm btn-success chat-howto-toggle"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#chatHouseRulesCollapse"
+                                aria-expanded="false"
+                                aria-controls="chatHouseRulesCollapse">
+                            <i class="fas fa-hand-sparkles me-1" aria-hidden="true"></i> Le regole della casa
+                        </button>
+                        <button type="button"
+                                class="btn btn-sm btn-outline-success chat-howto-toggle"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#chatHowtoCollapse"
+                                aria-expanded="false"
+                                aria-controls="chatHowtoCollapse">
+                            <i class="fas fa-circle-info me-1" aria-hidden="true"></i> Salottino: come funziona
+                        </button>
+                    </div>
+
+                    <div class="collapse mt-2" id="chatHouseRulesCollapse">
+                        <div class="alert alert-light mb-2 small chat-howto-box" role="note">
+                            <div class="d-flex justify-content-end mb-2">
+                                <button type="button"
+                                        class="btn btn-sm chat-howto-close-btn"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#chatHouseRulesCollapse"
+                                        aria-expanded="true"
+                                        aria-controls="chatHouseRulesCollapse">
+                                    <i class="fas fa-times" aria-hidden="true"></i> Chiudi
+                                </button>
+                            </div>
+                            <p class="mb-2">
+                                <strong>✨ Le “regole della casa” (Buon senso e rispetto)</strong><br>
+                                Vogliamo che questo spazio sia piacevole e accogliente per tutti.
+                                Per far sì che funzioni, ti chiediamo di seguire queste piccole ma importanti regole di convivenza:
+                            </p>
+                            <ul class="mb-2 ps-3">
+                                <li class="mb-1">
+                                    <strong>Rispetto e buone maniere</strong>: sii sempre gentile. Non sono ammessi insulti, parolacce o toni aggressivi.
+                                </li>
+                                <li class="mb-1">
+                                    <strong>Argomenti delicati</strong>: per mantenere un clima sereno, ti chiediamo di evitare discussioni su politica e sesso, che spesso portano a inutili tensioni.
+                                </li>
+                                <li class="mb-1">
+                                    <strong>No discriminazione</strong>: non tolleriamo alcun tipo di commento razzista, sessista o discriminatorio. Siamo qui per stare insieme, non per dividere!
+                                </li>
+                                <li class="mb-1">
+                                    <strong>Niente spam</strong>: evita di inondare il Salottino con pubblicità, link esterni non richiesti o messaggi ripetitivi.
+                                </li>
+                                <li class="mb-1">
+                                    <strong>Indirizzare un messaggio (solo amministratore)</strong>: l’admin può cercare un utente abilitato e scegliere se inviare anche l’email di notifica o solo il messaggio in chat.
+                                </li>
+                                <li class="mb-1">
+                                    <strong>La tua firma</strong>: ricorda che sei l’unico responsabile di ciò che scrivi.
+                                </li>
+                                <li class="mb-0">
+                                    <strong>Conseguenze</strong>:
+                                    <span class="text-danger fw-semibold">
+                                        In caso di lamentele fondate o comportamenti che violano queste regole, saremo costretti a ricorrere al ban dell’account. Ci teniamo troppo alla serenità del gruppo!
+                                    </span>
+                                </li>
+                            </ul>
+                            <p class="mb-0 fw-semibold">Buon divertimento!</p>
+                        </div>
+                    </div>
+
                     <div class="collapse mt-2" id="chatHowtoCollapse">
                         <div class="alert alert-light mb-0 small chat-howto-box" role="note">
                             <div class="d-flex justify-content-end mb-2">
@@ -85,41 +143,32 @@
                                         data-bs-target="#chatHowtoCollapse"
                                         aria-expanded="true"
                                         aria-controls="chatHowtoCollapse">
-                                    <i class="fas fa-times"></i> Chiudi
+                                    <i class="fas fa-times" aria-hidden="true"></i> Chiudi
                                 </button>
                             </div>
-                            <p class="mb-2">
-                                <strong>✨ Le "regole della casa" (Buon senso e Rispetto)</strong><br>
-                                Vogliamo che questo spazio sia piacevole e accogliente per tutti.
-                                Per far sì che funzioni, ti chiediamo di seguire queste piccole ma importanti regole di convivenza:
-                            </p>
-                            <ul class="mb-2 ps-3">
-                                <li class="mb-1">
-                                    <strong>Rispetto e Buone maniere</strong>: Sii sempre gentile. Non sono ammessi insulti, parolacce o toni aggressivi.
-                                </li>
-                                <li class="mb-1">
-                                    <strong>Argomenti delicati</strong>: Per mantenere un clima sereno, ti chiediamo di evitare discussioni su politica e sesso, che spesso portano a inutili tensioni.
-                                </li>
-                                <li class="mb-1">
-                                    <strong>No Discriminazione</strong>: Non tolleriamo alcun tipo di commento razzista, sessista o discriminatorio. Siamo qui per stare insieme, non per dividere!
-                                </li>
-                                <li class="mb-1">
-                                    <strong>Niente Spam</strong>: Evita di inondare il Salottino con pubblicità, link esterni non richiesti o messaggi ripetitivi.
-                                </li>
-                                <li class="mb-1">
-                                    <strong>Indirizzare un messaggio (solo amministratore)</strong>: l’admin può cercare un utente abilitato e scegliere se inviare anche l’email di notifica o solo il messaggio in chat.
-                                </li>
-                                <li class="mb-1">
-                                    <strong>La tua firma</strong>: Ricorda che sei l'unico responsabile di ciò che scrivi.
-                                </li>
-                                <li class="mb-0">
-                                    <strong>Conseguenze</strong>:
-                                    <span class="text-danger fw-semibold">
-                                        In caso di lamentele fondate o comportamenti che violano queste regole, saremo costretti a ricorrere al ban dell'account. Ci teniamo troppo alla serenità del gruppo!
-                                    </span>
-                                </li>
-                            </ul>
-                            <p class="mb-0 fw-semibold">Buon divertimento!</p>
+                            <h2 class="h6 fw-semibold mb-3">Salottino chat di Excursio — come funziona</h2>
+
+                            <p class="mb-2"><strong>Cos’è:</strong> è una chat “pubblica” tipo bacheca (un unico salotto comune), dove i messaggi vengono salvati nel database e mostrati a tutti gli utenti abilitati.</p>
+
+                            <p class="mb-2"><strong>Chi può entrare:</strong> solo utenti loggati e approvati (<code class="small">/chat</code>).</p>
+
+                            <p class="mb-2"><strong>Cosa viene salvato:</strong> ogni messaggio finisce nella tabella <code class="small">chat_messages</code> con: <code class="small">user_id</code> (chi scrive), contenuto (testo/HTML), data/ora.</p>
+
+                            <p class="mb-2"><strong>Cosa si vede in pagina:</strong> vengono caricati gli ultimi 100 messaggi, ordinati dal più vecchio al più nuovo, con nickname e data/ora.</p>
+
+                            <p class="mb-2"><strong>Invio messaggi:</strong> per gli utenti, testo semplice (max ~1000 caratteri).</p>
+
+                            <p class="mb-2"><strong>Regola importante (moderazione):</strong> se un messaggio contiene email o numeri di telefono, il contenuto viene <strong>bloccato</strong>: è vietato inviare email e numeri di telefono, per rispetto della privacy.</p>
+
+                            <p class="mb-2"><strong>Risposte:</strong> puoi cliccare “Rispondi” su un messaggio: il sistema aggiunge in testa al testo <span class="text-nowrap">@ Risponde a NICK (data/ora)</span> e in pagina evidenzia visivamente risposta e messaggio “target”.</p>
+
+                            <p class="mb-2"><strong>Notifiche:</strong> quando rispondi a qualcuno, può partire un’email di notifica al destinatario (se risolvibile e se l’opzione è attiva).</p>
+
+                            <p class="mb-2"><strong>Menzioni (@nickname):</strong> se qualcuno scrive <span class="text-nowrap">@tuonick</span>, in alto compare un avviso; puoi chiuderlo (viene ricordato nel browser).</p>
+
+                            <p class="mb-3"><strong>Gestione messaggi:</strong> chi scrive (o l’admin) può modificare o eliminare i propri messaggi.</p>
+
+                            <p class="mb-0"><span class="fst-italic">Buone conversazioni</span><br><span class="text-muted">Lorise</span></p>
                         </div>
                     </div>
                 </div>
@@ -183,7 +232,7 @@
                     @endif
                 @endauth
 
-                <div class="mb-3 chat-messages-box" style="max-height: 400px; overflow-y: auto;">
+                <div class="mb-3 chat-messages-box">
                     @forelse($messages as $message)
                         <div class="mb-3 p-2 rounded chat-message-item" id="msg-{{ (int) $message->id }}"
                              @php
@@ -494,11 +543,14 @@
         }
 
         .chat-messages-box {
-            border: 2px solid rgba(25, 135, 84, 0.75);
+            border: 3px solid #5c2d04;
             border-radius: 0.5rem;
             padding: 0.75rem;
             background: #fff;
             box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85);
+            /* Quasi tutta l’altezza utile della finestra, con tetto su monitor molto alti */
+            max-height: min(1600px, calc(100vh - 100px));
+            overflow-y: auto;
         }
 
         .chat-howto-toggle {

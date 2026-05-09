@@ -21,37 +21,76 @@
                     </div>
                 </div>
 
-                <!-- Statistiche -->
-                <div class="row mb-4 admin-events-stats">
-                    <div class="col-md-3">
-                        <div class="card bg-primary text-white">
+                <!-- Ricerca + Statistiche (stessa riga) -->
+                <div class="row mb-4 admin-events-stats g-2 align-items-stretch">
+                    <div class="col-12 col-md">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <form method="GET" action="{{ route('admin.events.index') }}" class="admin-events-search">
+                                    <div class="row g-2 align-items-end">
+                                        <div class="col-12 col-md-3">
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text">Cerca per</span>
+                                                <select id="adminEventsSearchField" name="field" class="form-select" aria-label="Cerca per">
+                                                    <option value="nome" {{ request('field', 'nome') === 'nome' ? 'selected' : '' }}>Evento</option>
+                                                    <option value="locale" {{ request('field') === 'locale' ? 'selected' : '' }}>Locale</option>
+                                                    <option value="indirizzo" {{ request('field') === 'indirizzo' ? 'selected' : '' }}>Indirizzo</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-12 col-md-5">
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text">Testo</span>
+                                                <input
+                                                    id="adminEventsSearchQuery"
+                                                    type="text"
+                                                    name="q"
+                                                    value="{{ request('q', '') }}"
+                                                    class="form-control"
+                                                    placeholder="Scrivi…"
+                                                    autocomplete="off"
+                                                    aria-label="Testo"
+                                                    list="adminEventsSearchSuggestions"
+                                                >
+                                            </div>
+                                            <datalist id="adminEventsSearchSuggestions"></datalist>
+                                        </div>
+                                        <div class="col-12 col-md-4">
+                                            <div class="d-flex gap-2">
+                                                <button type="submit" class="btn btn-sm btn-primary flex-grow-1" data-hint="Filtra la lista eventi">
+                                                    <i class="fas fa-search"></i> Cerca
+                                                </button>
+                                                <a href="{{ route('admin.events.index') }}" class="btn btn-sm btn-outline-secondary flex-grow-1" data-hint="Rimuovi filtri e mostra tutti gli eventi">
+                                                    <i class="fas fa-undo"></i> Reset
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-auto">
+                        <div class="card bg-primary text-white h-100">
                             <div class="card-body text-center">
                                 <h5 class="card-title">Totale Eventi</h5>
                                 <h3 class="card-text">{{ $events->total() }}</h3>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-3">
-                        <div class="card bg-success text-white">
+                    <div class="col-12 col-md-auto">
+                        <div class="card bg-success text-white h-100">
                             <div class="card-body text-center">
                                 <h5 class="card-title">Eventi Attivi</h5>
                                 <h3 class="card-text">{{ $events->where('is_active', true)->count() }}</h3>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-3">
-                        <div class="card bg-warning text-white">
+                    <div class="col-12 col-md-auto">
+                        <div class="card bg-warning text-white h-100">
                             <div class="card-body text-center">
                                 <h5 class="card-title">Eventi Passati</h5>
                                 <h3 class="card-text">{{ $events->where('date', '<', now())->count() }}</h3>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card bg-info text-white">
-                            <div class="card-body text-center">
-                                <h5 class="card-title">Con Ospiti</h5>
-                                <h3 class="card-text">{{ $events->where('allow_guests', true)->count() }}</h3>
                             </div>
                         </div>
                     </div>
@@ -175,7 +214,7 @@
 
                             <!-- Paginazione -->
                             <div class="d-flex justify-content-center mt-4">
-                                {{ $events->links() }}
+                                {{ $events->appends(request()->query())->links() }}
                             </div>
                         @else
                             <div class="text-center py-5">
@@ -195,17 +234,42 @@
 
     <style>
         .admin-events-stats .card-body {
-            padding: 0.42rem 0.5rem;
+            padding: 0.28rem 0.45rem;
+        }
+        .admin-events-stats .card.bg-primary,
+        .admin-events-stats .card.bg-success,
+        .admin-events-stats .card.bg-warning {
+            width: fit-content;
+            min-width: 10rem; /* abbastanza per titolo+numero senza sprechi */
         }
         .admin-events-stats .card-title {
-            font-size: 0.9rem;
-            margin-bottom: 0.15rem;
+            font-size: 0.78rem;
+            margin-bottom: 0.05rem;
             line-height: 1.05;
+            white-space: nowrap;
         }
         .admin-events-stats .card-text {
-            font-size: 1.15rem;
+            font-size: 1.02rem;
             line-height: 1;
             margin-bottom: 0;
+        }
+        .admin-events-search .row.g-2 {
+            --bs-gutter-x: 0.35rem;
+            --bs-gutter-y: 0.2rem;
+        }
+        .admin-events-search .input-group-text {
+            padding-top: 0.15rem;
+            padding-bottom: 0.15rem;
+        }
+        .admin-events-search .form-select,
+        .admin-events-search .form-control {
+            padding-top: 0.15rem;
+            padding-bottom: 0.15rem;
+        }
+        .admin-events-search .btn {
+            padding-top: 0.18rem;
+            padding-bottom: 0.18rem;
+            line-height: 1.1;
         }
         .admin-events-table th,
         .admin-events-table td {
@@ -240,7 +304,8 @@
         .admin-events-sort[data-dir="desc"] .fa-sort-down { opacity: 1; }
         .admin-events-table td:first-child strong {
             display: inline-block;
-            max-width: 180px;
+            /* Allarga il titolo nella lista eventi admin (prima era troppo stretto) */
+            max-width: min(520px, 55vw);
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -290,6 +355,67 @@
 
                     rows.forEach(function (tr) { tbody.appendChild(tr); });
                 });
+            });
+        })();
+    </script>
+
+    @php
+        // Usa la root della request per evitare 404 quando l'app è servita da una sottocartella (es. /excursio/public)
+        $adminEventsSuggestionsEndpoint = rtrim(request()->root(), '/') . route('admin.events.suggestions', [], false);
+    @endphp
+    <script>
+        (function () {
+            var input = document.getElementById('adminEventsSearchQuery');
+            var select = document.getElementById('adminEventsSearchField');
+            var datalist = document.getElementById('adminEventsSearchSuggestions');
+            if (!input || !select || !datalist) return;
+
+            var endpoint = @json($adminEventsSuggestionsEndpoint);
+            var timer = null;
+            var lastKey = '';
+
+            function clearOptions() {
+                while (datalist.firstChild) datalist.removeChild(datalist.firstChild);
+            }
+
+            function setOptions(items) {
+                clearOptions();
+                (items || []).forEach(function (v) {
+                    var opt = document.createElement('option');
+                    opt.value = String(v || '');
+                    datalist.appendChild(opt);
+                });
+            }
+
+            function fetchSuggestions() {
+                var q = (input.value || '').trim();
+                var field = (select.value || 'nome').trim();
+                var key = field + '|' + q;
+                if (key === lastKey) return;
+                lastKey = key;
+
+                if (q.length < 2) {
+                    clearOptions();
+                    return;
+                }
+
+                var url = endpoint + '?field=' + encodeURIComponent(field) + '&q=' + encodeURIComponent(q);
+                fetch(url, { headers: { 'Accept': 'application/json' } })
+                    .then(function (r) { return r.ok ? r.json() : []; })
+                    .then(function (items) { setOptions(items); })
+                    .catch(function () { /* no-op */ });
+            }
+
+            function schedule() {
+                if (timer) window.clearTimeout(timer);
+                timer = window.setTimeout(fetchSuggestions, 220);
+            }
+
+            input.addEventListener('input', schedule);
+            select.addEventListener('change', function () {
+                lastKey = '';
+                clearOptions();
+                schedule();
             });
         })();
     </script>

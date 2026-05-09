@@ -21,6 +21,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use App\Support\MercatinoAnnuncioStorage;
 
 
 // Route pubbliche
@@ -257,30 +258,9 @@ Route::post('/mercatino/bozze/{folder}', function (Request $request, string $fol
     return redirect()->route('mercatino.index')->with('success', 'Bozza aggiornata con successo.');
 })->name('mercatino.bozza.update')->middleware(['auth', 'approved', 'feature:mercatino']);
 
-// Mercatino: vetrina annunci pubblicati
+// Mercatino: vetrina annunci pubblicati (cartelle sotto public/upload_immagini/mercatino_annunci; legacy anche storage/app/public)
 Route::get('/mercatino/vetrina', function () {
-    $annunci = collect();
-    $base = 'mercatino_annunci';
-    if (Storage::disk('public')->exists($base)) {
-        foreach (Storage::disk('public')->directories($base) as $subdir) {
-            $jsonPath = $subdir . '/dati.json';
-            if (! Storage::disk('public')->exists($jsonPath)) {
-                continue;
-            }
-            $decoded = json_decode(Storage::disk('public')->get($jsonPath), true);
-            if (! is_array($decoded)) {
-                continue;
-            }
-            $annunci->push([
-                'cartella' => basename($subdir),
-                'dati' => $decoded,
-            ]);
-        }
-    }
-
-    $annunci = $annunci->sortByDesc(function ($row) {
-        return $row['dati']['inviato_il'] ?? '';
-    })->values();
+    $annunci = MercatinoAnnuncioStorage::listPublished();
 
     return view('mercatino.vetrina', compact('annunci'));
 })->name('mercatino.vetrina')->middleware(['auth', 'approved', 'feature:mercatino']);
@@ -293,13 +273,12 @@ Route::post('/mercatino/contatta', function (Request $request) {
     ]);
 
     $folder = $validated['folder'];
-    $jsonPath = 'mercatino_annunci/' . $folder . '/dati.json';
-    if (!Storage::disk('public')->exists($jsonPath)) {
+    if (! MercatinoAnnuncioStorage::annuncioExists($folder)) {
         return back()->with('error', 'Annuncio non trovato o non più disponibile.');
     }
 
-    $decoded = json_decode(Storage::disk('public')->get($jsonPath), true);
-    if (!is_array($decoded)) {
+    $decoded = MercatinoAnnuncioStorage::readJsonDecoded($folder);
+    if (! is_array($decoded)) {
         return back()->with('error', 'Annuncio non valido.');
     }
 
@@ -395,13 +374,12 @@ Route::post('/mercatino/modifica', function (Request $request) {
     ]);
 
     $folder = $validated['folder'];
-    $jsonPath = 'mercatino_annunci/' . $folder . '/dati.json';
-    if (!Storage::disk('public')->exists($jsonPath)) {
+    if (! MercatinoAnnuncioStorage::annuncioExists($folder)) {
         return back()->with('error', 'Annuncio non trovato o non più disponibile.');
     }
 
-    $decoded = json_decode(Storage::disk('public')->get($jsonPath), true);
-    if (!is_array($decoded)) {
+    $decoded = MercatinoAnnuncioStorage::readJsonDecoded($folder);
+    if (! is_array($decoded)) {
         return back()->with('error', 'Annuncio non valido.');
     }
 
@@ -427,8 +405,9 @@ Route::post('/mercatino/modifica', function (Request $request) {
     $decoded['contatto'] = $validated['contatto'];
     $decoded['modificato_il'] = now()->toIso8601String();
 
-    // Gestione foto (public disk): rimozione / sostituzione
-    $baseDir = 'mercatino_annunci/' . $folder;
+    // Foto: servite da public/upload_immagini/mercatino_annunci/…; rimuove anche eventuali file legacy in storage/public
+    $baseDir = MercatinoAnnuncioStorage::folderBase($folder);
+    $jsonPath = MercatinoAnnuncioStorage::jsonPath($folder);
     $exts = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
     for ($i = 1; $i <= 3; $i++) {
         $removeKey = 'remove_foto_' . $i;
@@ -436,44 +415,30 @@ Route::post('/mercatino/modifica', function (Request $request) {
 
         $remove = (bool) ($validated[$removeKey] ?? false);
         if ($remove) {
-            foreach ($exts as $ext) {
-                $rel = $baseDir . '/foto_' . $i . '.' . $ext;
-                if (Storage::disk('public')->exists($rel)) {
-                    Storage::disk('public')->delete($rel);
-                }
-            }
+            MercatinoAnnuncioStorage::deletePhotoIfExists($folder, $i);
         }
 
         if ($request->hasFile($fileKey)) {
             $file = $request->file($fileKey);
             if ($file && $file->isValid()) {
-                // Elimina eventuali versioni precedenti (qualsiasi estensione)
-                foreach ($exts as $ext) {
-                    $rel = $baseDir . '/foto_' . $i . '.' . $ext;
-                    if (Storage::disk('public')->exists($rel)) {
-                        Storage::disk('public')->delete($rel);
-                    }
-                }
+                MercatinoAnnuncioStorage::deletePhotoIfExists($folder, $i);
                 $ext = strtolower($file->getClientOriginalExtension() ?: $file->extension() ?: 'jpg');
                 $ext = preg_replace('/[^a-z0-9]/', '', $ext) ?: 'jpg';
-                Storage::disk('public')->putFileAs($baseDir, $file, 'foto_' . $i . '.' . $ext);
+                Storage::disk('upload_immagini')->putFileAs($baseDir, $file, 'foto_' . $i . '.' . $ext);
             }
         }
     }
 
-    // Ricalcola foto caricate
+    // Ricalcola foto caricate (entrambe le posizioni, per coerenza con la vetrina)
     $fotoCaricate = 0;
     for ($i = 1; $i <= 3; $i++) {
-        foreach ($exts as $ext) {
-            if (Storage::disk('public')->exists($baseDir . '/foto_' . $i . '.' . $ext)) {
-                $fotoCaricate++;
-                break;
-            }
+        if (MercatinoAnnuncioStorage::photoPublicUrl($folder, $i) !== null) {
+            $fotoCaricate++;
         }
     }
     $decoded['foto_caricate'] = $fotoCaricate;
 
-    Storage::disk('public')->put(
+    Storage::disk('upload_immagini')->put(
         $jsonPath,
         json_encode($decoded, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT)
     );
@@ -524,7 +489,7 @@ Route::post('/mercatino', function (Request $request) {
 
     $batchKey = now()->format('Ymd_His') . '_' . Str::lower(Str::random(8));
     $batchDir = 'mercatino_bozze/' . auth()->id() . '/' . $batchKey;
-    $publicDir = 'mercatino_annunci/' . $batchKey;
+    $publishDir = MercatinoAnnuncioStorage::folderBase($batchKey);
     $fotoCaricate = 0;
     foreach (['foto_1', 'foto_2', 'foto_3'] as $i => $field) {
         if (!$request->hasFile($field)) {
@@ -536,9 +501,14 @@ Route::post('/mercatino', function (Request $request) {
         }
         $ext = strtolower($file->getClientOriginalExtension() ?: $file->extension() ?: 'jpg');
         $ext = preg_replace('/[^a-z0-9]/', '', $ext) ?: 'jpg';
-        $file->storeAs($batchDir, 'foto_' . ($i + 1) . '.' . $ext, 'local');
-        // Copia anche su disco pubblico (vetrina annunci)
-        $file->storeAs($publicDir, 'foto_' . ($i + 1) . '.' . $ext, 'public');
+        $fotoName = 'foto_' . ($i + 1) . '.' . $ext;
+        $file->storeAs($batchDir, $fotoName, 'local');
+        // Vetrina: copia in public/upload_immagini/… (stesso contenuto della bozza; un solo store dal file upload)
+        $bozzaRel = $batchDir . '/' . $fotoName;
+        Storage::disk('upload_immagini')->put(
+            $publishDir . '/' . $fotoName,
+            Storage::disk('local')->get($bozzaRel)
+        );
         $fotoCaricate++;
     }
 
@@ -559,8 +529,8 @@ Route::post('/mercatino', function (Request $request) {
         $batchDir . '/dati.json',
         json_encode($datiAnnuncio, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT)
     );
-    Storage::disk('public')->put(
-        $publicDir . '/dati.json',
+    Storage::disk('upload_immagini')->put(
+        $publishDir . '/dati.json',
         json_encode($datiAnnuncio, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT)
     );
 
@@ -733,6 +703,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/common-event/users-search', [\App\Http\Controllers\Admin\CommonEventController::class, 'usersSearch'])
         ->name('common-event.users-search');
 
+    // Autocomplete: va dichiarata PRIMA della resource, altrimenti viene intercettata da /admin/events/{event}
+    Route::get('/events/suggestions', [\App\Http\Controllers\Admin\EventController::class, 'suggestions'])->name('events.suggestions');
     Route::resource('events', \App\Http\Controllers\Admin\EventController::class);
     Route::post('/events/{event}/duplicate', [\App\Http\Controllers\Admin\EventController::class, 'duplicate'])->name('events.duplicate');
     Route::post('/events/{event}/toggle-status', [\App\Http\Controllers\Admin\EventController::class, 'toggleStatus'])->name('events.toggle-status');

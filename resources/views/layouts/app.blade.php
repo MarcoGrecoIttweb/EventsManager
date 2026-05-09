@@ -402,6 +402,16 @@
                             </a>
                         </li>
                     @endif
+                    @if($showMercatinoLink)
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ route('mercatino.index') }}">
+                                <i class="fas fa-store"></i> Mercatino
+                                @if(!($featureMercatinoEnabled ?? true))
+                                    <span class="ms-1 badge bg-secondary">OFF</span>
+                                @endif
+                            </a>
+                        </li>
+                    @endif
                 @else
                     {{-- Utente non admin: ordine classico community --}}
                     <li class="nav-item">

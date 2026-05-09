@@ -295,14 +295,10 @@
                         $fotoUrls = [];
                         $fotoSlots = [1 => null, 2 => null, 3 => null];
                         for ($i = 1; $i <= 3; $i++) {
-                            foreach (['jpg','jpeg','png','webp','gif'] as $ext) {
-                                $rel = 'mercatino_annunci/' . $folder . '/foto_' . $i . '.' . $ext;
-                                if (\Illuminate\Support\Facades\Storage::disk('public')->exists($rel)) {
-                                    $url = asset('storage/' . $rel);
-                                    $fotoUrls[] = $url;
-                                    $fotoSlots[$i] = $url;
-                                    break;
-                                }
+                            $url = \App\Support\MercatinoAnnuncioStorage::photoPublicUrl($folder, $i);
+                            if ($url !== null) {
+                                $fotoUrls[] = $url;
+                                $fotoSlots[$i] = $url;
                             }
                         }
                         $thumbUrl = $fotoSlots[1] ?? ($fotoUrls[0] ?? null);

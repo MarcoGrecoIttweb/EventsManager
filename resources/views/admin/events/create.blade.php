@@ -3,10 +3,26 @@
 @section('title', 'Crea Nuovo Evento - Admin')
 
 @section('content')
+    <!-- build-marker: admin-events-create datetime-split v1 -->
     <style>
+        :root {
+            /* Altezza unica per TUTTI i campi in create (incluso file input) */
+            --event-create-field-h: calc(1.5em + 0.5rem + 2px);
+        }
         .event-create-col-date {
             flex: 0 0 auto;
             max-width: 16.5rem;
+        }
+        /* Data + ora (usati nella riga con titolo) */
+        .event-create-date {
+            flex: 0 0 auto;
+            width: 16.5rem;
+            max-width: 100%;
+        }
+        .event-create-time {
+            flex: 0 0 auto;
+            width: 10rem;
+            max-width: 100%;
         }
         .event-create-small-number {
             max-width: 4.75rem;
@@ -30,9 +46,22 @@
             width: 11rem;
             max-width: 100%;
         }
-        .event-create-media-cover .form-control {
-            padding: 0.25rem 0.5rem;
+        .event-create-media-row {
+            /* allinea l'altezza dei box sopra gli switch */
+            align-items: stretch;
+        }
+        .event-create-media-row > div {
+            display: flex;
+            flex-direction: column;
+        }
+        .event-create-media-row .form-control,
+        .event-create-media-row .form-select {
             font-size: 0.875rem;
+            padding: 0.25rem 0.5rem;
+            height: var(--event-create-field-h);
+        }
+        .event-create-media-row input[type="file"].form-control {
+            line-height: 1.2;
         }
         .event-create-media-google {
             flex: 1 1 9rem;
@@ -52,6 +81,30 @@
             flex: 0 1 auto;
             min-width: 0;
         }
+        /* Switch "Evento attivo" + "Permetti ospiti" sempre in una riga */
+        #event_create_switches_cell {
+            flex-wrap: nowrap !important;
+            white-space: nowrap;
+        }
+        .event-create-media-max {
+            flex: 0 0 auto;
+            width: 6.25rem;
+            max-width: 100%;
+        }
+
+        /* Uniforma l'altezza di tutti i campi del form (non solo la media-row) */
+        form[action="{{ route('admin.events.store') }}"] .form-control,
+        form[action="{{ route('admin.events.store') }}"] .form-select {
+            height: var(--event-create-field-h);
+        }
+        form[action="{{ route('admin.events.store') }}"] textarea.form-control {
+            height: auto;
+        }
+        form[action="{{ route('admin.events.store') }}"] input[type="file"].form-control {
+            height: var(--event-create-field-h);
+            padding-top: 0.25rem;
+            padding-bottom: 0.25rem;
+        }
     </style>
     <div class="container-fluid">
         <div class="row justify-content-center">
@@ -66,27 +119,50 @@
                         <form action="{{ route('admin.events.store') }}" method="POST" enctype="multipart/form-data">
                             @csrf
 
-                            <div class="mb-3">
-                                <label for="title" class="form-label text-primary-emphasis">Titolo Evento *</label>
-                                <input type="text" class="form-control border border-2 border-primary @error('title') is-invalid @enderror"
-                                       id="title" name="title" value="{{ old('title') }}" required>
-                                @error('title')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
+                            {{-- Riga: Titolo + Data evento + Ora inizio --}}
                             <div class="row g-2 align-items-end">
-                                <div class="col-12 col-md-auto col-lg-2 event-create-col-date">
+                                <div class="col-12 col-lg">
                                     <div class="mb-3">
-                                        <label for="date" class="form-label text-primary-emphasis">Data Evento *</label>
-                                        <input type="datetime-local" class="form-control border border-2 border-primary @error('date') is-invalid @enderror"
-                                               id="date" name="date" value="{{ old('date') }}" required>
+                                        <label for="title" class="form-label text-primary-emphasis">Titolo Evento *</label>
+                                        <input type="text" class="form-control border border-2 border-primary @error('title') is-invalid @enderror"
+                                               id="title" name="title" value="{{ old('title') }}" required>
+                                        @error('title')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+
+                                <div class="col-6 col-lg-auto event-create-date">
+                                    <div class="mb-3">
+                                        <label for="date_only" class="form-label text-primary-emphasis">Data Evento *</label>
+                                        <input type="date"
+                                               class="form-control border border-2 border-primary @error('date') is-invalid @enderror"
+                                               id="date_only"
+                                               value="{{ old('date') ? \Carbon\Carbon::parse(old('date'))->format('Y-m-d') : '' }}"
+                                               required>
                                         @error('date')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
                                 </div>
-                                <div class="col-12 col-md-6 col-lg-5">
+
+                                <div class="col-6 col-lg-auto event-create-time">
+                                    <div class="mb-3">
+                                        <label for="time_only" class="form-label text-primary-emphasis">Ora inizio *</label>
+                                        <input type="time"
+                                               class="form-control border border-2 border-primary @error('date') is-invalid @enderror"
+                                               id="time_only"
+                                               value="{{ old('date') ? \Carbon\Carbon::parse(old('date'))->format('H:i') : '' }}"
+                                               required>
+                                    </div>
+                                </div>
+
+                                <input type="hidden" id="date" name="date" value="{{ old('date') }}" required>
+                            </div>
+
+                            {{-- Riga: Nome locale + Indirizzo + Civico + Città --}}
+                            <div class="row g-2 align-items-end">
+                                <div class="col-12 col-md-6 col-lg-4">
                                     <div class="mb-3">
                                         <label for="venue" class="form-label text-primary-emphasis">Nome locale</label>
                                         <input type="text" class="form-control border border-2 border-primary @error('venue') is-invalid @enderror"
@@ -106,7 +182,7 @@
                                         @enderror
                                     </div>
                                 </div>
-                                <div class="col-12 col-md-6 col-lg-1">
+                                <div class="col-6 col-md-3 col-lg-1">
                                     <div class="mb-3">
                                         <label for="civico" class="form-label text-primary-emphasis">Civico</label>
                                         <input type="text"
@@ -121,10 +197,7 @@
                                         @enderror
                                     </div>
                                 </div>
-                            </div>
-
-                            <div class="row g-2 align-items-end">
-                                <div class="col-12 col-sm-6 col-lg-6">
+                                <div class="col-6 col-md-3 col-lg-3">
                                     <div class="mb-3">
                                         <label for="city" class="form-label text-primary-emphasis">Città *</label>
                                         <input type="text" class="form-control border border-2 border-primary @error('city') is-invalid @enderror"
@@ -134,6 +207,9 @@
                                         @enderror
                                     </div>
                                 </div>
+                            </div>
+
+                            <div class="row g-2 align-items-end">
                                 <div class="col-6 col-sm-3 col-lg-1">
                                     <div class="mb-3">
                                         <label for="cost" class="form-label text-primary-emphasis">Costo (€)</label>
@@ -154,55 +230,60 @@
                                         @enderror
                                     </div>
                                 </div>
-                                <div class="col-6 col-sm-3 col-lg-1">
+                                <div class="col-12 col-lg-auto event-create-media-cover">
                                     <div class="mb-3">
-                                        <label for="max_participants" class="form-label text-primary-emphasis">Max partecipanti</label>
-                                        <input type="number" class="form-control border border-2 border-primary event-create-small-number @error('max_participants') is-invalid @enderror"
-                                               id="max_participants" name="max_participants"
-                                               value="{{ old('max_participants') }}" min="1" max="99">
-                                        @error('max_participants')
-                                        <div class="invalid-feedback">{{ $message }}</div>
+                                        <label for="cover_image" class="form-label text-primary-emphasis mb-1">Immag. copertina</label>
+                                        <input type="file" class="form-control form-control-sm border border-2 border-primary @error('cover_image') is-invalid @enderror"
+                                               id="cover_image" name="cover_image" accept="image/*">
+                                        @error('cover_image')
+                                        <div class="invalid-feedback d-block">{{ $message }}</div>
                                         @enderror
                                     </div>
                                 </div>
-                                <div id="max_guests_container" class="col-6 col-sm-3 col-lg-1 {{ old('allow_guests', true) ? '' : 'd-none' }}">
+                                <div class="col-12 col-lg event-create-media-google">
                                     <div class="mb-3">
-                                        <label for="max_guests_per_user" class="form-label text-primary-emphasis">Max ospiti</label>
-                                        <input type="number" class="form-control border border-2 border-primary event-create-small-number @error('max_guests_per_user') is-invalid @enderror"
+                                        <label for="google_album_url" class="form-label text-primary-emphasis mb-1" title="Opzionale, sopra i commenti nell'evento.">Link album Google Foto</label>
+                                        <input type="url"
+                                               inputmode="url"
+                                               autocomplete="off"
+                                               class="form-control form-control-sm border border-2 border-primary @error('google_album_url') is-invalid @enderror"
+                                               id="google_album_url"
+                                               name="google_album_url"
+                                               value="{{ old('google_album_url') }}"
+                                               placeholder="https://photos.app.goo.gl/..."
+                                               title="Opzionale, sopra i commenti nell'evento.">
+                                        @error('google_album_url')
+                                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+                                <div class="col-6 col-lg-auto event-create-media-max">
+                                    <div class="mb-3">
+                                        <label for="max_participants" class="form-label text-primary-emphasis mb-1">Max part.</label>
+                                        <input type="number" class="form-control form-control-sm border border-2 border-primary event-create-small-number @error('max_participants') is-invalid @enderror"
+                                               id="max_participants" name="max_participants"
+                                               value="{{ old('max_participants') }}" min="1" max="99">
+                                        @error('max_participants')
+                                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+                                <div id="max_guests_container" class="col-6 col-lg-auto event-create-media-max {{ old('allow_guests', true) ? '' : 'd-none' }}">
+                                    <div class="mb-3">
+                                        <label for="max_guests_per_user" class="form-label text-primary-emphasis mb-1">Max ospiti</label>
+                                        <input type="number" class="form-control form-control-sm border border-2 border-primary event-create-small-number @error('max_guests_per_user') is-invalid @enderror"
                                                id="max_guests_per_user" name="max_guests_per_user"
                                                value="{{ old('max_guests_per_user', 3) }}" min="1" max="99">
                                         @error('max_guests_per_user')
-                                        <div class="invalid-feedback">{{ $message }}</div>
+                                        <div class="invalid-feedback d-block">{{ $message }}</div>
                                         @enderror
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="event-create-media-row mb-3">
-                                <div class="event-create-media-cover">
-                                    <label for="cover_image" class="form-label text-primary-emphasis mb-1">Immagine di copertina</label>
-                                    <input type="file" class="form-control border border-2 border-primary @error('cover_image') is-invalid @enderror"
-                                           id="cover_image" name="cover_image" accept="image/*">
-                                    @error('cover_image')
-                                    <div class="invalid-feedback d-block">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                                <div class="event-create-media-google">
-                                    <label for="google_album_url" class="form-label text-primary-emphasis mb-1" title="Opzionale, sopra i commenti nell'evento.">Link album Google Foto</label>
-                                    <input type="url"
-                                           inputmode="url"
-                                           autocomplete="off"
-                                           class="form-control border border-2 border-primary @error('google_album_url') is-invalid @enderror"
-                                           id="google_album_url"
-                                           name="google_album_url"
-                                           value="{{ old('google_album_url') }}"
-                                           placeholder="https://photos.app.goo.gl/..."
-                                           title="Opzionale, sopra i commenti nell'evento.">
-                                    @error('google_album_url')
-                                    <div class="invalid-feedback d-block">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                                <div id="event_create_switches_cell" class="event-create-media-switches d-flex flex-wrap align-items-center gap-2 gap-lg-3 pb-1">
+                            {{-- Switch subito sotto la riga scadenza/album/max --}}
+                            <div class="mb-3">
+                                <div id="event_create_switches_cell" class="event-create-media-switches d-flex flex-wrap align-items-center gap-2 gap-lg-3">
                                     <div class="form-check form-switch mb-0">
                                         <input type="checkbox" class="form-check-input" id="is_active" name="is_active" value="1"
                                             {{ old('is_active', true) ? 'checked' : '' }}>
@@ -275,6 +356,30 @@
     @include('partials.ckeditor4-description', ['height' => 400])
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Data+ora: combina `date_only` + `time_only` nel campo hidden `date`
+            (function setupDateTimeCombine() {
+                var d = document.getElementById('date_only');
+                var t = document.getElementById('time_only');
+                var hidden = document.getElementById('date');
+                if (!d || !t || !hidden) return;
+
+                function sync() {
+                    var dv = (d.value || '').trim();
+                    var tv = (t.value || '').trim();
+                    if (!dv || !tv) {
+                        hidden.value = '';
+                        return;
+                    }
+                    hidden.value = dv + 'T' + tv;
+                }
+
+                d.addEventListener('change', sync);
+                d.addEventListener('input', sync);
+                t.addEventListener('change', sync);
+                t.addEventListener('input', sync);
+                sync();
+            })();
+
             // Titolo evento: forza MAIUSCOLO in tempo reale
             const titleInput = document.getElementById('title');
             if (titleInput) {
