@@ -236,7 +236,7 @@
                 $isAdmin = auth()->check() && auth()->user()->isAdmin();
                 // Mostra sempre il link chat agli utenti loggati: se la feature è OFF, verrà mostrata la pagina "in arrivo".
                 $showChatLink = auth()->check() ? true : (($featureChatSalottinoEnabled ?? true) || $isAdmin);
-                // Mostra sempre il link mercatino agli utenti loggati: se la feature è OFF, verrà mostrata la pagina "in arrivo".
+                // Link Mercatino (vetrina) anche per i visitatori: se la feature è OFF, badge / redirect "in arrivo".
                 $showMercatinoLink = auth()->check() ? true : (($featureMercatinoEnabled ?? true) || $isAdmin);
                 // Stessa logica degli album foto: in passato il link c'era solo per @guest e nel menu Admin — così spariva dopo il login.
                 $showAlbumsFotoLink = auth()->check() ? true : (($featureAlbumsFotoEnabled ?? true) || $isAdmin);
@@ -279,7 +279,7 @@
                     @endif
                     @if($showMercatinoLink)
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ route('mercatino.index') }}">
+                            <a class="nav-link" href="{{ route('mercatino.vetrina') }}">
                                 <i class="fas fa-store"></i> Mercatino
                                 @if(!($featureMercatinoEnabled ?? true))
                                     @if($isAdmin)
@@ -404,7 +404,7 @@
                     @endif
                     @if($showMercatinoLink)
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ route('mercatino.index') }}">
+                            <a class="nav-link" href="{{ route('mercatino.vetrina') }}">
                                 <i class="fas fa-store"></i> Mercatino
                                 @if(!($featureMercatinoEnabled ?? true))
                                     <span class="ms-1 badge bg-secondary">OFF</span>
@@ -461,7 +461,7 @@
                     @endif
                     @if($showMercatinoLink)
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ route('mercatino.index') }}">
+                            <a class="nav-link" href="{{ route('mercatino.vetrina') }}">
                                 <i class="fas fa-store"></i> Mercatino
                                 @if(!($featureMercatinoEnabled ?? true))
                                     <span class="ms-1 badge bg-warning text-dark">IN ARRIVO</span>
@@ -585,6 +585,17 @@
                             @endforeach
                         </ul>
                     @endif
+                </div>
+            </div>
+
+            <div class="card card-sidebar mb-3">
+                <div class="card-body p-2 text-center">
+                    <a href="https://www.excursio.org"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       class="small fw-semibold text-decoration-none">
+                        Vai a Storico Excursio
+                    </a>
                 </div>
             </div>
 

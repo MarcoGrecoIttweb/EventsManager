@@ -28,7 +28,30 @@
         <ul>
             <li><strong>Titolo:</strong> {{ $annuncio['titolo'] ?? '—' }}</li>
             <li><strong>Categoria:</strong> {{ $annuncio['categoria'] ?? '—' }}</li>
-            <li><strong>Prezzo:</strong> {{ $annuncio['tipo_prezzo'] ?? '—' }}@if(($annuncio['tipo_prezzo'] ?? '') === 'fisso' && isset($annuncio['prezzo'])) — {{ number_format((float) $annuncio['prezzo'], 2, ',', '.') }} €@endif</li>
+            <li><strong>Prezzo:</strong>
+                @php
+                    $mailTp = (string) ($annuncio['tipo_prezzo'] ?? '');
+                    $mailHas = isset($annuncio['prezzo']) && $annuncio['prezzo'] !== '' && $annuncio['prezzo'] !== null;
+                    $mailTr = !empty($annuncio['prezzo_trattabile']) || $mailTp === 'trattabile';
+                @endphp
+                @if($mailTp === 'trattabile' && ! $mailHas)
+                    Trattabile
+                @elseif($mailTp === 'fisso' || ($mailTp === 'trattabile' && $mailHas))
+                    Prezzo fisso
+                    @if($mailHas)
+                        — {{ number_format((float) $annuncio['prezzo'], 2, ',', '.') }} €
+                    @endif
+                    @if($mailTr)
+                        (trattabile)
+                    @endif
+                @elseif($mailTp === 'gratis')
+                    Gratis / omaggio
+                @elseif($mailTp === 'scambio')
+                    Solo scambio
+                @else
+                    {{ $mailTp !== '' ? $mailTp : '—' }}
+                @endif
+            </li>
             <li><strong>Condizione:</strong> {{ $annuncio['condizione'] ?? '—' }}</li>
             <li><strong>Zona ritiro:</strong> {{ $annuncio['zona_ritiro'] ?? '—' }}</li>
             <li><strong>Contatto preferito:</strong> {{ $annuncio['contatto'] ?? '—' }}</li>

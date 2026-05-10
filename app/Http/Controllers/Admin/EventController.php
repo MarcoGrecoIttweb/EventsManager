@@ -55,7 +55,80 @@ class EventController extends Controller
             ->orderBy('dataevento', 'desc')
             ->paginate(20);
 
-        return view('admin.events.index', compact('events'));
+        $suspendedUpcomingCount = Event::query()
+            ->where('pubblicato', 0)
+            ->whereNotNull('dataevento')
+            ->where('dataevento', '>=', now()->startOfDay())
+            ->count();
+
+        $activePublishedCount = Event::query()->where('pubblicato', 1)->count();
+
+        return view('admin.events.index', compact('events', 'suspendedUpcomingCount', 'activePublishedCount'));
+    }
+
+    /**
+     * JSON: eventi non pubblicati con data evento da oggi in avanti (modale «Eventi sospesi»).
+     */
+    public function suspendedUpcomingFutureJson()
+    {
+        $events = Event::query()
+            ->where('pubblicato', 0)
+            ->whereNotNull('dataevento')
+            ->where('dataevento', '>=', now()->startOfDay())
+            ->orderBy('dataevento')
+            ->limit(500)
+            ->get(['IDevento', 'nome', 'dataevento', 'dove', 'citta']);
+
+        return response()->json([
+            'events' => $events->map(function (Event $e) {
+                $place = trim(implode(' · ', array_filter([
+                    (string) ($e->dove ?? ''),
+                    (string) ($e->citta ?? ''),
+                ])));
+
+                return [
+                    'id' => (int) $e->IDevento,
+                    'title' => (string) ($e->nome ?? ''),
+                    'date' => $e->dataevento ? $e->dataevento->format('d/m/Y H:i') : '',
+                    'place' => $place,
+                    'edit_url' => route('admin.events.edit', $e->IDevento),
+                    'show_url' => route('events.show', $e->IDevento),
+                ];
+            })->values(),
+        ]);
+    }
+
+    /**
+     * JSON: eventi pubblicati (attivi) da oggi in avanti, per modale «Eventi attivi».
+     * (Il conteggio sul pulsante resta il totale attivi, senza filtro data.)
+     */
+    public function activePublishedJson()
+    {
+        $events = Event::query()
+            ->where('pubblicato', 1)
+            ->whereNotNull('dataevento')
+            ->where('dataevento', '>=', now()->startOfDay())
+            ->orderBy('dataevento')
+            ->limit(500)
+            ->get(['IDevento', 'nome', 'dataevento', 'dove', 'citta']);
+
+        return response()->json([
+            'events' => $events->map(function (Event $e) {
+                $place = trim(implode(' · ', array_filter([
+                    (string) ($e->dove ?? ''),
+                    (string) ($e->citta ?? ''),
+                ])));
+
+                return [
+                    'id' => (int) $e->IDevento,
+                    'title' => (string) ($e->nome ?? ''),
+                    'date' => $e->dataevento ? $e->dataevento->format('d/m/Y H:i') : '',
+                    'place' => $place,
+                    'edit_url' => route('admin.events.edit', $e->IDevento),
+                    'show_url' => route('events.show', $e->IDevento),
+                ];
+            })->values(),
+        ]);
     }
 
     /**
@@ -73,7 +146,7 @@ class EventController extends Controller
             return response()->json([]);
         }
 
-        $like = $term . '%';
+        $like = '%' . $term . '%';
 
         if ($field === 'nome') {
             $items = Event::query()

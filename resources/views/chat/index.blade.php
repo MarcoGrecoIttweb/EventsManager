@@ -3,15 +3,6 @@
 @php
     use Illuminate\Support\Str;
     $chatBaseUrl = rtrim(request()->getBaseUrl(), '/');
-    $chatLogoRel = 'upload_immagini/chat_salottino.webp';
-    $chatLogoV = time();
-    $full = public_path($chatLogoRel);
-    if (file_exists($full)) {
-        $tmpMtime = filemtime($full);
-        if (is_int($tmpMtime) && $tmpMtime > 0) {
-            $chatLogoV = $tmpMtime;
-        }
-    }
 @endphp
 
 @section('title', 'Il salottino delle chat di Excursio - Excursio')
@@ -26,12 +17,6 @@
                           style="color:#0f5132; font-family: 'Curlz MT', 'Brush Script MT', cursive; font-style: italic; font-weight: 600; letter-spacing: 0.02em; text-shadow: 0 1px 3px rgba(15, 81, 50, 0.22);">
                         Il salottino delle chat di <span class="text-nowrap">Excursio</span>
                     </span>
-                    <img src="{{ asset($chatLogoRel) }}?v={{ $chatLogoV }}"
-                         class="flex-shrink-0"
-                         style="max-height: 6rem; width: auto; height: auto; object-fit: contain;"
-                         alt="Excursio — salotto chat"
-                         loading="lazy"
-                         decoding="async">
                 </h1>
 
                 <div class="mb-4 text-center">
@@ -48,20 +33,24 @@
                         @endphp
                         <img src="{{ asset($headerImage) . '?v=' . $cacheBuster }}"
                              alt="Salotto di Excursio"
-                             style="max-width: 260px; height:auto;"
+                             class="chat-header-salotto-display"
                         >
                     @endif
                     @auth
                         @if(auth()->user()->isAdmin())
-                            <form action="{{ route('chat.header-image') }}" method="POST" enctype="multipart/form-data" class="mt-2 d-inline-block">
+                            <form action="{{ route('chat.header-image') }}" method="POST" enctype="multipart/form-data" class="mt-2 d-inline-block text-center">
                                 @csrf
                                 <div class="input-group input-group-sm">
-                                    <input type="file" name="header_image" class="form-control form-control-sm" accept="image/*" required>
+                                    <input type="file" id="chatHeaderImageInput" name="header_image" class="form-control form-control-sm" accept="image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp,.gif" required>
                                     <button type="submit" class="btn btn-outline-secondary btn-sm">
                                         <i class="fas fa-upload"></i> Cambia immagine
                                     </button>
                                 </div>
                                 <small class="text-muted d-block mt-1">Solo amministratore: max 4MB.</small>
+                                <div id="chatHeaderPreviewWrap" class="mt-2 d-none">
+                                    <div class="small text-muted mb-1">Anteprima</div>
+                                    <img id="chatHeaderImagePreview" src="" alt="Anteprima nuova intestazione chat" class="chat-header-image-preview rounded border border-secondary">
+                                </div>
                             </form>
                         @endif
                     @endauth
@@ -614,6 +603,14 @@
         .chat-addressed-user-box .list-group-item:focus {
             background: rgba(25, 135, 84, 0.12);
         }
+
+        /* Intestazione salotto + anteprima dopo «Scegli file» */
+        .chat-header-salotto-display,
+        .chat-header-image-preview {
+            max-width: 140px;
+            width: 100%;
+            height: auto;
+        }
     </style>
 @endsection
 @section('scripts')
@@ -967,6 +964,27 @@
                 }
 
                 cleanupBox();
+            })();
+
+            (function setupChatHeaderImagePreview() {
+                var input = document.getElementById('chatHeaderImageInput');
+                var wrap = document.getElementById('chatHeaderPreviewWrap');
+                var prev = document.getElementById('chatHeaderImagePreview');
+                if (!input || !wrap || !prev) return;
+                input.addEventListener('change', function () {
+                    var f = this.files && this.files[0];
+                    if (!f || !/^image\//i.test(f.type)) {
+                        wrap.classList.add('d-none');
+                        prev.removeAttribute('src');
+                        return;
+                    }
+                    var reader = new FileReader();
+                    reader.onload = function (e) {
+                        prev.src = e.target.result;
+                        wrap.classList.remove('d-none');
+                    };
+                    reader.readAsDataURL(f);
+                });
             })();
         });
     </script>

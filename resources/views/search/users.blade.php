@@ -89,7 +89,7 @@
                                     <i class="fas fa-user fa-2x text-white"></i>
                                 </div>
                             @endif
-                            <h6 class="mb-1">{{ $user->nome }} {{ $user->cognome }}</h6>
+                            <h6 class="mb-1">{{ $user->nome }}</h6>
                             <small class="text-muted">{{ $user->username }}</small>
                             <div class="mt-2 d-flex gap-1 justify-content-center flex-wrap">
                                 <a href="{{ route('profile.show', $user) }}" class="btn btn-sm btn-outline-primary">

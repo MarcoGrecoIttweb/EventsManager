@@ -91,9 +91,14 @@ class ProfileController extends Controller
                 'residenza' => 'nullable|string|max:30',
                 'datanascita' => 'nullable|date',
                 'description' => 'nullable|string|max:65535',
+                'foto_profilo' => ['nullable', 'image', 'max:4096', 'mimes:jpeg,jpg,png,webp,gif'],
+            ], [
+                'foto_profilo.image' => 'Il file della foto deve essere un’immagine valida.',
+                'foto_profilo.max' => 'La foto non può superare 4 MB.',
+                'foto_profilo.mimes' => 'Formati ammessi: JPEG, PNG, WebP, GIF.',
             ]);
 
-            $user->update([
+            $updatePayload = [
                 'username' => $validated['username'],
                 'nome' => $validated['nome'],
                 'cognome' => $validated['cognome'],
@@ -103,7 +108,39 @@ class ProfileController extends Controller
                 'residenza' => $validated['residenza'] ?? '',
                 'datanascita' => $validated['datanascita'] ?? $user->datanascita,
                 'descr' => $validated['description'] ?? '',
-            ]);
+            ];
+
+            if ($request->hasFile('foto_profilo')) {
+                $file = $request->file('foto_profilo');
+                if ($file && $file->isValid()) {
+                    $ext = strtolower($file->getClientOriginalExtension() ?: $file->extension() ?: 'jpg');
+                    $ext = preg_replace('/[^a-z0-9]/', '', $ext) ?: 'jpg';
+                    $safeNick = preg_replace('/[^a-zA-Z0-9_-]+/', '', (string) $validated['username']) ?: 'user';
+                    $avatarFilename = $safeNick . '_' . now()->format('Ymd_His_u') . '.' . $ext;
+
+                    $oldAvatar = $user->avatar;
+                    if (is_string($oldAvatar) && $oldAvatar !== '') {
+                        $base = basename($oldAvatar);
+                        $pub = public_path('upload_avatar/' . $base);
+                        if (is_file($pub)) {
+                            @unlink($pub);
+                        }
+                        $stor = storage_path('app/public/photos/' . $base);
+                        if (is_file($stor)) {
+                            @unlink($stor);
+                        }
+                    }
+
+                    $dest = public_path('upload_avatar');
+                    if (! is_dir($dest)) {
+                        @mkdir($dest, 0755, true);
+                    }
+                    $file->move($dest, $avatarFilename);
+                    $updatePayload['avatar'] = $avatarFilename;
+                }
+            }
+
+            $user->update($updatePayload);
         } else {
             $validated = $request->validate([
                 // Permetti email duplicate: requisito richiesto (non bloccare se già usata).
@@ -147,10 +184,19 @@ class ProfileController extends Controller
     {
         $this->authorize('update', $user);
 
-        $request->validate([
-            'current_password' => 'required|current_password',
-            'password' => 'required|string|min:4|confirmed',
-        ]);
+        $actor = $request->user();
+        $isAdminResettingOther = $actor && $actor->isAdmin() && $actor->getKey() !== $user->getKey();
+
+        if ($isAdminResettingOther) {
+            $request->validate([
+                'password' => 'required|string|min:4|confirmed',
+            ]);
+        } else {
+            $request->validate([
+                'current_password' => 'required|current_password',
+                'password' => 'required|string|min:4|confirmed',
+            ]);
+        }
 
         $plain = $request->input('password');
         $user->password = md5($plain);

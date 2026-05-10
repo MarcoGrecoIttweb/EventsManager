@@ -13,6 +13,8 @@ use App\Models\Event;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\ChatController;
+use App\Http\Controllers\MercatinoTitleImageController;
+use App\Http\Controllers\MercatinoVetrinaHeaderImageController;
 use App\Http\Controllers\GuestController;
 use App\Http\Controllers\CookieConsentController;
 use App\Http\Controllers\ImpersonationController;
@@ -58,6 +60,10 @@ Route::get('/events/past', [EventController::class, 'pastEvents'])
     ->name('events.past')
     ->middleware('auth');
 
+Route::get('/events/past/suggestions', [EventController::class, 'pastSearchSuggestions'])
+    ->name('events.past.suggestions')
+    ->middleware('auth');
+
 Route::get('/organizzatore/richiesta', function () {
     $adminNotifyEmail = '';
     try {
@@ -100,11 +106,27 @@ Route::delete('/chat/{message}', [ChatController::class, 'destroy'])
     ->name('chat.destroy')
     ->middleware(['auth', 'approved', 'feature:chat_salottino']);
 Route::post('/chat/header-image', [ChatController::class, 'updateHeaderImage'])->name('chat.header-image')->middleware('admin');
+Route::post('/mercatino/titolo-immagine', [MercatinoTitleImageController::class, 'update'])
+    ->name('mercatino.title-image')
+    ->middleware('admin');
+Route::post('/mercatino/vetrina/header-image', [MercatinoVetrinaHeaderImageController::class, 'update'])
+    ->name('mercatino.vetrina.header-image')
+    ->middleware('admin');
 
 // Mercatino: solo utenti registrati e approvati (come la chat)
 Route::get('/mercatino', function (Request $request) {
+    MercatinoAnnuncioStorage::purgeExpired();
     $bozze = collect();
     $base = 'mercatino_bozze/' . auth()->id();
+    // Bozze locali il cui nome cartella coincide con un annuncio già in vetrina: rimosse automaticamente (niente doppioni).
+    if (Storage::disk('local')->exists($base)) {
+        foreach (Storage::disk('local')->directories($base) as $subdir) {
+            $name = basename($subdir);
+            if (preg_match('/^[a-zA-Z0-9_\-]+$/', $name) === 1 && MercatinoAnnuncioStorage::annuncioExists($name)) {
+                Storage::disk('local')->deleteDirectory($subdir);
+            }
+        }
+    }
     if (Storage::disk('local')->exists($base)) {
         foreach (Storage::disk('local')->directories($base) as $subdir) {
             $jsonPath = $subdir . '/dati.json';
@@ -137,12 +159,20 @@ Route::get('/mercatino', function (Request $request) {
         }
     }
 
-    return view('mercatino.index', compact('bozze', 'editFolder', 'editDraft'));
+    $mercatinoTitleImage = MercatinoTitleImageController::titleImagePublicRelative();
+
+    return view('mercatino.index', compact('bozze', 'editFolder', 'editDraft', 'mercatinoTitleImage'));
 })->name('mercatino.index')->middleware(['auth', 'approved', 'feature:mercatino']);
 
 Route::post('/mercatino/bozze/delete', function () {
     $base = 'mercatino_bozze/' . auth()->id();
     if (Storage::disk('local')->exists($base)) {
+        foreach (Storage::disk('local')->directories($base) as $subdir) {
+            $name = basename($subdir);
+            if (preg_match('/^[a-zA-Z0-9_\-]+$/', $name) === 1 && MercatinoAnnuncioStorage::annuncioExists($name)) {
+                MercatinoAnnuncioStorage::deletePublishedAnnuncio($name);
+            }
+        }
         Storage::disk('local')->deleteDirectory($base);
     }
 
@@ -159,6 +189,9 @@ Route::post('/mercatino/bozze/{folder}/delete', function (Request $request, stri
         return back()->with('error', 'Bozza non trovata.');
     }
     Storage::disk('local')->deleteDirectory($dir);
+    if (MercatinoAnnuncioStorage::annuncioExists($folder)) {
+        MercatinoAnnuncioStorage::deletePublishedAnnuncio($folder);
+    }
     return redirect()->route('mercatino.index')->with('success', 'Bozza eliminata.');
 })->name('mercatino.bozza.destroy')->middleware(['auth', 'approved', 'feature:mercatino']);
 
@@ -176,11 +209,12 @@ Route::post('/mercatino/bozze/{folder}', function (Request $request, string $fol
 
     $validated = $request->validate([
         'titolo' => ['required', 'string', 'max:120'],
-        'categoria' => ['required', 'in:abbigliamento,veicoli,casa,sport,elettronica_videogiochi,altro'],
+        'categoria' => ['required', 'in:abbigliamento,libri_riviste,giochi_videogiochi,sport_hobby,tecnologia_elettronica,audio_tv,idee_regalo,in_omaggio,biciclette,veicoli,telefonia,altro,casa,sport,elettronica_videogiochi'],
         'descrizione' => ['required', 'string', 'max:2000'],
-        'tipo_prezzo' => ['required', 'in:fisso,gratis,trattabile,scambio'],
+        'tipo_prezzo' => ['required', 'in:fisso,gratis,scambio'],
         'prezzo' => ['nullable', 'numeric', 'min:0', 'required_if:tipo_prezzo,fisso'],
-        'condizione' => ['required', 'in:nuovo,ottimo,buono,discreto'],
+        'trattabile' => ['nullable'],
+        'condizione' => ['required', 'in:nuovo,buono,discreto,altro,ottimo'],
         'zona_ritiro' => ['required', 'string', 'max:120'],
         'contatto' => ['required', 'in:excursio,email,telefono'],
         'foto_1' => ['nullable', 'image', 'max:4096', 'mimes:jpeg,jpg,png,webp,gif'],
@@ -189,9 +223,31 @@ Route::post('/mercatino/bozze/{folder}', function (Request $request, string $fol
         'remove_foto_1' => ['nullable', 'boolean'],
         'remove_foto_2' => ['nullable', 'boolean'],
         'remove_foto_3' => ['nullable', 'boolean'],
+    ], [
+        'titolo.required' => 'Inserisci un titolo per l’annuncio.',
+        'categoria.required' => 'Scegli una categoria.',
+        'descrizione.required' => 'Descrivi l’oggetto o il servizio offerto.',
+        'tipo_prezzo.required' => 'Indica come vuoi gestire il prezzo.',
+        'condizione.required' => 'Indica lo stato dell’oggetto.',
+        'zona_ritiro.required' => 'Indica dove si può ritirare o incontrarsi.',
+        'contatto.required' => 'Scegli come preferisci essere contattato.',
+        'foto_1.image' => 'La prima immagine deve essere un file immagine valido.',
+        'foto_2.image' => 'La seconda immagine deve essere un file immagine valido.',
+        'foto_3.image' => 'La terza immagine deve essere un file immagine valido.',
+        'foto_1.max' => 'La prima immagine non può superare 4 MB.',
+        'foto_2.max' => 'La seconda immagine non può superare 4 MB.',
+        'foto_3.max' => 'La terza immagine non può superare 4 MB.',
+        'foto_1.mimes' => 'Formati ammessi per la 1ª foto: JPEG, PNG, WebP, GIF.',
+        'foto_2.mimes' => 'Formati ammessi per la 2ª foto: JPEG, PNG, WebP, GIF.',
+        'foto_3.mimes' => 'Formati ammessi per la 3ª foto: JPEG, PNG, WebP, GIF.',
     ]);
 
     $validated['titolo'] = mb_strtoupper(trim((string) $validated['titolo']), 'UTF-8');
+
+    $prezzoTrattabile = $request->boolean('trattabile');
+    if (($validated['tipo_prezzo'] ?? '') !== 'fisso') {
+        $prezzoTrattabile = false;
+    }
 
     $decoded = json_decode(Storage::disk('local')->get($jsonPath), true);
     if (!is_array($decoded)) {
@@ -203,6 +259,7 @@ Route::post('/mercatino/bozze/{folder}', function (Request $request, string $fol
     $decoded['descrizione'] = $validated['descrizione'];
     $decoded['tipo_prezzo'] = $validated['tipo_prezzo'];
     $decoded['prezzo'] = $validated['prezzo'] ?? null;
+    $decoded['prezzo_trattabile'] = $prezzoTrattabile;
     $decoded['condizione'] = $validated['condizione'];
     $decoded['zona_ritiro'] = $validated['zona_ritiro'];
     $decoded['contatto'] = $validated['contatto'];
@@ -260,10 +317,12 @@ Route::post('/mercatino/bozze/{folder}', function (Request $request, string $fol
 
 // Mercatino: vetrina annunci pubblicati (cartelle sotto public/upload_immagini/mercatino_annunci; legacy anche storage/app/public)
 Route::get('/mercatino/vetrina', function () {
+    MercatinoAnnuncioStorage::purgeExpired();
     $annunci = MercatinoAnnuncioStorage::listPublished();
+    $vetrinaHeaderImage = MercatinoVetrinaHeaderImageController::headerPublicRelative();
 
-    return view('mercatino.vetrina', compact('annunci'));
-})->name('mercatino.vetrina')->middleware(['auth', 'approved', 'feature:mercatino']);
+    return view('mercatino.vetrina', compact('annunci', 'vetrinaHeaderImage'));
+})->name('mercatino.vetrina')->middleware(['feature:mercatino']);
 
 // Mercatino: contatta inserzionista (via email)
 Route::post('/mercatino/contatta', function (Request $request) {
@@ -358,11 +417,12 @@ Route::post('/mercatino/modifica', function (Request $request) {
     $validated = $request->validate([
         'folder' => ['required', 'string', 'max:64', 'regex:/^[a-zA-Z0-9_\-]+$/'],
         'titolo' => ['required', 'string', 'max:120'],
-        'categoria' => ['required', 'in:abbigliamento,veicoli,casa,sport,elettronica_videogiochi,altro'],
+        'categoria' => ['required', 'in:abbigliamento,libri_riviste,giochi_videogiochi,sport_hobby,tecnologia_elettronica,audio_tv,idee_regalo,in_omaggio,biciclette,veicoli,telefonia,altro,casa,sport,elettronica_videogiochi'],
         'descrizione' => ['required', 'string', 'max:2000'],
-        'tipo_prezzo' => ['required', 'in:fisso,gratis,trattabile,scambio'],
+        'tipo_prezzo' => ['required', 'in:fisso,gratis,scambio'],
         'prezzo' => ['nullable', 'numeric', 'min:0', 'required_if:tipo_prezzo,fisso'],
-        'condizione' => ['required', 'in:nuovo,ottimo,buono,discreto'],
+        'trattabile' => ['nullable'],
+        'condizione' => ['required', 'in:nuovo,buono,discreto,altro,ottimo'],
         'zona_ritiro' => ['required', 'string', 'max:120'],
         'contatto' => ['required', 'in:excursio,email,telefono'],
         'foto_1' => ['nullable', 'image', 'max:4096', 'mimes:jpeg,jpg,png,webp,gif'],
@@ -394,12 +454,18 @@ Route::post('/mercatino/modifica', function (Request $request) {
 
     $validated['titolo'] = mb_strtoupper(trim((string) $validated['titolo']), 'UTF-8');
 
+    $prezzoTrattabile = $request->boolean('trattabile');
+    if (($validated['tipo_prezzo'] ?? '') !== 'fisso') {
+        $prezzoTrattabile = false;
+    }
+
     // Mantieni i campi non editabili (foto, autore, data invio).
     $decoded['titolo'] = $validated['titolo'];
     $decoded['categoria'] = $validated['categoria'];
     $decoded['descrizione'] = $validated['descrizione'];
     $decoded['tipo_prezzo'] = $validated['tipo_prezzo'];
     $decoded['prezzo'] = $validated['prezzo'] ?? null;
+    $decoded['prezzo_trattabile'] = $prezzoTrattabile;
     $decoded['condizione'] = $validated['condizione'];
     $decoded['zona_ritiro'] = $validated['zona_ritiro'];
     $decoded['contatto'] = $validated['contatto'];
@@ -446,21 +512,107 @@ Route::post('/mercatino/modifica', function (Request $request) {
     return back()->with('success', 'Annuncio aggiornato con successo.');
 })->name('mercatino.update')->middleware(['auth', 'approved', 'feature:mercatino']);
 
+// Mercatino: elimina annuncio in vetrina (autore o amministratore)
+Route::post('/mercatino/vetrina/annuncio/elimina', function (Request $request) {
+    $validated = $request->validate([
+        'folder' => ['required', 'string', 'max:64', 'regex:/^[a-zA-Z0-9_\-]+$/'],
+    ]);
+
+    $folder = $validated['folder'];
+    if (! MercatinoAnnuncioStorage::annuncioExists($folder)) {
+        return redirect()->route('mercatino.vetrina')->with('error', 'Annuncio non trovato o già rimosso.');
+    }
+
+    $decoded = MercatinoAnnuncioStorage::readJsonDecoded($folder);
+    if (! is_array($decoded)) {
+        return redirect()->route('mercatino.vetrina')->with('error', 'Annuncio non valido.');
+    }
+
+    $authorUsername = trim((string) ($decoded['autore_username'] ?? ''));
+    $isAdmin = auth()->user()->isAdmin();
+    $me = auth()->user();
+    $meUsername = trim((string) ($me?->username ?? ''));
+    $isOwner = $meUsername !== '' && $authorUsername !== '' && mb_strtolower($meUsername, 'UTF-8') === mb_strtolower($authorUsername, 'UTF-8');
+    if (! $isAdmin && ! $isOwner) {
+        abort(403);
+    }
+
+    MercatinoAnnuncioStorage::deletePublishedAnnuncio($folder);
+
+    return redirect()->route('mercatino.vetrina')->with('success', 'Annuncio eliminato dalla vetrina.');
+})->name('mercatino.annuncio.destroy')->middleware(['auth', 'approved', 'feature:mercatino']);
+
+// Rinnova visibilità: altri 30 giorni da oggi (solo autore dell’annuncio)
+Route::post('/mercatino/vetrina/annuncio/rinnova', function (Request $request) {
+    $validated = $request->validate([
+        'folder' => ['required', 'string', 'max:64', 'regex:/^[a-zA-Z0-9_\-]+$/'],
+    ]);
+    MercatinoAnnuncioStorage::purgeExpired();
+    $folder = $validated['folder'];
+    if (! MercatinoAnnuncioStorage::annuncioExists($folder)) {
+        return back()->with('error', 'Annuncio non trovato, già scaduto o rimosso.');
+    }
+    $decoded = MercatinoAnnuncioStorage::readJsonDecoded($folder);
+    if (! is_array($decoded)) {
+        return back()->with('error', 'Annuncio non valido.');
+    }
+    if (MercatinoAnnuncioStorage::isExpired($decoded)) {
+        return back()->with('error', 'Questo annuncio è scaduto. Pubblica un nuovo annuncio dalla pagina Mercatino.');
+    }
+    $authorUsername = trim((string) ($decoded['autore_username'] ?? ''));
+    $me = auth()->user();
+    $meUsername = trim((string) ($me?->username ?? ''));
+    $isOwner = $meUsername !== '' && $authorUsername !== ''
+        && mb_strtolower($meUsername, 'UTF-8') === mb_strtolower($authorUsername, 'UTF-8');
+    if (! $isOwner) {
+        abort(403);
+    }
+    $now = now()->toIso8601String();
+    $decoded['visibilita_da'] = $now;
+    $decoded['rinnovato_il'] = $now;
+    MercatinoAnnuncioStorage::saveAnnuncioJsonAllDisks($folder, $decoded);
+
+    return back()->with('success', 'Annuncio rinnovato: resterà in vetrina per altri 30 giorni da oggi.');
+})->name('mercatino.annuncio.renew')->middleware(['auth', 'approved', 'feature:mercatino']);
+
+// Mercatino: elimina tutti gli annunci in vetrina (solo amministratore)
+Route::post('/mercatino/vetrina/annunci/elimina-tutti', function () {
+    if (! auth()->user()->isAdmin()) {
+        abort(403);
+    }
+
+    $annunci = MercatinoAnnuncioStorage::listPublished();
+    $count = 0;
+    foreach ($annunci as $row) {
+        $f = $row['cartella'] ?? '';
+        if ($f !== '') {
+            MercatinoAnnuncioStorage::deletePublishedAnnuncio($f);
+            $count++;
+        }
+    }
+
+    return redirect()->route('mercatino.vetrina')->with('success', $count === 1
+        ? 'Eliminato 1 annuncio dalla vetrina.'
+        : "Eliminati {$count} annunci dalla vetrina.");
+})->name('mercatino.annunci.destroyAll')->middleware(['auth', 'approved', 'feature:mercatino']);
+
 // Mercatino "in arrivo" (quando la feature è disattivata)
 Route::get('/mercatino/in-arrivo', function () {
     return view('mercatino.coming-soon');
-})->name('mercatino.coming-soon')->middleware(['auth', 'approved']);
+})->name('mercatino.coming-soon');
 Route::post('/mercatino', function (Request $request) {
     $validated = $request->validate([
         'titolo' => ['required', 'string', 'max:120'],
-        'categoria' => ['required', 'in:abbigliamento,veicoli,casa,sport,elettronica_videogiochi,altro'],
+        'categoria' => ['required', 'in:abbigliamento,libri_riviste,giochi_videogiochi,sport_hobby,tecnologia_elettronica,audio_tv,idee_regalo,in_omaggio,biciclette,veicoli,telefonia,altro,casa,sport,elettronica_videogiochi'],
         'descrizione' => ['required', 'string', 'max:2000'],
-        'tipo_prezzo' => ['required', 'in:fisso,gratis,trattabile,scambio'],
+        'tipo_prezzo' => ['required', 'in:fisso,gratis,scambio'],
         'prezzo' => ['nullable', 'numeric', 'min:0', 'required_if:tipo_prezzo,fisso'],
-        'condizione' => ['required', 'in:nuovo,ottimo,buono,discreto'],
+        'trattabile' => ['nullable'],
+        'condizione' => ['required', 'in:nuovo,buono,discreto,altro,ottimo'],
         'zona_ritiro' => ['required', 'string', 'max:120'],
         'contatto' => ['required', 'in:excursio,email,telefono'],
         'accetto_regole' => ['accepted'],
+        'mercatino_bozza_origine' => ['nullable', 'string', 'max:64', 'regex:/^[a-zA-Z0-9_\-]+$/'],
         'foto_1' => ['nullable', 'image', 'max:4096', 'mimes:jpeg,jpg,png,webp,gif'],
         'foto_2' => ['nullable', 'image', 'max:4096', 'mimes:jpeg,jpg,png,webp,gif'],
         'foto_3' => ['nullable', 'image', 'max:4096', 'mimes:jpeg,jpg,png,webp,gif'],
@@ -472,7 +624,7 @@ Route::post('/mercatino', function (Request $request) {
         'condizione.required' => 'Indica lo stato dell’oggetto.',
         'zona_ritiro.required' => 'Indica dove si può ritirare o incontrarsi.',
         'contatto.required' => 'Scegli come preferisci essere contattato.',
-        'accetto_regole.accepted' => 'Devi accettare le condizioni per inviare la bozza.',
+        'accetto_regole.accepted' => 'Devi accettare le condizioni per pubblicare in vetrina.',
         'foto_1.image' => 'La prima immagine deve essere un file immagine valido.',
         'foto_2.image' => 'La seconda immagine deve essere un file immagine valido.',
         'foto_3.image' => 'La terza immagine deve essere un file immagine valido.',
@@ -487,29 +639,79 @@ Route::post('/mercatino', function (Request $request) {
     // Titolo sempre in MAIUSCOLO (UTF-8)
     $validated['titolo'] = mb_strtoupper(trim((string) ($validated['titolo'] ?? '')), 'UTF-8');
 
-    $batchKey = now()->format('Ymd_His') . '_' . Str::lower(Str::random(8));
-    $batchDir = 'mercatino_bozze/' . auth()->id() . '/' . $batchKey;
+    $prezzoTrattabile = $request->boolean('trattabile');
+    if (($validated['tipo_prezzo'] ?? '') !== 'fisso') {
+        $prezzoTrattabile = false;
+    }
+
+    $userId = auth()->id();
+    $userBase = 'mercatino_bozze/' . $userId;
+    $origine = trim((string) ($validated['mercatino_bozza_origine'] ?? ''));
+    $srcDraftDir = null;
+    if ($origine !== '') {
+        $candidateJson = $userBase . '/' . $origine . '/dati.json';
+        if (! Storage::disk('local')->exists($candidateJson)) {
+            return back()->withInput()->with('error', 'Bozza non trovata. Ricarica la pagina e riprova.');
+        }
+        $srcDraftDir = $userBase . '/' . $origine;
+    }
+
+    do {
+        $batchKey = now()->format('Ymd_His') . '_' . Str::lower(Str::random(8));
+    } while ($srcDraftDir !== null && $batchKey === $origine);
+
+    $batchDir = $userBase . '/' . $batchKey;
     $publishDir = MercatinoAnnuncioStorage::folderBase($batchKey);
-    $fotoCaricate = 0;
+    $exts = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+
+    if ($srcDraftDir !== null) {
+        $draftPrefix = $srcDraftDir . '/';
+        foreach (Storage::disk('local')->allFiles($srcDraftDir) as $relPath) {
+            if (! str_starts_with($relPath, $draftPrefix)) {
+                continue;
+            }
+            $suffix = substr($relPath, strlen($draftPrefix));
+            if ($suffix === '') {
+                continue;
+            }
+            Storage::disk('local')->put($batchDir . '/' . $suffix, Storage::disk('local')->get($relPath));
+        }
+    }
+
     foreach (['foto_1', 'foto_2', 'foto_3'] as $i => $field) {
-        if (!$request->hasFile($field)) {
+        $slot = $i + 1;
+        if (! $request->hasFile($field)) {
             continue;
         }
         $file = $request->file($field);
-        if (!$file->isValid()) {
+        if (! $file->isValid()) {
             continue;
+        }
+        foreach ($exts as $oldExt) {
+            $oldRel = $batchDir . '/foto_' . $slot . '.' . $oldExt;
+            if (Storage::disk('local')->exists($oldRel)) {
+                Storage::disk('local')->delete($oldRel);
+            }
         }
         $ext = strtolower($file->getClientOriginalExtension() ?: $file->extension() ?: 'jpg');
         $ext = preg_replace('/[^a-z0-9]/', '', $ext) ?: 'jpg';
-        $fotoName = 'foto_' . ($i + 1) . '.' . $ext;
+        $fotoName = 'foto_' . $slot . '.' . $ext;
         $file->storeAs($batchDir, $fotoName, 'local');
-        // Vetrina: copia in public/upload_immagini/… (stesso contenuto della bozza; un solo store dal file upload)
-        $bozzaRel = $batchDir . '/' . $fotoName;
-        Storage::disk('upload_immagini')->put(
-            $publishDir . '/' . $fotoName,
-            Storage::disk('local')->get($bozzaRel)
-        );
-        $fotoCaricate++;
+    }
+
+    $fotoCaricate = 0;
+    for ($slot = 1; $slot <= 3; $slot++) {
+        foreach ($exts as $ext) {
+            $rel = $batchDir . '/foto_' . $slot . '.' . $ext;
+            if (Storage::disk('local')->exists($rel)) {
+                Storage::disk('upload_immagini')->put(
+                    $publishDir . '/foto_' . $slot . '.' . $ext,
+                    Storage::disk('local')->get($rel)
+                );
+                $fotoCaricate++;
+                break;
+            }
+        }
     }
 
     $datiAnnuncio = [
@@ -518,10 +720,12 @@ Route::post('/mercatino', function (Request $request) {
         'descrizione' => $validated['descrizione'],
         'tipo_prezzo' => $validated['tipo_prezzo'],
         'prezzo' => $validated['prezzo'] ?? null,
+        'prezzo_trattabile' => $prezzoTrattabile,
         'condizione' => $validated['condizione'],
         'zona_ritiro' => $validated['zona_ritiro'],
         'contatto' => $validated['contatto'],
         'inviato_il' => now()->toIso8601String(),
+        'visibilita_da' => now()->toIso8601String(),
         'foto_caricate' => $fotoCaricate,
         'autore_username' => auth()->user()->username ?? '',
     ];
@@ -561,12 +765,18 @@ Route::post('/mercatino', function (Request $request) {
         ]);
     }
 
-    $msg = 'Annuncio pubblicato nella vetrina del Mercatino. Lo vedi anche nella sezione «Le tue bozze» sotto.';
-    if ($fotoCaricate > 0) {
-        $msg .= ' ' . $fotoCaricate . ' ' . ($fotoCaricate === 1 ? 'foto caricata' : 'foto caricate') . '.';
+    // Dopo la pubblicazione in vetrina: niente copia locale (né cartella temporanea né bozza di origine).
+    if (Storage::disk('local')->exists($batchDir)) {
+        Storage::disk('local')->deleteDirectory($batchDir);
+    }
+    if ($srcDraftDir !== null && Storage::disk('local')->exists($srcDraftDir)) {
+        Storage::disk('local')->deleteDirectory($srcDraftDir);
     }
 
-    return redirect()->route('mercatino.vetrina')->with('success', $msg);
+    return redirect()->route('mercatino.vetrina')->with(
+        'success',
+        'Annuncio pubblicato in vetrina. per modificare testi o foto usa «Modifica» sull’annuncio in vetrina.'
+    );
 })->name('mercatino.store')->middleware(['auth', 'approved', 'feature:mercatino']);
 
 // Route di autenticazione
@@ -705,9 +915,14 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     // Autocomplete: va dichiarata PRIMA della resource, altrimenti viene intercettata da /admin/events/{event}
     Route::get('/events/suggestions', [\App\Http\Controllers\Admin\EventController::class, 'suggestions'])->name('events.suggestions');
+    Route::get('/events/suspended-upcoming-future', [\App\Http\Controllers\Admin\EventController::class, 'suspendedUpcomingFutureJson'])
+        ->name('events.suspended-upcoming-future');
+    Route::get('/events/active-published', [\App\Http\Controllers\Admin\EventController::class, 'activePublishedJson'])
+        ->name('events.active-published');
     Route::resource('events', \App\Http\Controllers\Admin\EventController::class);
     Route::post('/events/{event}/duplicate', [\App\Http\Controllers\Admin\EventController::class, 'duplicate'])->name('events.duplicate');
     Route::post('/events/{event}/toggle-status', [\App\Http\Controllers\Admin\EventController::class, 'toggleStatus'])->name('events.toggle-status');
+    Route::get('/users/finder-suggestions', [\App\Http\Controllers\Admin\UserController::class, 'finderSuggestions'])->name('users.finder-suggestions');
     Route::get('/users', [\App\Http\Controllers\Admin\UserController::class, 'index'])->name('users.index');
     Route::post('/users/{user}/impersonate', [ImpersonationController::class, 'start'])->name('users.impersonate');
     Route::get('/users/logins', [AdminUserController::class, 'logins'])->name('users.logins');
@@ -735,5 +950,6 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/newsletter/users', [\App\Http\Controllers\Admin\NewsletterController::class, 'getUsers'])->name('newsletter.users');
     Route::get('/newsletter/group-recipients', [\App\Http\Controllers\Admin\NewsletterController::class, 'groupRecipients'])->name('newsletter.group-recipients');
     Route::post('/newsletter/preview-recipients', [\App\Http\Controllers\Admin\NewsletterController::class, 'previewRecipients'])->name('newsletter.preview-recipients');
+    Route::get('/newsletter/stat-recipients', [\App\Http\Controllers\Admin\NewsletterController::class, 'statRecipients'])->name('newsletter.stat-recipients');
 
 });

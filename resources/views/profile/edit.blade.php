@@ -16,13 +16,13 @@
                         @endphp
                         <p class="text-muted small mb-4">
                             @if($isAdminViewer)
-                                Come amministratore puoi modificare <strong>tutti i campi</strong> dell’utente.
+                                Come amministratore puoi modificare <strong>tutti i campi</strong> dell’utente, inclusa la <strong>foto profilo</strong>.
                             @else
                                 Puoi modificare solo <strong>email</strong> e <strong>cellulare</strong>. Se vuoi modificare la foto, per questioni tecniche devi inviarla all'amministratore che provvederà ad inserirla.
                             @endif
                         </p>
 
-                        <form action="{{ route('profile.update', $user) }}" method="POST">
+                        <form action="{{ route('profile.update', $user) }}" method="POST" enctype="multipart/form-data">
                             @csrf
                             @method('PUT')
 
@@ -130,6 +130,29 @@
                                     <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
+
+                                <div class="mb-4">
+                                    <span class="form-label d-block">Foto profilo</span>
+                                    @if($user->photo_url)
+                                        <div class="mb-2">
+                                            <img src="{{ $user->photo_url }}"
+                                                 alt="Foto attuale"
+                                                 class="rounded border border-secondary"
+                                                 style="max-height: 140px; width: auto; object-fit: contain;">
+                                        </div>
+                                    @else
+                                        <p class="small text-muted mb-2">Nessuna foto impostata.</p>
+                                    @endif
+                                    <input type="file"
+                                           name="foto_profilo"
+                                           id="foto_profilo"
+                                           class="form-control @error('foto_profilo') is-invalid @enderror"
+                                           accept="image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp,.gif">
+                                    <div class="form-text">JPG, PNG, WebP o GIF, massimo 4&nbsp;MB. Lascia vuoto per mantenere la foto attuale; con un nuovo file la precedente viene sostituita.</div>
+                                    @error('foto_profilo')
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                    @enderror
+                                </div>
                             @endif
 
                             <div class="d-grid gap-2 d-md-flex">
@@ -142,6 +165,7 @@
 
                         @php
                             $openPasswordFromQuery = request()->boolean('openPassword');
+                            $isAdminResettingOther = $isAdminViewer && auth()->id() !== $user->getKey();
                             $selfPwdOpen = $openPasswordFromQuery || $errors->has('current_password') || $errors->has('password');
                         @endphp
 
@@ -152,7 +176,7 @@
                                 aria-expanded="{{ $selfPwdOpen ? 'true' : 'false' }}"
                                 aria-controls="selfPasswordCollapse">
                             <i class="fas fa-key" style="font-size:0.85em;"></i>
-                            <span>Cambia password</span>
+                            <span>{{ $isAdminResettingOther ? 'Reimposta password utente' : 'Cambia password' }}</span>
                             <i class="fas fa-chevron-down small opacity-75" aria-hidden="true"></i>
                         </button>
 
@@ -161,6 +185,7 @@
                                 <form method="POST" action="{{ route('profile.password.self', $user) }}">
                                     @csrf
                                     <div class="row g-2">
+                                        @if(!$isAdminResettingOther)
                                         <div class="col-12">
                                             <label for="current_password" class="form-label mb-0">Password attuale</label>
                                             <input type="password" id="current_password" name="current_password"
@@ -170,6 +195,7 @@
                                             <div class="invalid-feedback d-block">{{ $message }}</div>
                                             @enderror
                                         </div>
+                                        @endif
                                         <div class="col-12">
                                             <label for="new_password" class="form-label mb-0">Nuova password</label>
                                             <input type="password" id="new_password" name="password"
@@ -188,7 +214,7 @@
                                     </div>
 
                                     <button type="submit" class="btn btn-outline-secondary btn-sm mt-2">
-                                        <i class="fas fa-save"></i> Salva nuova password
+                                        <i class="fas fa-save"></i> {{ $isAdminResettingOther ? 'Salva password utente' : 'Salva nuova password' }}
                                     </button>
                                 </form>
                             </div>

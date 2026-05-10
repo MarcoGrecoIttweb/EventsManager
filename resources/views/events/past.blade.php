@@ -31,13 +31,17 @@
                         <div class="col-12 col-md-6">
                             <label for="past_search_q" class="form-label fw-semibold mb-1">Testo</label>
                             <input
-                                type="text"
+                                type="search"
                                 name="q"
                                 id="past_search_q"
                                 class="form-control"
                                 value="{{ $q ?? '' }}"
                                 placeholder="Scrivi qui…"
+                                autocomplete="off"
+                                aria-autocomplete="list"
+                                list="past_search_suggestions"
                             >
+                            <datalist id="past_search_suggestions"></datalist>
                         </div>
                         <div class="col-12 col-md-2 d-grid">
                             <button type="submit" class="btn btn-dark">
@@ -254,4 +258,70 @@
         }
 
     </style>
+    @if(auth()->check() && auth()->user()->isAdmin())
+        @php
+            $pastEventsSuggestionsEndpoint = rtrim(request()->root(), '/') . route('events.past.suggestions', [], false);
+        @endphp
+        <script>
+            (function () {
+                var input = document.getElementById('past_search_q');
+                var select = document.getElementById('past_search_field');
+                var datalist = document.getElementById('past_search_suggestions');
+                if (!input || !select || !datalist) return;
+
+                var endpoint = @json($pastEventsSuggestionsEndpoint);
+                var timer = null;
+                var lastKey = '';
+
+                function clearOptions() {
+                    while (datalist.firstChild) datalist.removeChild(datalist.firstChild);
+                }
+
+                function setOptions(items) {
+                    clearOptions();
+                    (items || []).forEach(function (v) {
+                        var opt = document.createElement('option');
+                        opt.value = String(v || '');
+                        datalist.appendChild(opt);
+                    });
+                }
+
+                function fetchSuggestions() {
+                    var q = (input.value || '').trim();
+                    var field = (select.value || 'title').trim();
+                    var key = field + '|' + q;
+                    if (key === lastKey) return;
+                    lastKey = key;
+
+                    if (q.length < 2) {
+                        clearOptions();
+                        return;
+                    }
+
+                    var url = endpoint + '?field=' + encodeURIComponent(field) + '&q=' + encodeURIComponent(q);
+                    fetch(url, { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
+                        .then(function (r) { return r.ok ? r.json() : []; })
+                        .then(function (items) { setOptions(Array.isArray(items) ? items : []); })
+                        .catch(function () { clearOptions(); });
+                }
+
+                function schedule() {
+                    if (timer) window.clearTimeout(timer);
+                    timer = window.setTimeout(fetchSuggestions, 200);
+                }
+
+                input.addEventListener('input', function () {
+                    lastKey = '';
+                    schedule();
+                });
+                input.addEventListener('focus', schedule);
+                input.addEventListener('compositionend', schedule);
+                select.addEventListener('change', function () {
+                    lastKey = '';
+                    clearOptions();
+                    schedule();
+                });
+            })();
+        </script>
+    @endif
 @endsection

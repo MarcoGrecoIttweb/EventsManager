@@ -32,6 +32,54 @@
                     <div class="card-header admin-users-list-header">
                         <div class="d-flex align-items-center gap-2 admin-users-header-inline">
                             <h5 class="mb-0">Lista Utenti</h5>
+                            <div class="admin-users-actions-box">
+                                <div class="d-flex flex-nowrap gap-2 admin-users-actions-box__row">
+                                    <a href="{{ route('admin.users.logins') }}" class="btn btn-primary btn-sm btn-border-brown">
+                                        <i class="fas fa-sign-in-alt me-1"></i> Ingressi giornalieri
+                                    </a>
+                                    <a href="{{ route('admin.users.index', ['registrations' => 'pending']) }}" class="btn btn-warning btn-sm btn-border-brown text-dark">
+                                        <i class="fas fa-list me-1"></i> Vedi solo in attesa
+                                    </a>
+                                    <a href="{{ route('admin.users.index', ['status' => 'approved']) }}" class="btn btn-success btn-sm btn-border-brown text-white">
+                                        <i class="fas fa-check-circle me-1"></i> Visualizza Attivi
+                                    </a>
+                                    <a href="{{ route('admin.users.index', ['status' => 'suspended']) }}" class="btn btn-danger btn-sm btn-border-brown text-white admin-users-actions-btn--sospesi-width">
+                                        <i class="fas fa-pause-circle me-1"></i> Visualizza sospesi
+                                    </a>
+                                    <a href="{{ route('admin.users.index') }}" class="btn btn-success btn-sm btn-border-brown text-white admin-users-actions-btn--sospesi-width">Vista completa</a>
+                                    <a href="{{ route('home') }}" class="btn btn-secondary btn-sm btn-border-brown admin-users-actions-btn--sospesi-width">
+                                        <i class="fas fa-home"></i> Home
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="input-group input-group-sm admin-user-finder">
+                                <label class="visually-hidden" for="userFinderField">Campo</label>
+                                <div class="admin-user-finder-select-wrap">
+                                    <select id="userFinderField" class="form-select">
+                                        <option value="nome" selected>Nome</option>
+                                        <option value="cognome">Cognome</option>
+                                        <option value="nickname">Nickname</option>
+                                    </select>
+                                    <span class="admin-user-finder-select-icon" aria-hidden="true">
+                                        <i class="fas fa-chevron-down"></i>
+                                    </span>
+                                </div>
+                                <span class="input-group-text">
+                                    <i class="fas fa-search"></i>
+                                </span>
+                                <input id="userFinder"
+                                       type="search"
+                                       class="form-control"
+                                       placeholder="Trova utente…"
+                                       autocomplete="off"
+                                       list="adminUsersFinderSuggestions"
+                                       aria-autocomplete="list"
+                                       aria-label="Trova utente">
+                                <datalist id="adminUsersFinderSuggestions"></datalist>
+                                <button id="userFinderClear" type="button" class="btn btn-outline-dark" title="Pulisci">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
                             <div class="admin-user-stats-grid">
                                 {{-- Riga 1: Attivi + In attesa --}}
                                 <div class="admin-user-stats-grid__item">
@@ -72,51 +120,6 @@
                                         <span class="admin-user-stats-pill-value">{{ $bannedCount }}</span>
                                     </span>
                                 </div>
-                            </div>
-                            <div class="admin-users-actions-box">
-                                <div class="d-flex flex-wrap gap-2 admin-users-actions-box__row">
-                                    <a href="{{ route('admin.users.index', ['registrations' => 'pending']) }}" class="btn btn-warning btn-sm btn-border-brown text-dark">
-                                        <i class="fas fa-list me-1"></i> Vedi solo in attesa
-                                    </a>
-                                    <a href="{{ route('admin.users.index', ['status' => 'approved']) }}" class="btn btn-success btn-sm btn-border-brown text-white">
-                                        <i class="fas fa-check-circle me-1"></i> Visualizza Attivi
-                                    </a>
-                                    <a href="{{ route('admin.users.index', ['status' => 'suspended']) }}" class="btn btn-danger btn-sm btn-border-brown text-white">
-                                        <i class="fas fa-pause-circle me-1"></i> Visualizza sospesi
-                                    </a>
-                                    <a href="{{ route('admin.users.index') }}" class="btn btn-success btn-sm btn-border-brown text-white">Vista completa</a>
-                                    <a href="{{ route('admin.users.logins') }}" class="btn btn-primary btn-sm btn-border-brown">
-                                        <i class="fas fa-sign-in-alt"></i> Ingressi giornalieri ultimi gg
-                                    </a>
-                                    <a href="{{ route('home') }}" class="btn btn-secondary btn-sm btn-border-brown">
-                                        <i class="fas fa-home"></i> Home
-                                    </a>
-                                </div>
-                            </div>
-                            <div class="input-group input-group-sm admin-user-finder">
-                                <label class="visually-hidden" for="userFinderField">Campo</label>
-                                <div class="admin-user-finder-select-wrap">
-                                    <select id="userFinderField" class="form-select">
-                                        <option value="nome" selected>Nome</option>
-                                        <option value="cognome">Cognome</option>
-                                        <option value="nickname">Nickname</option>
-                                    </select>
-                                    <span class="admin-user-finder-select-icon" aria-hidden="true">
-                                        <i class="fas fa-chevron-down"></i>
-                                    </span>
-                                </div>
-                                <span class="input-group-text">
-                                    <i class="fas fa-search"></i>
-                                </span>
-                                <input id="userFinder"
-                                       type="search"
-                                       class="form-control"
-                                       placeholder="Trova utente…"
-                                       autocomplete="off"
-                                       aria-label="Trova utente">
-                                <button id="userFinderClear" type="button" class="btn btn-outline-dark" title="Pulisci">
-                                    <i class="fas fa-times"></i>
-                                </button>
                             </div>
                         </div>
                     </div>
@@ -469,19 +472,33 @@
             opacity: 1;
         }
 
-        /* Box azioni (ocra + bordo marrone) */
+        /* Box azioni (ocra + bordo marrone): dopo titolo, prima di Trova utente e riquadri statistiche */
         .admin-users-actions-box {
             border: 2px solid #8B4513;
             background: rgba(184, 134, 11, 0.22); /* giallo ocra */
             border-radius: 12px;
             padding: 10px 12px;
-        }
-        .admin-users-actions-box .btn {
-            white-space: nowrap;
-        }
-        .admin-users-actions-box {
             flex: 0 0 auto;
             margin-top: 0.25rem;
+        }
+        .admin-users-actions-box__row {
+            align-items: center;
+        }
+        .admin-users-actions-box .btn {
+            flex: 0 0 auto;
+            justify-content: center;
+            text-align: center;
+            white-space: nowrap;
+            line-height: 1.2;
+            padding-left: 0.35rem;
+            padding-right: 0.35rem;
+        }
+        /* Larghezza unica: Visualizza sospesi, Vista completa, Home */
+        .admin-users-actions-box .admin-users-actions-btn--sospesi-width {
+            flex: 0 0 13.35rem;
+            width: 13.35rem;
+            max-width: 13.35rem;
+            box-sizing: border-box;
         }
         .btn.btn-border-brown {
             border: 2px solid #8B4513 !important;
@@ -802,14 +819,60 @@
         }
     </style>
 
+    @php
+        $adminUsersFinderSuggestionsUrl = rtrim(request()->root(), '/') . route('admin.users.finder-suggestions', [], false);
+    @endphp
     <script>
         (function () {
             var input = document.getElementById('userFinder');
             var clearBtn = document.getElementById('userFinderClear');
             var fieldSel = document.getElementById('userFinderField');
+            var datalist = document.getElementById('adminUsersFinderSuggestions');
+            var finderSuggestionsUrl = @json($adminUsersFinderSuggestionsUrl);
             if (!input) return;
 
             var rows = Array.prototype.slice.call(document.querySelectorAll('.admin-users-table tbody tr'));
+
+            var sugTimer = null;
+            var sugLastKey = '';
+
+            function clearFinderSuggestions() {
+                if (!datalist) return;
+                while (datalist.firstChild) datalist.removeChild(datalist.firstChild);
+            }
+
+            function setFinderSuggestions(items) {
+                if (!datalist) return;
+                clearFinderSuggestions();
+                (items || []).forEach(function (v) {
+                    var opt = document.createElement('option');
+                    opt.value = String(v || '');
+                    datalist.appendChild(opt);
+                });
+            }
+
+            function fetchFinderSuggestions() {
+                if (!datalist || !finderSuggestionsUrl) return;
+                var q = (input.value || '').trim();
+                var field = (fieldSel && fieldSel.value) ? fieldSel.value : 'nome';
+                var key = field + '|' + q;
+                if (key === sugLastKey) return;
+                sugLastKey = key;
+                if (q.length < 2) {
+                    clearFinderSuggestions();
+                    return;
+                }
+                var url = finderSuggestionsUrl + '?field=' + encodeURIComponent(field) + '&q=' + encodeURIComponent(q);
+                fetch(url, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' })
+                    .then(function (r) { return r.ok ? r.json() : []; })
+                    .then(function (items) { setFinderSuggestions(Array.isArray(items) ? items : []); })
+                    .catch(function () { clearFinderSuggestions(); });
+            }
+
+            function scheduleFinderSuggestions() {
+                if (sugTimer) window.clearTimeout(sugTimer);
+                sugTimer = window.setTimeout(fetchFinderSuggestions, 200);
+            }
 
             function normalize(v) {
                 return (v || '')
@@ -867,18 +930,31 @@
                 }
             }
 
-            input.addEventListener('input', applyFilter);
-            input.addEventListener('change', applyFilter);
+            input.addEventListener('input', function () {
+                applyFilter();
+                scheduleFinderSuggestions();
+            });
+            input.addEventListener('change', function () {
+                applyFilter();
+                scheduleFinderSuggestions();
+            });
+            input.addEventListener('focus', scheduleFinderSuggestions);
+            input.addEventListener('compositionend', scheduleFinderSuggestions);
             if (fieldSel) {
                 fieldSel.addEventListener('change', function () {
+                    sugLastKey = '';
+                    clearFinderSuggestions();
                     applyFilter();
+                    scheduleFinderSuggestions();
                     input.focus();
                 });
             }
 
             if (clearBtn) {
                 clearBtn.addEventListener('click', function () {
+                    sugLastKey = '';
                     input.value = '';
+                    clearFinderSuggestions();
                     applyFilter();
                     input.focus();
                 });

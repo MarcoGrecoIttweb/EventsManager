@@ -7,28 +7,20 @@
     <div class="container-fluid">
         <div class="row">
             <div class="col-md-12">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h1 class="display-4">
+                <div class="mb-4">
+                    <h1 class="display-4 mb-0">
                         <i class="fas fa-calendar-alt"></i> Gestione Eventi
                     </h1>
-                    <div class="d-flex gap-2">
-                        <a href="{{ route('home') }}" class="btn btn-secondary" data-hint="Torna alla homepage">
-                            <i class="fas fa-home"></i> Torna alla home
-                        </a>
-                        <a href="{{ route('admin.events.create') }}" class="btn btn-success" data-hint="Crea un nuovo evento">
-                            <i class="fas fa-plus"></i> Nuovo Evento
-                        </a>
-                    </div>
                 </div>
 
                 <!-- Ricerca + Statistiche (stessa riga) -->
                 <div class="row mb-4 admin-events-stats g-2 align-items-stretch">
-                    <div class="col-12 col-md">
-                        <div class="card h-100">
+                    <div class="col-12 col-md-auto d-flex admin-events-search-wrap">
+                        <div class="card h-100 admin-events-search-card flex-fill">
                             <div class="card-body">
                                 <form method="GET" action="{{ route('admin.events.index') }}" class="admin-events-search">
-                                    <div class="row g-2 align-items-end">
-                                        <div class="col-12 col-md-3">
+                                    <div class="d-flex flex-wrap align-items-end gap-2 admin-events-search-inner">
+                                        <div class="admin-events-search-field admin-events-search-field--select flex-shrink-0">
                                             <div class="input-group input-group-sm">
                                                 <span class="input-group-text">Cerca per</span>
                                                 <select id="adminEventsSearchField" name="field" class="form-select" aria-label="Cerca per">
@@ -38,59 +30,80 @@
                                                 </select>
                                             </div>
                                         </div>
-                                        <div class="col-12 col-md-5">
+                                        <div class="admin-events-search-field admin-events-search-field--q flex-shrink-0">
                                             <div class="input-group input-group-sm">
                                                 <span class="input-group-text">Testo</span>
                                                 <input
                                                     id="adminEventsSearchQuery"
-                                                    type="text"
+                                                    type="search"
                                                     name="q"
                                                     value="{{ request('q', '') }}"
                                                     class="form-control"
                                                     placeholder="Scrivi…"
                                                     autocomplete="off"
                                                     aria-label="Testo"
+                                                    aria-autocomplete="list"
                                                     list="adminEventsSearchSuggestions"
                                                 >
                                             </div>
                                             <datalist id="adminEventsSearchSuggestions"></datalist>
                                         </div>
-                                        <div class="col-12 col-md-4">
-                                            <div class="d-flex gap-2">
-                                                <button type="submit" class="btn btn-sm btn-primary flex-grow-1" data-hint="Filtra la lista eventi">
-                                                    <i class="fas fa-search"></i> Cerca
-                                                </button>
-                                                <a href="{{ route('admin.events.index') }}" class="btn btn-sm btn-outline-secondary flex-grow-1" data-hint="Rimuovi filtri e mostra tutti gli eventi">
-                                                    <i class="fas fa-undo"></i> Reset
-                                                </a>
-                                            </div>
+                                        <div class="admin-events-search-actions d-flex gap-2 flex-shrink-0">
+                                            <button type="submit" class="btn btn-sm btn-primary" data-hint="Filtra la lista eventi">
+                                                <i class="fas fa-search"></i> Cerca
+                                            </button>
+                                            <a href="{{ route('admin.events.index') }}" class="btn btn-sm btn-outline-secondary" data-hint="Rimuovi filtri e mostra tutti gli eventi">
+                                                <i class="fas fa-undo"></i> Reset
+                                            </a>
                                         </div>
                                     </div>
                                 </form>
                             </div>
                         </div>
                     </div>
-                    <div class="col-12 col-md-auto">
-                        <div class="card bg-primary text-white h-100">
-                            <div class="card-body text-center">
+                    <div class="col-12 col-md-auto d-flex">
+                        <div class="card bg-primary text-white h-100 w-100 flex-fill">
+                            <div class="card-body text-center d-flex flex-column justify-content-center">
                                 <h5 class="card-title">Totale Eventi</h5>
                                 <h3 class="card-text">{{ $events->total() }}</h3>
                             </div>
                         </div>
                     </div>
-                    <div class="col-12 col-md-auto">
-                        <div class="card bg-success text-white h-100">
-                            <div class="card-body text-center">
-                                <h5 class="card-title">Eventi Attivi</h5>
-                                <h3 class="card-text">{{ $events->where('is_active', true)->count() }}</h3>
+                    <div class="col-12 col-md-auto d-flex">
+                        <div class="card bg-warning text-white h-100 w-100 flex-fill">
+                            <div class="card-body text-center d-flex flex-column justify-content-center">
+                                <h5 class="card-title text-dark">Eventi Passati</h5>
+                                <h3 class="card-text text-dark">{{ $events->where('date', '<', now())->count() }}</h3>
                             </div>
                         </div>
                     </div>
-                    <div class="col-12 col-md-auto">
-                        <div class="card bg-warning text-white h-100">
-                            <div class="card-body text-center">
-                                <h5 class="card-title">Eventi Passati</h5>
-                                <h3 class="card-text">{{ $events->where('date', '<', now())->count() }}</h3>
+                    <div class="col-12 col-md-auto d-flex admin-events-top-actions">
+                        <div class="card admin-events-actions-card border border-secondary bg-light h-100 w-100 flex-fill">
+                            <div class="card-body d-flex align-items-center justify-content-center py-2 px-2">
+                                <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
+                                    <button type="button"
+                                            class="btn btn-success btn-sm"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#adminActiveEventsModal"
+                                            data-hint="Elenco eventi attivi da oggi in poi (totale attivi sul badge)">
+                                        <i class="fas fa-check-circle"></i> Eventi attivi
+                                        <span class="badge bg-dark ms-1">{{ (int) ($activePublishedCount ?? 0) }}</span>
+                                    </button>
+                                    <button type="button"
+                                            class="btn btn-warning text-dark btn-sm"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#adminSuspendedEventsModal"
+                                            data-hint="Elenco eventi sospesi da riprogrammare">
+                                        <i class="fas fa-pause-circle"></i> Eventi sospesi
+                                        <span class="badge bg-dark ms-1">{{ (int) ($suspendedUpcomingCount ?? 0) }}</span>
+                                    </button>
+                                    <a href="{{ route('admin.events.create') }}" class="btn btn-success btn-sm" data-hint="Crea un nuovo evento">
+                                        <i class="fas fa-plus"></i> Nuovo Evento
+                                    </a>
+                                    <a href="{{ route('home') }}" class="btn btn-secondary btn-sm" data-hint="Torna alla homepage">
+                                        <i class="fas fa-home"></i> Torna alla home
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -232,15 +245,56 @@
         </div>
     </div>
 
+    <div class="modal fade" id="adminSuspendedEventsModal" tabindex="-1" aria-labelledby="adminSuspendedEventsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="adminSuspendedEventsModalLabel">Eventi sospesi (Da riprogrammare)</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="adminSuspendedEventsBody">
+                        <p class="text-muted mb-0"><i class="fas fa-spinner fa-spin me-1"></i>Caricamento…</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Chiudi</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="adminActiveEventsModal" tabindex="-1" aria-labelledby="adminActiveEventsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="adminActiveEventsModalLabel">Eventi attivi <span class="fs-6 fw-normal text-muted">(da oggi in poi)</span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="adminActiveEventsBody">
+                        <p class="text-muted mb-0"><i class="fas fa-spinner fa-spin me-1"></i>Caricamento…</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Chiudi</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <style>
         .admin-events-stats .card-body {
             padding: 0.28rem 0.45rem;
         }
         .admin-events-stats .card.bg-primary,
-        .admin-events-stats .card.bg-success,
-        .admin-events-stats .card.bg-warning {
+        .admin-events-stats .card.bg-warning,
+        .admin-events-stats .admin-events-actions-card {
             width: fit-content;
-            min-width: 10rem; /* abbastanza per titolo+numero senza sprechi */
+            min-width: 10rem;
+        }
+        .admin-events-stats .admin-events-actions-card {
+            min-width: min(100%, 28rem);
         }
         .admin-events-stats .card-title {
             font-size: 0.78rem;
@@ -253,9 +307,29 @@
             line-height: 1;
             margin-bottom: 0;
         }
-        .admin-events-search .row.g-2 {
-            --bs-gutter-x: 0.35rem;
-            --bs-gutter-y: 0.2rem;
+        /* Box ricerca: larghezza aderente ai campi, non tutta la riga */
+        .admin-events-search-wrap {
+            flex: 0 0 auto;
+            width: auto;
+            max-width: 100%;
+        }
+        .admin-events-search-card {
+            width: fit-content;
+            max-width: 100%;
+        }
+        .admin-events-search-inner {
+            row-gap: 0.35rem;
+        }
+        .admin-events-search-field--select .form-select {
+            width: auto;
+            min-width: 6.5rem;
+        }
+        .admin-events-search-field--q .input-group {
+            width: auto;
+        }
+        .admin-events-search-field--q .form-control {
+            width: 12.5rem;
+            max-width: min(18rem, 72vw);
         }
         .admin-events-search .input-group-text {
             padding-top: 0.15rem;
@@ -284,6 +358,83 @@
         .admin-events-table .badge {
             font-size: 0.66rem;
             padding: 0.12rem 0.32rem;
+        }
+        /* Modale «Eventi sospesi»: contenitore bordo verde; box distinti da sfondi tenui (no bordo blu) */
+        .admin-suspended-events-list {
+            border: 2px solid #198754;
+            border-radius: 0.5rem;
+            padding: 0.45rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.45rem;
+            background: #f8f9fa;
+        }
+        .admin-suspended-event-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1.25fr) minmax(0, 7rem) minmax(0, 1fr) minmax(0, 6.85rem);
+            gap: 0.35rem;
+            align-items: stretch;
+        }
+        @media (max-width: 767.98px) {
+            .admin-suspended-event-row {
+                grid-template-columns: 1fr;
+            }
+        }
+        .admin-suspended-event-box {
+            border: none;
+            border-radius: 0.35rem;
+            padding: 0.35rem 0.45rem;
+            min-width: 0;
+        }
+        .admin-suspended-event-box--title {
+            background-color: #e8f2fe;
+            color: #212529;
+        }
+        .admin-suspended-event-box--date {
+            background-color: #e8f6ee;
+            color: #212529;
+        }
+        .admin-suspended-event-box--place {
+            background-color: #fff6e5;
+            color: #212529;
+        }
+        .admin-suspended-event-box--actions {
+            background-color: #f2ebfb;
+            color: #212529;
+        }
+        .admin-suspended-event-label {
+            display: block;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: rgba(33, 37, 41, 0.55);
+            margin-bottom: 0.12rem;
+            font-weight: 600;
+            line-height: 1.1;
+        }
+        .admin-suspended-event-box--actions .admin-suspended-actions-pair {
+            max-width: none;
+        }
+        /* Modale «Eventi sospesi»: Apri (verde) sopra, Modifica (giallo) sotto, compatti */
+        .admin-suspended-actions-pair {
+            display: flex;
+            flex-direction: column;
+            flex-wrap: nowrap;
+            align-items: stretch;
+            gap: 0.22rem;
+            width: 100%;
+            max-width: 6.75rem;
+        }
+        .admin-suspended-actions-pair .admin-suspended-action-btn {
+            width: 100%;
+            padding-top: 0.1rem;
+            padding-bottom: 0.1rem;
+            padding-left: 0.35rem;
+            padding-right: 0.35rem;
+            font-size: 0.72rem;
+            line-height: 1.12;
+            text-align: center;
+            white-space: nowrap;
         }
         .admin-events-sort-icons {
             display: inline-flex;
@@ -400,23 +551,102 @@
                 }
 
                 var url = endpoint + '?field=' + encodeURIComponent(field) + '&q=' + encodeURIComponent(q);
-                fetch(url, { headers: { 'Accept': 'application/json' } })
+                fetch(url, { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
                     .then(function (r) { return r.ok ? r.json() : []; })
-                    .then(function (items) { setOptions(items); })
-                    .catch(function () { /* no-op */ });
+                    .then(function (items) { setOptions(Array.isArray(items) ? items : []); })
+                    .catch(function () { clearOptions(); });
             }
 
             function schedule() {
                 if (timer) window.clearTimeout(timer);
-                timer = window.setTimeout(fetchSuggestions, 220);
+                timer = window.setTimeout(fetchSuggestions, 200);
             }
 
-            input.addEventListener('input', schedule);
+            input.addEventListener('input', function () {
+                lastKey = '';
+                schedule();
+            });
+            input.addEventListener('focus', schedule);
+            input.addEventListener('compositionend', schedule);
             select.addEventListener('change', function () {
                 lastKey = '';
                 clearOptions();
                 schedule();
             });
+        })();
+    </script>
+    <script>
+        window.ADMIN_SUSPENDED_EVENTS_JSON_URL = @json(route('admin.events.suspended-upcoming-future'));
+        window.ADMIN_ACTIVE_EVENTS_JSON_URL = @json(route('admin.events.active-published'));
+        (function () {
+            function escHtml(t) {
+                if (t == null) return '';
+                return String(t)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;');
+            }
+
+            function renderAdminEventsModalList(bodyEl, rows) {
+                if (!rows.length) {
+                    bodyEl.innerHTML = '<p class="text-muted mb-0">Nessun evento in questa fascia.</p>';
+                    return;
+                }
+                var html = '<div class="admin-suspended-events-list">';
+                for (var i = 0; i < rows.length; i++) {
+                    var r = rows[i];
+                    var hrefEdit = String(r.edit_url || '').replace(/"/g, '&quot;');
+                    var hrefShow = String(r.show_url || '').replace(/"/g, '&quot;');
+                    html += '<div class="admin-suspended-event-row">' +
+                        '<div class="admin-suspended-event-box admin-suspended-event-box--title">' +
+                        '<span class="admin-suspended-event-label">Evento</span>' +
+                        '<div class="small mb-0">' + escHtml(r.title) + '</div></div>' +
+                        '<div class="admin-suspended-event-box admin-suspended-event-box--date">' +
+                        '<span class="admin-suspended-event-label">Data</span>' +
+                        '<div class="small text-nowrap mb-0">' + escHtml(r.date) + '</div></div>' +
+                        '<div class="admin-suspended-event-box admin-suspended-event-box--place">' +
+                        '<span class="admin-suspended-event-label">Luogo</span>' +
+                        '<div class="small mb-0">' + escHtml(r.place) + '</div></div>' +
+                        '<div class="admin-suspended-event-box admin-suspended-event-box--actions">' +
+                        '<span class="admin-suspended-event-label">Azioni</span>' +
+                        '<div class="admin-suspended-actions-pair">' +
+                        '<a href="' + hrefShow + '" class="btn btn-success btn-sm admin-suspended-action-btn" target="_blank" rel="noopener" title="Vedi scheda evento (senza modifica)">Apri</a>' +
+                        '<a href="' + hrefEdit + '" class="btn btn-warning text-dark btn-sm admin-suspended-action-btn" target="_blank" rel="noopener">Modifica</a>' +
+                        '</div></div></div>';
+                }
+                html += '</div>';
+                bodyEl.innerHTML = html;
+            }
+
+            function wireModal(modalEl, bodyEl, jsonUrl) {
+                if (!modalEl || !bodyEl || !jsonUrl) return;
+                modalEl.addEventListener('show.bs.modal', function () {
+                    bodyEl.innerHTML = '<p class="text-muted mb-0"><i class="fas fa-spinner fa-spin me-1"></i>Caricamento…</p>';
+                    fetch(jsonUrl, {
+                        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                        credentials: 'same-origin'
+                    })
+                        .then(function (r) { return r.json(); })
+                        .then(function (data) {
+                            renderAdminEventsModalList(bodyEl, data.events || []);
+                        })
+                        .catch(function () {
+                            bodyEl.innerHTML = '<p class="text-danger mb-0">Impossibile caricare l’elenco.</p>';
+                        });
+                });
+            }
+
+            wireModal(
+                document.getElementById('adminSuspendedEventsModal'),
+                document.getElementById('adminSuspendedEventsBody'),
+                window.ADMIN_SUSPENDED_EVENTS_JSON_URL
+            );
+            wireModal(
+                document.getElementById('adminActiveEventsModal'),
+                document.getElementById('adminActiveEventsBody'),
+                window.ADMIN_ACTIVE_EVENTS_JSON_URL
+            );
         })();
     </script>
 @endsection

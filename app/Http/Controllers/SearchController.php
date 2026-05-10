@@ -31,7 +31,7 @@ class SearchController extends Controller
         }
 
         $users = User::query()
-            ->select(['userID', 'username', 'nome', 'cognome'])
+            ->select(['userID', 'username', 'nome'])
             ->where('abilitato', 1)
             ->where('username', 'like', '%' . $q . '%')
             ->orderBy('username')
@@ -41,12 +41,10 @@ class SearchController extends Controller
         return response()->json([
             'results' => $users->map(function ($u) {
                 $nome = trim((string) ($u->nome ?? ''));
-                $cognome = trim((string) ($u->cognome ?? ''));
-                $full = trim($nome . ' ' . $cognome);
 
                 return [
                     'username' => (string) $u->username,
-                    'label' => $full !== '' ? ($full . ' (' . $u->username . ')') : (string) $u->username,
+                    'label' => $nome !== '' ? ($nome . ' (' . $u->username . ')') : (string) $u->username,
                 ];
             }),
         ]);

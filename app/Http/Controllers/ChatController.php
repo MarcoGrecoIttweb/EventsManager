@@ -55,12 +55,18 @@ class ChatController extends Controller
             }
         }
 
-        // Trova un'immagine header se presente (qualunque estensione)
+        // Trova un'immagine header se presente (un solo file previsto; se ce ne sono più, usa il più recente)
         $headerImage = null;
         $basePath = public_path('upload_immagini');
         if (is_dir($basePath)) {
             $matches = glob($basePath . DIRECTORY_SEPARATOR . 'chat_header.*');
-            if ($matches && isset($matches[0])) {
+            if ($matches && count($matches) > 0) {
+                usort($matches, function ($a, $b) {
+                    $ta = @filemtime($a) ?: 0;
+                    $tb = @filemtime($b) ?: 0;
+
+                    return $tb <=> $ta;
+                });
                 $headerImage = 'upload_immagini/' . basename($matches[0]);
             }
         }
@@ -187,17 +193,33 @@ class ChatController extends Controller
         }
 
         $request->validate([
-            // Accetta qualsiasi formato immagine fino a ~10MB
-            'header_image' => 'required|image|max:10240',
+            'header_image' => 'required|file|max:10240',
         ]);
 
         $file = $request->file('header_image');
+        $clientExt = strtolower((string) ($file->getClientOriginalExtension() ?: ''));
+        if ($clientExt === 'jpeg') {
+            $clientExt = 'jpg';
+        }
+        $allowedExt = ['webp', 'png', 'gif', 'jpg'];
+        if (!in_array($clientExt, $allowedExt, true)) {
+            return redirect()->route('chat.index')
+                ->with('error', 'Formato file non ammesso. Usa JPG, PNG, GIF o WebP.');
+        }
+
         $dest = public_path('upload_immagini');
         if (!is_dir($dest)) {
             @mkdir($dest, 0755, true);
         }
 
-        $filename = 'chat_header.' . strtolower($file->getClientOriginalExtension() ?: 'jpg');
+        // Evita più chat_header.*: altrimenti glob() può mostrare ancora il vecchio JPG al posto della nuova WebP
+        foreach (glob($dest . DIRECTORY_SEPARATOR . 'chat_header.*') ?: [] as $oldPath) {
+            if (is_file($oldPath)) {
+                @unlink($oldPath);
+            }
+        }
+
+        $filename = 'chat_header.' . $clientExt;
         $file->move($dest, $filename);
 
         return redirect()->route('chat.index')

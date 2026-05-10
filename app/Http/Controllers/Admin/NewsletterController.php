@@ -9,11 +9,97 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
 use App\Mail\NewsletterMail;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class NewsletterController extends Controller
 {
     /** Dimensione predefinita gruppo newsletter (iscritti News attiva). */
     public const NEWS_GROUP_SIZE_DEFAULT = 80;
+
+    /** Target destinatari ammessi in invio / anteprima / gruppi. */
+    private const NEWSLETTER_TARGET_VALUES = [
+        'all', 'approved', 'approved_newsletter_off', 'participants',
+        'never_participated', 'pending', 'low_participation', 'news',
+    ];
+
+    /** Elenco utenti per box statistiche pagina newsletter. */
+    private const STAT_RECIPIENT_LIST_KEYS = [
+        'all_non_admin', 'approved', 'news_active', 'approved_newsletter_off',
+        'participants', 'low_participation', 'pending',
+    ];
+
+    /**
+     * Filtro utenti non-admin in base al target (escluso "all": nessun filtro aggiuntivo).
+     */
+    private static function applyNewsletterTargetFilter($query, string $target): void
+    {
+        switch ($target) {
+            case 'approved':
+                $query->where('abilitato', 1);
+                break;
+            case 'approved_newsletter_off':
+                $query->where('abilitato', 1)->where('invia', false);
+                break;
+            case 'participants':
+                $query->where('abilitato', 1)->has('events');
+                break;
+            case 'never_participated':
+                $query->where('abilitato', 1)->doesntHave('events');
+                break;
+            case 'pending':
+                $query->where('abilitato', 3);
+                break;
+            case 'low_participation':
+                $query->where('abilitato', 1)
+                    ->withCount('events')
+                    ->having('events_count', '<', 2);
+                break;
+            case 'news':
+                $query->where('abilitato', 1)->where('invia', true);
+                break;
+        }
+    }
+
+    /**
+     * Query base per l’elenco utenti collegato a un box «Statistiche destinatari».
+     */
+    private static function statRecipientsBaseQuery(string $list)
+    {
+        $query = User::nonAdmin();
+
+        switch ($list) {
+            case 'all_non_admin':
+                break;
+            case 'approved':
+                $query->where('abilitato', 1);
+                break;
+            case 'news_active':
+                $query->where('abilitato', 1)
+                    ->where('invia', true)
+                    ->whereNotNull('email')
+                    ->where('email', '!=', '');
+                break;
+            case 'approved_newsletter_off':
+                $query->where('abilitato', 1)
+                    ->where('invia', false)
+                    ->whereNotNull('email')
+                    ->where('email', '!=', '');
+                break;
+            case 'participants':
+                $query->where('abilitato', 1)->has('events');
+                break;
+            case 'low_participation':
+                $query->where('abilitato', 1)
+                    ->withCount('events')
+                    ->having('events_count', '<', 2);
+                break;
+            case 'pending':
+                $query->where('abilitato', 3);
+                break;
+        }
+
+        return $query;
+    }
 
     public function create()
     {
@@ -25,8 +111,16 @@ class NewsletterController extends Controller
             ->whereNotNull('email')
             ->where('email', '!=', '')
             ->count();
+        // Attivati con email valida (tutti, indipendentemente da News)
         $approvedEmailCount = User::nonAdmin()
             ->where('abilitato', 1)
+            ->whereNotNull('email')
+            ->where('email', '!=', '')
+            ->count();
+        // Attivati con email ma newsletter disattivata (invia = false)
+        $approvedNewsletterOffCount = User::nonAdmin()
+            ->where('abilitato', 1)
+            ->where('invia', false)
             ->whereNotNull('email')
             ->where('email', '!=', '')
             ->count();
@@ -39,6 +133,32 @@ class NewsletterController extends Controller
             ->where('abilitato', 1)
             ->has('events')
             ->count();
+
+        $lowParticipationSub = DB::table('utente')
+            ->where('ruolo', '!=', 0)
+            ->where('abilitato', 1)
+            ->leftJoin('partecipa', 'utente.userID', '=', 'partecipa.id_utente')
+            ->groupBy('utente.userID')
+            ->havingRaw('COUNT(partecipa.id_evento) < 2')
+            ->select('utente.userID', DB::raw('COUNT(partecipa.id_evento) as ev_count'));
+        $lowParticipationStats = DB::query()
+            ->fromSub($lowParticipationSub, 't')
+            ->selectRaw('COUNT(*) as user_cnt, COALESCE(SUM(ev_count), 0) as participations_sum')
+            ->first();
+        $lowEventParticipationUsersCount = (int) ($lowParticipationStats->user_cnt ?? 0);
+        $lowEventParticipationTotalEvents = (int) ($lowParticipationStats->participations_sum ?? 0);
+
+        $lowParticipationEmailSub = DB::table('utente')
+            ->where('ruolo', '!=', 0)
+            ->where('abilitato', 1)
+            ->whereNotNull('email')
+            ->where('email', '!=', '')
+            ->leftJoin('partecipa', 'utente.userID', '=', 'partecipa.id_utente')
+            ->groupBy('utente.userID')
+            ->havingRaw('COUNT(partecipa.id_evento) < 2')
+            ->select('utente.userID');
+        $lowParticipationEmailCount = (int) DB::query()->fromSub($lowParticipationEmailSub, 'x')->count();
+
         $participantsEmailCount = User::nonAdmin()
             ->where('abilitato', 1)
             ->has('events')
@@ -61,9 +181,11 @@ class NewsletterController extends Controller
         $targetEmailTotals = [
             'all' => $allEmailCount,
             'approved' => $approvedEmailCount,
+            'approved_newsletter_off' => $approvedNewsletterOffCount,
             'participants' => $participantsEmailCount,
             'never_participated' => $neverParticipatedEmailCount,
             'pending' => $pendingEmailCount,
+            'low_participation' => $lowParticipationEmailCount,
             'news' => $newsSubscribersCount,
         ];
 
@@ -104,7 +226,10 @@ class NewsletterController extends Controller
             'usersCount',
             'totalUsersCount',
             'participantsCount',
+            'lowEventParticipationUsersCount',
+            'lowEventParticipationTotalEvents',
             'newsSubscribersCount',
+            'approvedNewsletterOffCount',
             'newsGroupSizePreview',
             'newsBatchCount',
             'newsBatchesMeta',
@@ -120,7 +245,7 @@ class NewsletterController extends Controller
         $rules = [
             'subject' => 'required|string|max:255',
             'message' => 'required|string|min:10',
-            'target' => 'required|in:all,approved,participants,never_participated,pending,news',
+            'target' => ['required', Rule::in(self::NEWSLETTER_TARGET_VALUES)],
             'news_send' => 'nullable|in:all,groups',
             'news_group_size' => 'nullable|integer|min:20|max:300',
             'news_groups' => 'nullable|array|max:5',
@@ -173,23 +298,7 @@ class NewsletterController extends Controller
                 }
 
                 $baseQ = User::nonAdmin();
-                switch ($request->target) {
-                    case 'approved':
-                        $baseQ->where('abilitato', 1);
-                        break;
-                    case 'participants':
-                        $baseQ->where('abilitato', 1)->has('events');
-                        break;
-                    case 'never_participated':
-                        $baseQ->where('abilitato', 1)->doesntHave('events');
-                        break;
-                    case 'pending':
-                        $baseQ->where('abilitato', 3);
-                        break;
-                    case 'news':
-                        $baseQ->where('abilitato', 1)->where('invia', true);
-                        break;
-                }
+                self::applyNewsletterTargetFilter($baseQ, (string) $request->target);
 
                 $allBase = $baseQ
                     ->whereNotNull('email')
@@ -231,25 +340,7 @@ class NewsletterController extends Controller
             return back()->withErrors(['news_send' => 'Seleziona i gruppi da inviare.']);
         } else {
             $usersQuery = User::nonAdmin();
-
-            switch ($request->target) {
-                case 'approved':
-                    $usersQuery->where('abilitato', 1);
-                    break;
-                case 'participants':
-                    $usersQuery->where('abilitato', 1)->has('events');
-                    break;
-                case 'never_participated':
-                    $usersQuery->where('abilitato', 1)->doesntHave('events');
-                    break;
-                case 'pending':
-                    $usersQuery->where('abilitato', 3);
-                    break;
-                case 'news':
-                    $usersQuery->where('abilitato', 1)
-                        ->where('invia', true);
-                    break;
-            }
+            self::applyNewsletterTargetFilter($usersQuery, (string) $request->target);
 
             $users = $usersQuery
                 ->whereNotNull('email')
@@ -264,6 +355,21 @@ class NewsletterController extends Controller
             $users = $users->reject(function ($u) use ($excludeSet) {
                 return isset($excludeSet[(int) $u->userID]);
             })->values();
+        }
+
+        // Copia obbligatoria all'amministratore Scintilla (stesso username usato altrove nel progetto).
+        $scintillaAdmin = User::query()
+            ->where('ruolo', 0)
+            ->whereRaw('LOWER(username) = ?', ['scintilla'])
+            ->first();
+        if ($scintillaAdmin && trim((string) $scintillaAdmin->email) !== '') {
+            $scintillaId = (int) $scintillaAdmin->userID;
+            $alreadyHasScintilla = $users->contains(function ($u) use ($scintillaId) {
+                return (int) $u->userID === $scintillaId;
+            });
+            if (! $alreadyHasScintilla) {
+                $users->push($scintillaAdmin);
+            }
         }
 
         if ($users->isEmpty()) {
@@ -346,7 +452,7 @@ class NewsletterController extends Controller
     public function groupRecipients(Request $request)
     {
         $request->validate([
-            'target' => 'required|in:all,approved,participants,never_participated,pending,news',
+            'target' => ['required', Rule::in(self::NEWSLETTER_TARGET_VALUES)],
             'group' => 'required|integer|min:1',
             'news_group_size' => 'required|integer|min:20|max:300',
         ]);
@@ -356,23 +462,7 @@ class NewsletterController extends Controller
         $target = (string) $request->input('target');
 
         $q = User::nonAdmin();
-        switch ($target) {
-            case 'approved':
-                $q->where('abilitato', 1);
-                break;
-            case 'participants':
-                $q->where('abilitato', 1)->has('events');
-                break;
-            case 'never_participated':
-                $q->where('abilitato', 1)->doesntHave('events');
-                break;
-            case 'pending':
-                $q->where('abilitato', 3);
-                break;
-            case 'news':
-                $q->where('abilitato', 1)->where('invia', true);
-                break;
-        }
+        self::applyNewsletterTargetFilter($q, $target);
 
         $allBase = $q
             ->whereNotNull('email')
@@ -450,7 +540,7 @@ class NewsletterController extends Controller
     public function previewRecipients(Request $request)
     {
         $validated = $request->validate([
-            'target' => ['required', 'in:all,approved,participants,never_participated,pending,news'],
+            'target' => ['required', Rule::in(self::NEWSLETTER_TARGET_VALUES)],
             // Invio a gruppi (per qualunque target)
             'news_send' => ['nullable', 'in:all,groups'],
             'news_group_size' => ['nullable', 'integer', 'min:20', 'max:300'],
@@ -470,23 +560,7 @@ class NewsletterController extends Controller
             sort($groupNums);
 
             $q = User::nonAdmin();
-            switch ($target) {
-                case 'approved':
-                    $q->where('abilitato', 1);
-                    break;
-                case 'participants':
-                    $q->where('abilitato', 1)->has('events');
-                    break;
-                case 'never_participated':
-                    $q->where('abilitato', 1)->doesntHave('events');
-                    break;
-                case 'pending':
-                    $q->where('abilitato', 3);
-                    break;
-                case 'news':
-                    $q->where('abilitato', 1)->where('invia', true);
-                    break;
-            }
+            self::applyNewsletterTargetFilter($q, $target);
 
             $allBase = $q
                 ->whereNotNull('email')
@@ -517,21 +591,6 @@ class NewsletterController extends Controller
             $q = User::nonAdmin();
 
             switch ($target) {
-                case 'approved':
-                    $q->where('abilitato', 1);
-                    break;
-                case 'participants':
-                    $q->where('abilitato', 1)->has('events');
-                    break;
-                case 'never_participated':
-                    $q->where('abilitato', 1)->doesntHave('events');
-                    break;
-                case 'pending':
-                    $q->where('abilitato', 3);
-                    break;
-                case 'news':
-                    $q->where('abilitato', 1)->where('invia', true);
-                    break;
                 case 'selected':
                     $ids = $validated['selected_users'] ?? [];
                     $q->whereIn('userID', $ids);
@@ -539,6 +598,9 @@ class NewsletterController extends Controller
                 case 'selected_news':
                     $ids = $validated['selected_users'] ?? [];
                     $q->where('abilitato', 1)->where('invia', true)->whereIn('userID', $ids);
+                    break;
+                default:
+                    self::applyNewsletterTargetFilter($q, $target);
                     break;
             }
 
@@ -572,17 +634,81 @@ class NewsletterController extends Controller
         return response()->json([
             'target_label' => match ($target) {
                 'all' => 'Tutti gli utenti',
-                'approved' => 'Solo Utenti Attivati',
+                'approved' => 'Solo utenti attivati (tutti, con o senza newsletter)',
+                'approved_newsletter_off' => 'Solo utenti attivati con newsletter disattivata',
                 'participants' => 'Solo utenti che partecipano ad eventi',
                 'never_participated' => 'Solo utenti che non hanno mai partecipato ad eventi',
                 'pending' => 'Solo utenti in attesa di approvazione',
+                'low_participation' => 'Solo utenti attivati con meno di 2 eventi',
+                'news' => 'Solo utenti attivati con newsletter attiva',
                 'selected' => 'Seleziona utenti specifici',
                 'selected_news' => 'Seleziona Utenti Newsletter Attiva',
-                default => 'Solo utenti con News attiva (newsletter)',
+                default => 'Destinatari newsletter',
             },
             'total' => $total,
             'shown' => $shown,
             'max_show' => $maxShow,
+        ]);
+    }
+
+    /**
+     * Elenco utenti per una voce del box «Statistiche destinatari» (solo admin).
+     */
+    public function statRecipients(Request $request)
+    {
+        $validated = $request->validate([
+            'list' => ['required', 'string', Rule::in(self::STAT_RECIPIENT_LIST_KEYS)],
+        ]);
+
+        $list = $validated['list'];
+        $query = self::statRecipientsBaseQuery($list);
+
+        $titles = [
+            'all_non_admin' => 'Tutti gli utenti (non admin)',
+            'approved' => 'Utenti approvati / attivati',
+            'news_active' => 'Con News attiva (newsletter) — email valida',
+            'approved_newsletter_off' => 'Attivati con newsletter disattivata — email valida',
+            'participants' => 'Partecipanti ad eventi',
+            'low_participation' => 'Attivati con meno di 2 eventi',
+            'pending' => 'In attesa di approvazione',
+        ];
+
+        $total = $query->count();
+        $maxRows = 2000;
+        $listQuery = self::statRecipientsBaseQuery($list)
+            ->orderBy('nome')
+            ->orderBy('username')
+            ->limit($maxRows);
+        if ($list === 'low_participation') {
+            $users = $listQuery->get();
+        } else {
+            $users = $listQuery->get(['userID', 'nome', 'username', 'email', 'abilitato', 'invia']);
+        }
+
+        $rows = $users->map(function (User $u) use ($list) {
+            $row = [
+                'id' => (int) $u->userID,
+                'name' => (string) ($u->nome ?? ''),
+                'nickname' => (string) ($u->username ?? ''),
+                'email' => (string) ($u->email ?? ''),
+                'newsletter' => (bool) $u->invia,
+                'status' => (string) ($u->status ?? ''),
+            ];
+            if ($list === 'low_participation') {
+                $row['events_count'] = (int) ($u->events_count ?? 0);
+            }
+
+            return $row;
+        })->values();
+
+        return response()->json([
+            'title' => $titles[$list] ?? $list,
+            'list' => $list,
+            'total' => $total,
+            'shown' => $rows->count(),
+            'max_rows' => $maxRows,
+            'truncated' => $total > $maxRows,
+            'users' => $rows,
         ]);
     }
 

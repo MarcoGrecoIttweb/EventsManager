@@ -132,6 +132,52 @@ class EventController extends Controller
         return view('events.past', compact('events', 'q', 'field', 'mine'));
     }
 
+    /**
+     * Suggerimenti autocomplete per la ricerca testo in «Eventi passati» (solo admin).
+     */
+    public function pastSearchSuggestions(Request $request)
+    {
+        if (!$request->user() || !$request->user()->isAdmin()) {
+            abort(403);
+        }
+
+        $term = trim((string) $request->query('q', ''));
+        $field = strtolower(trim((string) $request->query('field', 'title')));
+        if (! in_array($field, ['title', 'description'], true)) {
+            $field = 'title';
+        }
+
+        if ($term === '' || mb_strlen($term, 'UTF-8') < 2) {
+            return response()->json([]);
+        }
+
+        $like = '%' . $term . '%';
+        $column = $field === 'description' ? 'descrizione' : 'nome';
+
+        $items = Event::query()
+            ->active()
+            ->past()
+            ->select($column)
+            ->whereNotNull($column)
+            ->where($column, '!=', '')
+            ->where($column, 'like', $like)
+            ->distinct()
+            ->orderBy($column)
+            ->limit(15)
+            ->pluck($column)
+            ->map(function ($v) {
+                $raw = html_entity_decode((string) $v, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                $t = trim(preg_replace('/\s+/', ' ', strip_tags($raw)) ?? '');
+
+                return $t !== '' ? mb_substr($t, 0, 160) : '';
+            })
+            ->filter()
+            ->unique()
+            ->values();
+
+        return response()->json($items);
+    }
+
     public function show(Event $event)
     {
         // Gli admin possono vedere anche eventi disattivati dalla lista gestione eventi.

@@ -47,6 +47,52 @@ class UserController extends Controller
     }
 
     /**
+     * Suggerimenti per il campo «Trova utente» (datalist), in base a nome / cognome / nickname (username).
+     */
+    public function finderSuggestions(Request $request)
+    {
+        $field = (string) $request->query('field', 'nome');
+        if (!in_array($field, ['nome', 'cognome', 'nickname'], true)) {
+            $field = 'nome';
+        }
+
+        $term = trim((string) $request->query('q', ''));
+        if (mb_strlen($term, 'UTF-8') < 2) {
+            return response()->json([]);
+        }
+
+        $escaped = addcslashes($term, '%_\\');
+        $like = '%' . $escaped . '%';
+
+        if ($field === 'cognome') {
+            $column = 'cognome';
+        } elseif ($field === 'nickname') {
+            $column = 'username';
+        } else {
+            $column = 'nome';
+        }
+
+        $values = User::query()
+            ->where($column, 'like', $like)
+            ->whereNotNull($column)
+            ->where($column, '!=', '')
+            ->orderBy($column)
+            ->limit(40)
+            ->pluck($column)
+            ->map(function ($v) {
+                return trim((string) $v);
+            })
+            ->filter(function ($v) {
+                return $v !== '';
+            })
+            ->unique()
+            ->values()
+            ->take(15);
+
+        return response()->json($values->all());
+    }
+
+    /**
      * Elenco ingressi giornalieri (default 1 giorno, fino a 10).
      */
     public function logins(Request $request)

@@ -48,11 +48,13 @@
                                 </label>
                                 <select class="form-select" id="target" name="target" required onchange="toggleUserSelection()">
                                     <option value="all" style="color:#6c757d; font-weight:800;">Tutti gli utenti</option>
-                                    <option value="approved" style="color:#198754; font-weight:800;">Solo Utenti Attivati</option>
+                                    <option value="approved" style="color:#198754; font-weight:800;">Solo utenti attivati</option>
+                                    <option value="approved_newsletter_off" style="color:#6f42c1; font-weight:800;">Solo attivati con newsletter disattivata</option>
                                     <option value="news" selected style="color:#0aa2c0; font-weight:800;">Solo utenti con News attiva (newsletter)</option>
                                     <option value="participants" style="color:#b88400; font-weight:800;">Solo utenti che partecipano ad eventi</option>
                                     <option value="never_participated" style="color:#6f42c1; font-weight:800;">Solo utenti che non hanno mai partecipato ad eventi</option>
                                     <option value="pending" style="color:#fd7e14; font-weight:800;">Solo utenti in attesa di approvazione</option>
+                                    <option value="low_participation" style="color:#20c997; font-weight:800;">Attivati con meno di 2 eventi</option>
                                 </select>
                             </div>
 
@@ -262,33 +264,44 @@
                     <div class="card-body">
                         <div class="mb-3">
                             <strong>Tutti gli utenti (non admin):</strong>
-                            <span class="badge bg-primary float-end">{{ number_format($totalUsersCount ?? $usersCount) }}</span>
+                            <span class="badge bg-primary float-end newsletter-stat-open cursor-pointer" role="button" tabindex="0" data-stat-list="all_non_admin" title="Apre l’elenco di tutti gli utenti non amministratori">{{ number_format($totalUsersCount ?? $usersCount) }}</span>
                         </div>
                         <div class="mb-3">
                             <strong>Utenti approvati:</strong>
-                            <span class="badge bg-success float-end">{{ number_format($usersCount) }}</span>
+                            <span class="badge bg-success float-end newsletter-stat-open cursor-pointer" role="button" tabindex="0" data-stat-list="approved" title="Apre l’elenco degli utenti approvati / attivati (con o senza News)">{{ number_format($usersCount) }}</span>
                         </div>
                         <div class="mb-3">
                             <strong>Con News attiva (newsletter):</strong>
-                            <span class="badge bg-info float-end">{{ number_format($newsSubscribersCount) }}</span>
+                            <span class="badge bg-info float-end newsletter-stat-open cursor-pointer" role="button" tabindex="0" data-stat-list="news_active" title="Apre l’elenco degli utenti con News attiva e indirizzo email valido">{{ number_format($newsSubscribersCount) }}</span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Attivati con newsletter disattivata:</strong>
+                            <span class="badge bg-secondary float-end newsletter-stat-open cursor-pointer" role="button" tabindex="0" data-stat-list="approved_newsletter_off" title="Apre l’elenco degli utenti attivati con newsletter disattivata e indirizzo email valido">{{ number_format($approvedNewsletterOffCount ?? 0) }}</span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Partecipanti ad eventi:</strong>
+                            <span class="badge bg-warning text-dark float-end newsletter-stat-open cursor-pointer" role="button" tabindex="0" data-stat-list="participants" title="Apre l’elenco degli utenti attivati iscritti ad almeno un evento">{{ number_format($participantsCount) }}</span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Attivati con meno di 2 eventi:</strong>
+                            <span class="float-end d-inline-flex align-items-center flex-wrap justify-content-end gap-1">
+                                <span class="badge bg-primary newsletter-stat-open cursor-pointer" role="button" tabindex="0" data-stat-list="low_participation" title="Apre l’elenco degli utenti attivati iscritti a 0 o 1 evento">{{ number_format($lowEventParticipationUsersCount ?? 0) }}</span>
+                                <span class="badge bg-light text-dark border" title="Somma delle partecipazioni a eventi di questi utenti (ciascuno ha al massimo 1 evento in questo elenco)">{{ number_format($lowEventParticipationTotalEvents ?? 0) }}</span>
+                            </span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>In attesa di approvazione:</strong>
+                            <span class="badge bg-secondary float-end newsletter-stat-open cursor-pointer" role="button" tabindex="0" data-stat-list="pending" title="Apre l’elenco degli utenti in attesa di approvazione">{{ number_format($users->where('status', 'awaiting')->count()) }}</span>
                         </div>
                         @if(($newsBatchCount ?? 0) > 0)
                             <div class="mb-3">
                                 <strong>Gruppi da ~{{ $newsGroupSizePreview ?? 80 }} iscritti:</strong>
-                                <span class="badge bg-dark float-end">{{ $newsBatchCount }}</span>
+                                <span class="badge bg-dark float-end" title="Numero di blocchi per invio a gruppi (non è un elenco utenti)">{{ $newsBatchCount }}</span>
                             </div>
                         @endif
-                        <div class="mb-3">
-                            <strong>Partecipanti ad eventi:</strong>
-                            <span class="badge bg-warning float-end">{{ number_format($participantsCount) }}</span>
-                        </div>
-                        <div class="mb-3">
-                            <strong>In attesa di approvazione:</strong>
-                            <span class="badge bg-secondary float-end">{{ number_format($users->where('status', 'awaiting')->count()) }}</span>
-                        </div>
                         <hr>
                         <small class="text-muted">
-                            <i class="fas fa-info-circle"></i> I numeri si aggiornano in tempo reale.
+                            <i class="fas fa-info-circle"></i> I conteggi con email si riferiscono a utenti non admin con indirizzo valorizzato. <strong>Clicca sul numero colorato</strong> per aprire l’elenco (max 2000 righe).
                         </small>
                     </div>
                 </div>
@@ -335,12 +348,128 @@
         </div>
     </div>
 
+    <div class="modal fade" id="newsletterStatListModal" tabindex="-1" aria-labelledby="newsletterStatListModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="newsletterStatListModalLabel">Elenco utenti</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="small text-muted mb-2" id="newsletterStatListModalMeta"></p>
+                    <div id="newsletterStatListModalBody"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Chiudi</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         window.NEWS_SUBSCRIBERS_TOTAL = {{ (int) ($newsSubscribersCount ?? 0) }};
         window.TARGET_EMAIL_TOTALS = @json($targetEmailTotals ?? []);
         window.NEWS_GROUP_RECIPIENTS_URL = @json(route('admin.newsletter.group-recipients'));
         window.NEWSLETTER_PREVIEW_RECIPIENTS_URL = @json(route('admin.newsletter.preview-recipients'));
+        window.NEWSLETTER_STAT_RECIPIENTS_URL = @json(route('admin.newsletter.stat-recipients'));
         window.NEWSLETTER_EXCLUDED_IDS = Object.create(null);
+
+        function newsletterStatStatusLabel(st) {
+            switch (st) {
+                case 'approved': return 'Attivo';
+                case 'awaiting': return 'In attesa';
+                case 'suspended': return 'Sospeso';
+                case 'banned': return 'Bannato';
+                case 'admin': return 'Admin';
+                default: return st || '—';
+            }
+        }
+
+        function openNewsletterStatListModal(listKey) {
+            var modalEl = document.getElementById('newsletterStatListModal');
+            var titleEl = document.getElementById('newsletterStatListModalLabel');
+            var metaEl = document.getElementById('newsletterStatListModalMeta');
+            var bodyEl = document.getElementById('newsletterStatListModalBody');
+            if (!modalEl || !titleEl || !metaEl || !bodyEl) return;
+
+            titleEl.textContent = 'Caricamento…';
+            metaEl.textContent = '';
+            bodyEl.innerHTML = '<p class="text-muted mb-0"><i class="fas fa-spinner fa-spin me-1"></i>Caricamento elenco…</p>';
+
+            var url = new URL(window.NEWSLETTER_STAT_RECIPIENTS_URL, window.location.origin);
+            url.searchParams.set('list', listKey);
+
+            fetch(url.toString(), {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                credentials: 'same-origin'
+            })
+                .then(function (r) {
+                    return r.json().then(function (data) {
+                        return { ok: r.ok, data: data };
+                    });
+                })
+                .then(function (res) {
+                    if (!res.ok || !res.data) {
+                        var err = (res.data && res.data.message) ? res.data.message : 'Impossibile caricare l’elenco.';
+                        titleEl.textContent = 'Errore';
+                        bodyEl.innerHTML = '<p class="text-danger mb-0">' + escapeHtmlSimple(err) + '</p>';
+                        return;
+                    }
+                    var d = res.data;
+                    titleEl.textContent = d.title || 'Elenco utenti';
+                    var meta = 'Totale in anagrafica: <strong>' + (d.total != null ? d.total : 0) + '</strong>';
+                    if (d.truncated) {
+                        meta += ' · mostrati i primi <strong>' + (d.shown != null ? d.shown : 0) + '</strong> (limite ' + (d.max_rows || 2000) + ')';
+                    } else {
+                        meta += ' · righe mostrate: <strong>' + (d.shown != null ? d.shown : 0) + '</strong>';
+                    }
+                    metaEl.innerHTML = meta;
+
+                    var showEventsCol = d.list === 'low_participation';
+                    var thEvents = showEventsCol ? '<th class="text-center">Eventi</th>' : '';
+                    var colCount = showEventsCol ? 5 : 4;
+
+                    var rows = (d.users || []).map(function (u) {
+                        var em = u.email || '';
+                        var nick = u.nickname ? ' <span class="text-muted">(' + escapeHtmlSimple(u.nickname) + ')</span>' : '';
+                        var newsOn = u.newsletter ? '<span class="badge bg-info">News on</span>' : '<span class="badge bg-secondary">News off</span>';
+                        var st = newsletterStatStatusLabel(u.status);
+                        var evCell = showEventsCol
+                            ? '<td class="text-center">' + (u.events_count != null ? String(u.events_count) : '0') + '</td>'
+                            : '';
+                        return '<tr><td>' + escapeHtmlSimple(u.name || '') + nick + '</td><td><a href="mailto:' + encodeURIComponent(em) + '">' + escapeHtmlSimple(em) + '</a></td><td class="text-center">' + newsOn + '</td>' + evCell + '<td class="small">' + escapeHtmlSimple(st) + '</td></tr>';
+                    }).join('');
+
+                    bodyEl.innerHTML =
+                        '<div class="table-responsive"><table class="table table-sm table-striped table-hover mb-0">' +
+                        '<thead><tr><th>Nome</th><th>Email</th><th class="text-center">Newsletter</th>' + thEvents + '<th>Stato</th></tr></thead><tbody>' +
+                        (rows || '<tr><td colspan="' + colCount + '" class="text-muted">Nessun utente</td></tr>') +
+                        '</tbody></table></div>';
+
+                    var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                    modal.show();
+                })
+                .catch(function () {
+                    titleEl.textContent = 'Errore';
+                    bodyEl.innerHTML = '<p class="text-danger mb-0">Errore di rete.</p>';
+                    var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                    modal.show();
+                });
+        }
+
+        document.querySelectorAll('.newsletter-stat-open[data-stat-list]').forEach(function (el) {
+            el.addEventListener('click', function () {
+                var k = el.getAttribute('data-stat-list');
+                if (k) openNewsletterStatListModal(k);
+            });
+            el.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    var k = el.getAttribute('data-stat-list');
+                    if (k) openNewsletterStatListModal(k);
+                }
+            });
+        });
 
         function clearNewsletterManualExclusions() {
             window.NEWSLETTER_EXCLUDED_IDS = Object.create(null);
@@ -583,10 +712,12 @@
                 titleEl.textContent = 'Elenco destinatari — ' + (function () {
                     switch (payload.target) {
                         case 'all': return 'Tutti gli utenti';
-                        case 'approved': return 'Solo Utenti Attivati';
+                        case 'approved': return 'Solo utenti attivati';
+                        case 'approved_newsletter_off': return 'Solo attivati con newsletter disattivata';
                         case 'participants': return 'Partecipanti ad eventi';
                         case 'never_participated': return 'Mai partecipato ad eventi';
                         case 'pending': return 'In attesa di approvazione';
+                        case 'low_participation': return 'Attivati con meno di 2 eventi';
                         default: return 'Newsletter attiva (News)';
                     }
                 })();
@@ -691,10 +822,12 @@
             var classes = [
                 'target-theme-all',
                 'target-theme-approved',
+                'target-theme-approved-news-off',
                 'target-theme-news',
                 'target-theme-participants',
                 'target-theme-never',
-                'target-theme-pending'
+                'target-theme-pending',
+                'target-theme-low-participation'
             ];
             classes.forEach(function (c) { sel.classList.remove(c); });
 
@@ -719,6 +852,11 @@
                     if (previewBox) previewBox.classList.add('target-theme-approved');
                     if (modalTitle) modalTitle.classList.add('target-theme-approved');
                     break;
+                case 'approved_newsletter_off':
+                    sel.classList.add('target-theme-approved-news-off');
+                    if (previewBox) previewBox.classList.add('target-theme-approved-news-off');
+                    if (modalTitle) modalTitle.classList.add('target-theme-approved-news-off');
+                    break;
                 case 'participants':
                     sel.classList.add('target-theme-participants');
                     if (previewBox) previewBox.classList.add('target-theme-participants');
@@ -734,6 +872,11 @@
                     if (previewBox) previewBox.classList.add('target-theme-pending');
                     if (modalTitle) modalTitle.classList.add('target-theme-pending');
                     break;
+                case 'low_participation':
+                    sel.classList.add('target-theme-low-participation');
+                    if (previewBox) previewBox.classList.add('target-theme-low-participation');
+                    if (modalTitle) modalTitle.classList.add('target-theme-low-participation');
+                    break;
                 default:
                     sel.classList.add('target-theme-news');
                     if (previewBox) previewBox.classList.add('target-theme-news');
@@ -745,7 +888,10 @@
             if (infoBox) {
                 switch (v) {
                     case 'approved':
-                        infoBox.innerHTML = 'Invia email a gruppi (solo con destinatari <strong>«Attivati»</strong>)';
+                        infoBox.innerHTML = 'Invia email a <strong>tutti gli utenti attivati</strong> con email valida (con o senza newsletter)';
+                        break;
+                    case 'approved_newsletter_off':
+                        infoBox.innerHTML = 'Invia email solo agli <strong>attivati</strong> che hanno <strong>disattivato</strong> la newsletter (flag News off)';
                         break;
                     case 'all':
                         infoBox.innerHTML = 'Invia email a tutti gli utenti';
@@ -758,6 +904,9 @@
                         break;
                     case 'never_participated':
                         infoBox.innerHTML = 'Invia email a gruppi (solo con destinatari <strong>«Mai partecipato»</strong>)';
+                        break;
+                    case 'low_participation':
+                        infoBox.innerHTML = 'Invia email a gruppi (solo con destinatari <strong>«Attivati con meno di 2 eventi»</strong>)';
                         break;
                     default:
                         infoBox.innerHTML = 'Invia email a gruppi (solo con destinatari <strong>«News attiva»</strong>)';
@@ -818,7 +967,10 @@
                     message = '<span><i class="fas fa-users"></i> Tutti gli utenti' + groupsExtra + '</span>';
                     break;
                 case 'approved':
-                    message = '<span><i class="fas fa-check-circle"></i> Solo utenti approvati' + groupsExtra + '</span>';
+                    message = '<span><i class="fas fa-check-circle"></i> Tutti gli utenti attivati' + groupsExtra + '</span>';
+                    break;
+                case 'approved_newsletter_off':
+                    message = '<span><i class="fas fa-newspaper"></i> Attivati con newsletter disattivata' + groupsExtra + '</span>';
                     break;
                 case 'news':
                     {
@@ -833,6 +985,9 @@
                     break;
                 case 'pending':
                     message = '<span><i class="fas fa-clock"></i> Solo utenti in attesa' + groupsExtra + '</span>';
+                    break;
+                case 'low_participation':
+                    message = '<span><i class="fas fa-calendar-minus"></i> Attivati con meno di 2 eventi' + groupsExtra + '</span>';
                     break;
             }
 
@@ -1131,6 +1286,10 @@
             border: 2px solid #198754 !important;
             background-color: rgba(25, 135, 84, 0.12) !important;
         }
+        #target.target-theme-approved-news-off {
+            border: 2px solid #6610f2 !important;
+            background-color: rgba(102, 16, 242, 0.10) !important;
+        }
         #target.target-theme-news {
             border: 2px solid #0dcaf0 !important;
             background-color: rgba(13, 202, 240, 0.12) !important;
@@ -1147,6 +1306,10 @@
             border: 2px solid #fd7e14 !important;
             background-color: rgba(253, 126, 20, 0.12) !important;
         }
+        #target.target-theme-low-participation {
+            border: 2px solid #20c997 !important;
+            background-color: rgba(32, 201, 151, 0.14) !important;
+        }
 
         /* Titoli/anteprime: colori in base al target */
         #selectionPreview {
@@ -1158,10 +1321,12 @@
 
         #newsletterPreviewRecipientsModalLabel.target-theme-all { color: #6c757d; }
         #newsletterPreviewRecipientsModalLabel.target-theme-approved { color: #198754; }
+        #newsletterPreviewRecipientsModalLabel.target-theme-approved-news-off { color: #6610f2; }
         #newsletterPreviewRecipientsModalLabel.target-theme-news { color: #0aa2c0; }
         #newsletterPreviewRecipientsModalLabel.target-theme-participants { color: #b88400; }
         #newsletterPreviewRecipientsModalLabel.target-theme-never { color: #6f42c1; }
         #newsletterPreviewRecipientsModalLabel.target-theme-pending { color: #fd7e14; }
+        #newsletterPreviewRecipientsModalLabel.target-theme-low-participation { color: #20c997; }
 
     </style>
 @endsection

@@ -13,19 +13,27 @@
             flex-wrap: wrap;
             row-gap: 0.5rem;
         }
-        .mercatino-vetrina-hero-img {
-            width: 300px;
-            max-width: min(300px, 45vw);
+        /* Immagine sotto il titolo (stesse impostazioni della chat) */
+        .mercatino-vetrina-header-display,
+        .mercatino-vetrina-header-image-preview {
+            max-width: 140px;
+            width: 100%;
             height: auto;
-            object-fit: contain;
-            margin-left: 1.5rem;
         }
-        @media (max-width: 576px) {
-            .mercatino-vetrina-hero-img {
-                width: min(160px, 60vw);
-                max-width: 60vw;
-                margin-left: 0;
-            }
+        /* Form admin in toolbar: solo l’etichetta «Solo amministratore» in azzurro */
+        .mercatino-vetrina-title-image-admin-form .input-group-text {
+            background-color: rgba(13, 202, 240, 0.35);
+            border-color: rgba(13, 202, 240, 0.65);
+            color: #055160;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+        .mercatino-vetrina-title-image-admin-form .form-control,
+        .mercatino-vetrina-title-image-admin-form .btn {
+            border-color: #adb5bd;
+        }
+        .mercatino-vetrina-toolbar {
+            row-gap: 0.5rem;
         }
         .mercatino-vetrina-title__text {
             /* Fallback (se il browser non supporta background-clip:text) */
@@ -199,30 +207,94 @@
         }
     </style>
     <div class="container py-4" style="max-width: 68rem;">
-        <div class="d-flex flex-wrap align-items-end justify-content-between gap-2 mb-3">
+        <div class="mb-3">
             <h1 class="mb-0 d-flex align-items-center mercatino-vetrina-title gap-3">
                 <span class="d-inline-flex align-items-center">
                     <i class="fas fa-store text-secondary me-2"></i>
                     <span class="mercatino-vetrina-title__text">Vetrina Mercatino</span>
                 </span>
-                <img src="{{ asset('upload_immagini/mercatino2.jpg') }}"
-                     alt=""
-                     class="flex-shrink-0 mercatino-vetrina-hero-img"
-                     style="vertical-align: middle;">
             </h1>
-            <div class="d-flex flex-wrap gap-2">
-                <a href="{{ route('mercatino.index') }}" class="btn btn-outline-secondary btn-sm">
-                    <i class="fas fa-edit"></i> Inserisci annuncio
-                </a>
-                <a href="{{ route('home') }}" class="btn btn-success btn-sm text-white">
-                    <i class="fas fa-home"></i> Home
-                </a>
-            </div>
         </div>
 
-        <p class="text-muted mb-4">
+        <div class="mb-4 text-center">
+            @php
+                $vetrinaBannerRel = ! empty($vetrinaHeaderImage) ? $vetrinaHeaderImage : null;
+                if (! $vetrinaBannerRel && is_file(public_path('upload_immagini/mercatino2.jpg'))) {
+                    $vetrinaBannerRel = 'upload_immagini/mercatino2.jpg';
+                }
+            @endphp
+            @if(! empty($vetrinaBannerRel))
+                @php
+                    $vetrinaHeaderCacheBuster = time();
+                    $vetrinaHeaderFull = public_path($vetrinaBannerRel);
+                    if (file_exists($vetrinaHeaderFull)) {
+                        $tmp = filemtime($vetrinaHeaderFull);
+                        if (is_int($tmp) && $tmp > 0) {
+                            $vetrinaHeaderCacheBuster = $tmp;
+                        }
+                    }
+                @endphp
+                <img src="{{ asset($vetrinaBannerRel) }}?v={{ $vetrinaHeaderCacheBuster }}"
+                     alt="Vetrina Mercatino"
+                     class="mercatino-vetrina-header-display">
+            @endif
+        </div>
+
+        <p class="text-muted mb-3">
             Qui trovi gli annunci pubblicati dagli utenti della community.
         </p>
+
+        <div class="d-flex flex-wrap gap-2 align-items-center mb-4 mercatino-vetrina-toolbar">
+            <a href="{{ route('mercatino.index') }}" class="btn btn-primary btn-sm text-white">
+                <i class="fas fa-edit"></i> Inserisci annuncio
+            </a>
+            @if(auth()->check() && auth()->user()->isAdmin() && isset($annunci) && $annunci->isNotEmpty())
+                <form method="POST"
+                      action="{{ route('mercatino.annunci.destroyAll') }}"
+                      class="d-inline"
+                      onsubmit="return confirm('Eliminare TUTTI gli annunci dalla vetrina? L’operazione non si può annullare.') && confirm('Seconda conferma: procedere comunque?');">
+                    @csrf
+                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                        <i class="fas fa-trash-alt me-1"></i> Elimina tutti gli annunci
+                    </button>
+                </form>
+            @endif
+            <a href="{{ route('home') }}" class="btn btn-success btn-sm text-white">
+                <i class="fas fa-home"></i> Home
+            </a>
+            @auth
+                @if(auth()->user()->isAdmin())
+                    <form action="{{ route('mercatino.vetrina.header-image') }}"
+                          method="POST"
+                          enctype="multipart/form-data"
+                          class="mercatino-vetrina-title-image-admin-form d-flex flex-wrap align-items-center gap-2 text-start flex-grow-1 flex-md-grow-0"
+                          style="min-width: min(100%, 18rem);">
+                        @csrf
+                        <div class="flex-grow-1" style="min-width: 12rem;">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">Solo amministratore</span>
+                                <input type="file"
+                                       id="mercatinoVetrinaHeaderImageInput"
+                                       name="header_image"
+                                       class="form-control form-control-sm"
+                                       accept="image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp,.gif"
+                                       required>
+                                <button type="submit" class="btn btn-outline-secondary btn-sm">
+                                    <i class="fas fa-upload"></i> Cambia immagine titolo
+                                </button>
+                            </div>
+                        </div>
+                        <div id="mercatinoVetrinaHeaderPreviewWrap" class="d-none align-self-center">
+                            <img id="mercatinoVetrinaHeaderImagePreview"
+                                 src=""
+                                 alt="Anteprima immagine titolo vetrina"
+                                 class="mercatino-vetrina-header-image-preview rounded border border-secondary"
+                                 title="Anteprima">
+                        </div>
+                    </form>
+                @endif
+            @endauth
+        </div>
 
         @if(session('success'))
             <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -252,11 +324,34 @@
         @php
             $mercatinoLblCat = [
                 'abbigliamento' => 'Abbigliamento',
+                'libri_riviste' => 'Libri e Riviste',
+                'giochi_videogiochi' => 'Giochi e Videogiochi',
+                'sport_hobby' => 'Sport e Hobby',
+                'tecnologia_elettronica' => 'Tecnologia ed Elettronica',
+                'audio_tv' => 'Audio e TV',
+                'idee_regalo' => 'Idee Regalo',
+                'in_omaggio' => 'In Omaggio',
+                'biciclette' => 'Biciclette',
                 'veicoli' => 'Veicoli',
+                'telefonia' => 'Telefonia',
+                'altro' => 'Altro',
                 'casa' => 'Articoli per la casa',
                 'sport' => 'Articoli sportivi',
                 'elettronica_videogiochi' => 'Elettronica e videogiochi',
-                'altro' => 'Altro',
+            ];
+            $mercatinoCatOrder = [
+                'abbigliamento',
+                'libri_riviste',
+                'giochi_videogiochi',
+                'sport_hobby',
+                'tecnologia_elettronica',
+                'audio_tv',
+                'idee_regalo',
+                'in_omaggio',
+                'biciclette',
+                'veicoli',
+                'telefonia',
+                'altro',
             ];
             $mercatinoLblPrezzo = [
                 'fisso' => '€',
@@ -266,10 +361,12 @@
             ];
             $mercatinoLblCond = [
                 'nuovo' => 'Nuovo / mai usato',
-                'ottimo' => 'Ottime condizioni',
                 'buono' => 'Buone condizioni',
                 'discreto' => 'Usato, ma funzionale',
+                'altro' => 'Altro',
+                'ottimo' => 'Ottime condizioni',
             ];
+            $mercatinoCondOrder = ['nuovo', 'buono', 'discreto', 'altro'];
         @endphp
 
         @if(!isset($annunci) || $annunci->isEmpty())
@@ -291,6 +388,7 @@
                         $isOwnerViewer = auth()->check()
                             && $autore !== ''
                             && mb_strtolower((string) auth()->user()->username, 'UTF-8') === mb_strtolower($autore, 'UTF-8');
+                        $mercatinoScadenzaAnnuncio = \App\Support\MercatinoAnnuncioStorage::expiresAt($d);
 
                         $fotoUrls = [];
                         $fotoSlots = [1 => null, 2 => null, 3 => null];
@@ -304,9 +402,37 @@
                         $thumbUrl = $fotoSlots[1] ?? ($fotoUrls[0] ?? null);
                         $tipoPrezzo = (string) ($d['tipo_prezzo'] ?? '');
                         $prezzoLabel = $mercatinoLblPrezzo[$tipoPrezzo] ?? ($tipoPrezzo !== '' ? $tipoPrezzo : '—');
-                        $prezzoText = $tipoPrezzo === 'fisso'
-                            ? (isset($d['prezzo']) ? ('€ ' . number_format((float) $d['prezzo'], 2, ',', '.')) : '€')
-                            : $prezzoLabel;
+                        $hasPrezzoVal = isset($d['prezzo']) && $d['prezzo'] !== '' && $d['prezzo'] !== null;
+                        $trattabileAnnuncio = ! empty($d['prezzo_trattabile']) || $tipoPrezzo === 'trattabile';
+                        if ($tipoPrezzo === 'trattabile' && ! $hasPrezzoVal) {
+                            $prezzoText = 'Trattabile';
+                        } elseif (($tipoPrezzo === 'fisso' || ($tipoPrezzo === 'trattabile' && $hasPrezzoVal)) && $hasPrezzoVal) {
+                            $prezzoText = '€ ' . number_format((float) $d['prezzo'], 2, ',', '.');
+                            if ($trattabileAnnuncio) {
+                                $prezzoText .= ' — Trattabile';
+                            }
+                        } elseif ($tipoPrezzo === 'fisso') {
+                            $prezzoText = '€';
+                            if ($trattabileAnnuncio) {
+                                $prezzoText .= ' — Trattabile';
+                            }
+                        } else {
+                            $prezzoText = $prezzoLabel;
+                        }
+                        $mercatinoEditCategoria = old('categoria', $d['categoria'] ?? '');
+                        $mercatinoEditCondizione = old('condizione', $d['condizione'] ?? '');
+                        $mercatinoEditTipoPrezzo = old('tipo_prezzo', $d['tipo_prezzo'] ?? '');
+                        if ($mercatinoEditTipoPrezzo === 'trattabile') {
+                            $mercatinoEditTipoPrezzo = 'fisso';
+                        }
+                        $mercatinoEditTrattabile = (old('trattabile') === '1' || old('trattabile') === 1 || old('trattabile') === true)
+                            || (
+                                old('trattabile') === null && ! $errors->any()
+                                && (
+                                    ! empty($d['prezzo_trattabile'])
+                                    || (($d['tipo_prezzo'] ?? '') === 'trattabile')
+                                )
+                            );
                     @endphp
 
                     <div class="col-12">
@@ -328,7 +454,10 @@
                                         <div class="mercatino-vetrina-subline">
                                             {{ $mercatinoLblCat[$d['categoria'] ?? ''] ?? ($d['categoria'] ?? '—') }}
                                             @if(!empty($d['inviato_il']))
-                                                — {{ \Carbon\Carbon::parse($d['inviato_il'])->timezone(config('app.timezone'))->format('d/m/Y H:i') }}
+                                                — Pubblicato {{ \Carbon\Carbon::parse($d['inviato_il'])->timezone(config('app.timezone'))->format('d/m/Y H:i') }}
+                                            @endif
+                                            @if($mercatinoScadenzaAnnuncio)
+                                                — Scade il {{ $mercatinoScadenzaAnnuncio->format('d/m/Y H:i') }}
                                             @endif
                                             — Inserzionista: <span class="mercatino-vetrina-seller">{{ $autore }}</span>
                                         </div>
@@ -339,13 +468,23 @@
                                     </div>
 
                                     <div class="mercatino-vetrina-list-actions">
-                                        <button class="btn btn-outline-secondary btn-sm mercatino-vetrina-details-btn"
+                                        <button id="mercatino-details-open-{{ $folder }}"
+                                                class="btn btn-success btn-sm text-white mercatino-vetrina-details-btn"
                                                 type="button"
                                                 data-bs-toggle="collapse"
                                                 data-bs-target="#mercatinoDetails-{{ $folder }}"
                                                 aria-expanded="false"
                                                 aria-controls="mercatinoDetails-{{ $folder }}">
                                             <i class="fas fa-chevron-down me-1"></i> Dettagli
+                                        </button>
+                                        <button id="mercatino-details-close-{{ $folder }}"
+                                                class="btn btn-success btn-sm text-white mercatino-vetrina-details-btn d-none"
+                                                type="button"
+                                                data-bs-toggle="collapse"
+                                                data-bs-target="#mercatinoDetails-{{ $folder }}"
+                                                aria-expanded="true"
+                                                aria-controls="mercatinoDetails-{{ $folder }}">
+                                            <i class="fas fa-chevron-up me-1"></i> Chiudi
                                         </button>
                                     </div>
                                 </div>
@@ -358,10 +497,24 @@
 
                                         <dt class="col-sm-4">Prezzo €.</dt>
                                         <dd class="col-sm-8">
-                                            @if(($d['tipo_prezzo'] ?? '') === 'fisso' && isset($d['prezzo']))
-                                                <strong>€ {{ number_format((float) $d['prezzo'], 2, ',', '.') }}</strong>
+                                            @php
+                                                $detTipo = (string) ($d['tipo_prezzo'] ?? '');
+                                                $detHas = isset($d['prezzo']) && $d['prezzo'] !== '' && $d['prezzo'] !== null;
+                                                $detTratt = ! empty($d['prezzo_trattabile']) || $detTipo === 'trattabile';
+                                            @endphp
+                                            @if($detTipo === 'trattabile' && ! $detHas)
+                                                Trattabile
+                                            @elseif($detTipo === 'fisso' || ($detTipo === 'trattabile' && $detHas))
+                                                @if($detHas)
+                                                    <strong>€ {{ number_format((float) $d['prezzo'], 2, ',', '.') }}</strong>
+                                                @else
+                                                    —
+                                                @endif
+                                                @if($detTratt)
+                                                    <span class="text-muted"> — Trattabile</span>
+                                                @endif
                                             @else
-                                                {{ $mercatinoLblPrezzo[$d['tipo_prezzo'] ?? ''] ?? ($d['tipo_prezzo'] ?? '—') }}
+                                                {{ $mercatinoLblPrezzo[$detTipo] ?? ($detTipo !== '' ? $detTipo : '—') }}
                                             @endif
                                         </dd>
 
@@ -406,6 +559,18 @@
                                                 data-bs-target="#mercatinoContactModal-{{ $folder }}">
                                             <i class="fas fa-envelope me-1"></i> Contatta inserzionista
                                         </button>
+                                        @if($isOwnerViewer)
+                                            <form method="POST"
+                                                  action="{{ route('mercatino.annuncio.renew') }}"
+                                                  class="d-inline"
+                                                  onsubmit="return confirm('Rinnovare questo annuncio? I 30 giorni di visibilità ripartono da oggi.');">
+                                                @csrf
+                                                <input type="hidden" name="folder" value="{{ $folder }}">
+                                                <button type="submit" class="btn btn-outline-primary btn-sm">
+                                                    <i class="fas fa-redo-alt me-1"></i> Rinnova 30 giorni
+                                                </button>
+                                            </form>
+                                        @endif
                                         @if($isAdminViewer || $isOwnerViewer)
                                             <button type="button"
                                                     class="btn btn-outline-secondary btn-sm"
@@ -413,6 +578,16 @@
                                                     data-bs-target="#mercatinoEditModal-{{ $folder }}">
                                                 <i class="fas fa-pen me-1"></i> Modifica
                                             </button>
+                                            <form method="POST"
+                                                  action="{{ route('mercatino.annuncio.destroy') }}"
+                                                  class="d-inline"
+                                                  onsubmit="return confirm('Eliminare questo annuncio dalla vetrina? L’operazione non si può annullare.');">
+                                                @csrf
+                                                <input type="hidden" name="folder" value="{{ $folder }}">
+                                                <button type="submit" class="btn btn-outline-danger btn-sm">
+                                                    <i class="fas fa-trash-alt me-1"></i> Elimina annuncio
+                                                </button>
+                                            </form>
                                         @endif
                                         <span class="small text-muted">
                                             Il messaggio verrà inviato via email all’inserzionista (senza mostrare pubblicamente l’indirizzo).
@@ -439,6 +614,16 @@
                                         Annuncio: <strong>{{ $d['titolo'] ?? 'Senza titolo' }}</strong>
                                     </p>
 
+                                    @guest
+                                        <p class="small mb-3">
+                                            Per inviare un messaggio all’inserzionista devi avere un account e aver effettuato l’accesso.
+                                        </p>
+                                        <div class="d-flex flex-wrap gap-2">
+                                            <a href="{{ route('login') }}" class="btn btn-primary btn-sm">Accedi</a>
+                                            <a href="{{ route('register') }}" class="btn btn-outline-secondary btn-sm">Registrati</a>
+                                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Chiudi</button>
+                                        </div>
+                                    @else
                                     <form method="POST" action="{{ route('mercatino.contact') }}">
                                         @csrf
                                         <input type="hidden" name="folder" value="{{ $folder }}">
@@ -467,6 +652,7 @@
                                             </button>
                                         </div>
                                     </form>
+                                    @endguest
                                 </div>
                             </div>
                         </div>
@@ -506,12 +692,12 @@
                                                 <div class="col-12 col-md-6">
                                                     <label class="form-label" for="edit_categoria_{{ $folder }}">Categoria</label>
                                                     <select id="edit_categoria_{{ $folder }}" name="categoria" class="form-select" required>
-                                                        <option value="abbigliamento" @selected(old('categoria', $d['categoria'] ?? '') === 'abbigliamento')>Abbigliamento</option>
-                                                        <option value="veicoli" @selected(old('categoria', $d['categoria'] ?? '') === 'veicoli')>Veicoli</option>
-                                                        <option value="casa" @selected(old('categoria', $d['categoria'] ?? '') === 'casa')>Articoli per la casa</option>
-                                                        <option value="sport" @selected(old('categoria', $d['categoria'] ?? '') === 'sport')>Articoli sportivi</option>
-                                                        <option value="elettronica_videogiochi" @selected(old('categoria', $d['categoria'] ?? '') === 'elettronica_videogiochi')>Elettronica e videogiochi</option>
-                                                        <option value="altro" @selected(old('categoria', $d['categoria'] ?? '') === 'altro')>Altro</option>
+                                                        @if($mercatinoEditCategoria !== '' && ! in_array($mercatinoEditCategoria, $mercatinoCatOrder, true))
+                                                            <option value="{{ $mercatinoEditCategoria }}" selected>{{ $mercatinoLblCat[$mercatinoEditCategoria] ?? $mercatinoEditCategoria }}</option>
+                                                        @endif
+                                                        @foreach($mercatinoCatOrder as $catSlug)
+                                                            <option value="{{ $catSlug }}" @selected($mercatinoEditCategoria === $catSlug)>{{ $mercatinoLblCat[$catSlug] }}</option>
+                                                        @endforeach
                                                     </select>
                                                 </div>
                                                 <div class="col-12">
@@ -526,29 +712,42 @@
                                                 <div class="col-12 col-md-6">
                                                     <label class="form-label" for="edit_tipo_prezzo_{{ $folder }}">Prezzo</label>
                                                     <select id="edit_tipo_prezzo_{{ $folder }}" name="tipo_prezzo" class="form-select" required>
-                                                        <option value="fisso" @selected(old('tipo_prezzo', $d['tipo_prezzo'] ?? '') === 'fisso')>Prezzo fisso</option>
-                                                        <option value="gratis" @selected(old('tipo_prezzo', $d['tipo_prezzo'] ?? '') === 'gratis')>Gratis / omaggio</option>
-                                                        <option value="trattabile" @selected(old('tipo_prezzo', $d['tipo_prezzo'] ?? '') === 'trattabile')>Trattabile</option>
-                                                        <option value="scambio" @selected(old('tipo_prezzo', $d['tipo_prezzo'] ?? '') === 'scambio')>Solo scambio</option>
+                                                        <option value="fisso" @selected($mercatinoEditTipoPrezzo === 'fisso')>Prezzo fisso</option>
+                                                        <option value="gratis" @selected($mercatinoEditTipoPrezzo === 'gratis')>Gratis / omaggio</option>
+                                                        <option value="scambio" @selected($mercatinoEditTipoPrezzo === 'scambio')>Solo scambio</option>
                                                     </select>
                                                 </div>
-                                                <div class="col-12 col-md-6">
-                                                    <label class="form-label" for="edit_prezzo_{{ $folder }}">Importo (se fisso)</label>
-                                                    <input type="number"
-                                                           id="edit_prezzo_{{ $folder }}"
-                                                           name="prezzo"
-                                                           class="form-control"
-                                                           step="0.01"
-                                                           min="0"
-                                                           value="{{ old('prezzo', $d['prezzo'] ?? '') }}">
+                                                <div class="col-12 col-md-6" id="mercatino-edit-prezzo-wrap-{{ $folder }}">
+                                                    <label class="form-label" for="edit_prezzo_{{ $folder }}">Importo (€)</label>
+                                                    <div class="d-flex flex-wrap align-items-end gap-3">
+                                                        <input type="number"
+                                                               id="edit_prezzo_{{ $folder }}"
+                                                               name="prezzo"
+                                                               class="form-control flex-grow-1"
+                                                               style="min-width: 7rem;"
+                                                               step="0.01"
+                                                               min="0"
+                                                               value="{{ old('prezzo', $d['prezzo'] ?? '') }}">
+                                                        <div class="form-check mb-2">
+                                                            <input class="form-check-input"
+                                                                   type="checkbox"
+                                                                   name="trattabile"
+                                                                   value="1"
+                                                                   id="edit_trattabile_{{ $folder }}"
+                                                                   @checked($mercatinoEditTrattabile)>
+                                                            <label class="form-check-label text-nowrap" for="edit_trattabile_{{ $folder }}">Trattabile</label>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                                 <div class="col-12 col-md-6">
                                                     <label class="form-label" for="edit_condizione_{{ $folder }}">Condizione</label>
                                                     <select id="edit_condizione_{{ $folder }}" name="condizione" class="form-select" required>
-                                                        <option value="nuovo" @selected(old('condizione', $d['condizione'] ?? '') === 'nuovo')>Nuovo / mai usato</option>
-                                                        <option value="ottimo" @selected(old('condizione', $d['condizione'] ?? '') === 'ottimo')>Ottime condizioni</option>
-                                                        <option value="buono" @selected(old('condizione', $d['condizione'] ?? '') === 'buono')>Buone condizioni</option>
-                                                        <option value="discreto" @selected(old('condizione', $d['condizione'] ?? '') === 'discreto')>Usato, ma funzionale</option>
+                                                        @if($mercatinoEditCondizione !== '' && ! in_array($mercatinoEditCondizione, $mercatinoCondOrder, true))
+                                                            <option value="{{ $mercatinoEditCondizione }}" selected>{{ $mercatinoLblCond[$mercatinoEditCondizione] ?? $mercatinoEditCondizione }}</option>
+                                                        @endif
+                                                        @foreach($mercatinoCondOrder as $condSlug)
+                                                            <option value="{{ $condSlug }}" @selected($mercatinoEditCondizione === $condSlug)>{{ $mercatinoLblCond[$condSlug] }}</option>
+                                                        @endforeach
                                                     </select>
                                                 </div>
                                                 <div class="col-12 col-md-6">
@@ -625,6 +824,88 @@
             </div>
         @endif
     </div>
+
+    @push('scripts')
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                function syncMercatinoEditPrezzoRow(folder) {
+                    var tipo = document.getElementById('edit_tipo_prezzo_' + folder);
+                    var wrap = document.getElementById('mercatino-edit-prezzo-wrap-' + folder);
+                    var input = document.getElementById('edit_prezzo_' + folder);
+                    var tratt = document.getElementById('edit_trattabile_' + folder);
+                    if (!tipo || !wrap || !input) {
+                        return;
+                    }
+                    var show = tipo.value === 'fisso';
+                    wrap.classList.toggle('d-none', !show);
+                    input.required = show;
+                    if (!show) {
+                        input.value = '';
+                        if (tratt) {
+                            tratt.checked = false;
+                        }
+                    }
+                }
+
+                document.querySelectorAll('[id^="edit_tipo_prezzo_"]').forEach(function (sel) {
+                    var folder = sel.id.replace('edit_tipo_prezzo_', '');
+                    syncMercatinoEditPrezzoRow(folder);
+                });
+
+                document.addEventListener('change', function (e) {
+                    var t = e.target;
+                    if (!t || t.tagName !== 'SELECT' || !t.id || t.id.indexOf('edit_tipo_prezzo_') !== 0) {
+                        return;
+                    }
+                    syncMercatinoEditPrezzoRow(t.id.replace('edit_tipo_prezzo_', ''));
+                });
+
+                (function setupMercatinoVetrinaHeaderImagePreview() {
+                    var input = document.getElementById('mercatinoVetrinaHeaderImageInput');
+                    var wrap = document.getElementById('mercatinoVetrinaHeaderPreviewWrap');
+                    var prev = document.getElementById('mercatinoVetrinaHeaderImagePreview');
+                    if (!input || !wrap || !prev) {
+                        return;
+                    }
+                    input.addEventListener('change', function () {
+                        var f = this.files && this.files[0];
+                        if (!f || !/^image\//i.test(f.type)) {
+                            wrap.classList.add('d-none');
+                            prev.removeAttribute('src');
+                            return;
+                        }
+                        var reader = new FileReader();
+                        reader.onload = function (e) {
+                            prev.src = e.target.result;
+                            wrap.classList.remove('d-none');
+                        };
+                        reader.readAsDataURL(f);
+                    });
+                })();
+
+                document.querySelectorAll('.collapse[id^="mercatinoDetails-"]').forEach(function (coll) {
+                    var folder = coll.id.replace('mercatinoDetails-', '');
+                    var openBtn = document.getElementById('mercatino-details-open-' + folder);
+                    var closeBtn = document.getElementById('mercatino-details-close-' + folder);
+                    if (!openBtn || !closeBtn) {
+                        return;
+                    }
+                    coll.addEventListener('shown.bs.collapse', function () {
+                        openBtn.classList.add('d-none');
+                        closeBtn.classList.remove('d-none');
+                        openBtn.setAttribute('aria-expanded', 'true');
+                        closeBtn.setAttribute('aria-expanded', 'true');
+                    });
+                    coll.addEventListener('hidden.bs.collapse', function () {
+                        openBtn.classList.remove('d-none');
+                        closeBtn.classList.add('d-none');
+                        openBtn.setAttribute('aria-expanded', 'false');
+                        closeBtn.setAttribute('aria-expanded', 'false');
+                    });
+                });
+            });
+        </script>
+    @endpush
 
 @endsection
 
