@@ -158,19 +158,36 @@
             border-color: #63d87f;
             color: #0f5132;
         }
-        /* Menu sempre hamburger: voci in colonna sotto la riga toggler+brand (anche su tablet/desktop). */
-        .excursio-navbar > .container-fluid {
-            flex-wrap: wrap;
-            justify-content: flex-start;
+        /* Desktop (md+): navbar orizzontale */
+        @media (min-width: 768px) {
+            .excursio-navbar__main-nav,
+            ul.excursio-navbar__main-nav {
+                flex-wrap: wrap !important;
+                align-items: center !important;
+            }
+            .excursio-navbar__main-nav .nav-item {
+                white-space: nowrap;
+            }
+            .excursio-navbar__main-nav .nav-link,
+            .excursio-navbar__main-nav .navbar-text {
+                padding-right: 0.5rem !important;
+                padding-left: 0.5rem !important;
+                font-size: 0.85rem;
+            }
+            .excursio-navbar__user-nav,
+            ul.excursio-navbar__user-nav {
+                flex-direction: row !important;
+                margin-left: auto !important;
+                align-items: center !important;
+            }
         }
-        .excursio-navbar .navbar-collapse {
-            flex-basis: 100%;
-            width: 100% !important;
-        }
-        .excursio-navbar__user-nav {
-            margin-top: 0.35rem;
-            padding-top: 0.5rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.25);
+        /* Mobile: separatore visivo tra nav principale e logout */
+        @media (max-width: 767.98px) {
+            .excursio-navbar__user-nav {
+                margin-top: 0.35rem;
+                padding-top: 0.5rem;
+                border-top: 1px solid rgba(255, 255, 255, 0.25);
+            }
         }
         .excursio-navbar__main-nav .navbar-text,
         .excursio-navbar__user-nav .navbar-text {
@@ -220,18 +237,16 @@
         <img src="{{ asset('upload_immagini/excursio.png') }}" alt="Excursio" class="site-header-logo">
     </a>
 </div>
-<nav class="navbar navbar-dark bg-dark excursio-navbar py-1">
-    <div class="container-fluid px-3 px-xl-4 d-flex align-items-center flex-wrap">
-        <div class="d-flex align-items-center flex-shrink-0">
-            <button class="navbar-toggler me-2" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
-                    aria-controls="navbarNav" aria-expanded="false" aria-label="Apri il menu">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <a href="{{ route('home') }}" class="navbar-brand mb-0 text-white fw-semibold ms-1 py-1" title="Home">
-                <i class="fas fa-home me-1"></i><span class="d-none d-sm-inline">Home</span>
-            </a>
-        </div>
-        <div class="collapse navbar-collapse flex-column align-items-stretch" id="navbarNav">
+<nav class="navbar navbar-expand-md navbar-dark bg-dark excursio-navbar py-1">
+    <div class="container-fluid px-3 px-xl-4">
+        <a href="{{ route('home') }}" class="navbar-brand mb-0 text-white fw-semibold py-1" title="Home">
+            <i class="fas fa-home me-1"></i><span class="d-none d-sm-inline">Home</span>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Apri il menu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse d-md-flex" id="navbarNav">
             @php
                 $isAdmin = auth()->check() && auth()->user()->isAdmin();
                 // Mostra sempre il link chat agli utenti loggati: se la feature è OFF, verrà mostrata la pagina "in arrivo".
@@ -241,7 +256,7 @@
                 // Stessa logica degli album foto: in passato il link c'era solo per @guest e nel menu Admin — così spariva dopo il login.
                 $showAlbumsFotoLink = auth()->check() ? true : (($featureAlbumsFotoEnabled ?? true) || $isAdmin);
             @endphp
-            <ul class="navbar-nav excursio-navbar__main-nav mb-2 w-100">
+            <ul class="navbar-nav excursio-navbar__main-nav me-auto mb-2 mb-lg-0">
                 @guest
                     @if($showAlbumsFotoLink)
                         <li class="nav-item">
@@ -263,36 +278,8 @@
                             <i class="fas fa-user-plus"></i> Registrati
                         </a>
                     </li>
-                    @if($showChatLink)
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ route('chat.index') }}">
-                                <i class="fas fa-comments"></i> Salottino delle chat
-                                @if(!($featureChatSalottinoEnabled ?? true))
-                                    @if($isAdmin)
-                                        <span class="ms-1 badge bg-secondary">OFF</span>
-                                    @else
-                                        <span class="ms-1 badge bg-warning text-dark">IN ARRIVO</span>
-                                    @endif
-                                @endif
-                            </a>
-                        </li>
-                    @endif
-                    @if($showMercatinoLink)
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ route('mercatino.vetrina') }}">
-                                <i class="fas fa-store"></i> Mercatino
-                                @if(!($featureMercatinoEnabled ?? true))
-                                    @if($isAdmin)
-                                        <span class="ms-1 badge bg-secondary">OFF</span>
-                                    @else
-                                        <span class="ms-1 badge bg-warning text-dark">IN ARRIVO</span>
-                                    @endif
-                                @endif
-                            </a>
-                        </li>
-                    @endif
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('home') }}#descrizione-eventi" title="Chi siamo e cosa facciamo">
+                        <a class="nav-link" href="{{ route('home') }}" id="btn-chi-siamo" title="Chi siamo e cosa facciamo">
                             <i class="fas fa-info-circle"></i> Chi siamo e cosa facciamo
                         </a>
                     </li>
@@ -485,7 +472,7 @@
                 @endguest
             </ul>
             @auth
-            <ul class="navbar-nav excursio-navbar__user-nav w-100">
+            <ul class="navbar-nav excursio-navbar__user-nav">
                 <li class="nav-item">
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
@@ -556,10 +543,14 @@
                 <div class="card-body p-2" style="max-height: 220px; overflow-y: auto;">
                     @php
                         try {
+                            $idleMinutes = (int) config('session.online_timeout', 3);
+                            if ($idleMinutes < 1) { $idleMinutes = 3; }
+                            $onlineCutoff = time() - ($idleMinutes * 60);
+
                             $onlineUsers = \Illuminate\Support\Facades\DB::table('utentionline')
                                 ->join('utente', 'utentionline.id_utente', '=', 'utente.userID')
                                 ->where('utente.abilitato', 1)
-                                // Evita duplicati: 1 riga per utente (anche se in tabella ci sono più record)
+                                ->where('utentionline.time', '>=', $onlineCutoff)
                                 ->groupBy('utentionline.id_utente', 'utente.username')
                                 ->selectRaw('utentionline.id_utente as userID, utente.username as nickname, MAX(utentionline.time) as last_time')
                                 ->orderByDesc('last_time')
@@ -699,6 +690,23 @@ document.addEventListener('DOMContentLoaded', function () {
     window.addEventListener('resize', function () {
         updateStickyHeaderVar();
     });
+
+    // "Chi siamo e cosa facciamo": mostra/nasconde la sezione al click
+    var btnChiSiamo = document.getElementById('btn-chi-siamo');
+    if (btnChiSiamo) {
+        btnChiSiamo.addEventListener('click', function(e) {
+            var box = document.getElementById('descrizione-eventi');
+            if (box) {
+                e.preventDefault();
+                if (box.style.display === 'none' || box.style.display === '') {
+                    box.style.display = 'block';
+                    box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                } else {
+                    box.style.display = 'none';
+                }
+            }
+        });
+    }
 
     // Chiudi il menu hamburger dopo click su link (non sui toggle dei dropdown)
     var navCollapse = document.getElementById('navbarNav');
@@ -925,5 +933,409 @@ document.addEventListener('DOMContentLoaded', function () {
     {{-- Si mostra automaticamente solo quando serve (primo accesso / banner attivo). --}}
     <x-cookie-consent-modal :show="true" :autoShow="$cookieBannerShouldShow ?? true" :consent="$cookieConsent" />
 @endif
+
+{{-- Chatbot assistente Excursio --}}
+<div id="excursio-chatbot">
+    <button id="chatbot-toggle" title="Hai bisogno di aiuto?">
+        <i class="fas fa-comment-dots"></i>
+    </button>
+    <div id="chatbot-window" style="display:none;">
+        <div id="chatbot-header">
+            <span><i class="fas fa-robot me-1"></i> Assistente Excursio</span>
+            <button id="chatbot-close" title="Chiudi"><i class="fas fa-times"></i></button>
+        </div>
+        <div id="chatbot-messages">
+            <div class="chatbot-msg chatbot-msg--bot">
+                Ciao! Sono l'assistente di Excursio. Chiedimi qualsiasi cosa sul sito, oppure scegli una domanda qui sotto.
+            </div>
+            <div id="chatbot-suggestions"></div>
+        </div>
+        <div id="chatbot-input-area">
+            <input type="text" id="chatbot-input" placeholder="Scrivi la tua domanda..." autocomplete="off">
+            <button id="chatbot-send" title="Invia"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+</div>
+<style>
+    #excursio-chatbot {
+        position: fixed;
+        bottom: 1.25rem;
+        right: 1.25rem;
+        z-index: 9999;
+        font-family: inherit;
+    }
+    #chatbot-toggle {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: #198754;
+        color: #fff;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+        transition: transform 0.2s, background 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    #chatbot-toggle:hover {
+        transform: scale(1.1);
+        background: #146c43;
+    }
+    #chatbot-window {
+        position: absolute;
+        bottom: 70px;
+        right: 0;
+        width: 360px;
+        max-width: calc(100vw - 2rem);
+        height: 480px;
+        max-height: calc(100vh - 6rem);
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        border: 2px solid #198754;
+    }
+    #chatbot-header {
+        background: #198754;
+        color: #fff;
+        padding: 0.7rem 1rem;
+        font-weight: 600;
+        font-size: 0.95rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-shrink: 0;
+    }
+    #chatbot-close {
+        background: none;
+        border: none;
+        color: #fff;
+        font-size: 1.1rem;
+        cursor: pointer;
+        padding: 0 0.25rem;
+        opacity: 0.8;
+    }
+    #chatbot-close:hover { opacity: 1; }
+    #chatbot-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 0.75rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    .chatbot-msg {
+        padding: 0.55rem 0.8rem;
+        border-radius: 10px;
+        font-size: 0.88rem;
+        line-height: 1.45;
+        max-width: 88%;
+        word-wrap: break-word;
+    }
+    .chatbot-msg--bot {
+        background: #e8f5e9;
+        color: #1b5e20;
+        align-self: flex-start;
+        border-bottom-left-radius: 3px;
+    }
+    .chatbot-msg--user {
+        background: #e3f2fd;
+        color: #0d47a1;
+        align-self: flex-end;
+        border-bottom-right-radius: 3px;
+    }
+    #chatbot-suggestions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+        margin-top: 0.25rem;
+    }
+    .chatbot-suggestion-btn {
+        background: #f0f0f0;
+        border: 1px solid #ccc;
+        border-radius: 16px;
+        padding: 0.3rem 0.7rem;
+        font-size: 0.78rem;
+        cursor: pointer;
+        color: #333;
+        transition: background 0.15s;
+    }
+    .chatbot-suggestion-btn:hover {
+        background: #198754;
+        color: #fff;
+        border-color: #198754;
+    }
+    .chatbot-suggestion-btn--more {
+        background: #e8f5e9;
+        border-color: #198754;
+        color: #198754;
+        font-weight: 600;
+    }
+    .chatbot-related-label {
+        font-size: 0.75rem;
+        color: #666;
+        width: 100%;
+        margin-bottom: 0.15rem;
+        font-style: italic;
+    }
+    #chatbot-input-area {
+        display: flex;
+        border-top: 1px solid #e0e0e0;
+        flex-shrink: 0;
+        padding: 0.5rem;
+        gap: 0.4rem;
+        background: #fafafa;
+    }
+    #chatbot-input {
+        flex: 1;
+        border: 1px solid #ccc;
+        border-radius: 20px;
+        padding: 0.45rem 0.85rem;
+        font-size: 0.88rem;
+        outline: none;
+    }
+    #chatbot-input:focus { border-color: #198754; }
+    #chatbot-send {
+        background: #198754;
+        color: #fff;
+        border: none;
+        border-radius: 50%;
+        width: 36px;
+        height: 36px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.85rem;
+        flex-shrink: 0;
+    }
+    #chatbot-send:hover { background: #146c43; }
+    @media (max-width: 480px) {
+        #chatbot-window {
+            width: calc(100vw - 1.5rem);
+            height: calc(100vh - 5rem);
+            bottom: 65px;
+            right: -0.5rem;
+            border-radius: 10px;
+        }
+    }
+</style>
+<script>
+(function() {
+    var faqData = [];
+    var chatWindow = document.getElementById('chatbot-window');
+    var chatToggle = document.getElementById('chatbot-toggle');
+    var chatClose = document.getElementById('chatbot-close');
+    var chatMessages = document.getElementById('chatbot-messages');
+    var chatInput = document.getElementById('chatbot-input');
+    var chatSend = document.getElementById('chatbot-send');
+    var suggestions = document.getElementById('chatbot-suggestions');
+
+    fetch('{{ asset("js/chatbot-faq.json") }}')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            faqData = data;
+            showSuggestions();
+        })
+        .catch(function() {});
+
+    var suggestionsPage = 0;
+    var suggestionsPerPage = 5;
+
+    function showSuggestions(excludeQuestion) {
+        if (!suggestions) return;
+        suggestions.innerHTML = '';
+        var filtered = faqData.filter(function(item) {
+            return item.question !== excludeQuestion;
+        });
+        var start = suggestionsPage * suggestionsPerPage;
+        var page = filtered.slice(start, start + suggestionsPerPage);
+        if (page.length === 0) {
+            suggestionsPage = 0;
+            page = filtered.slice(0, suggestionsPerPage);
+        }
+        page.forEach(function(item) {
+            var btn = document.createElement('button');
+            btn.className = 'chatbot-suggestion-btn';
+            btn.textContent = item.question;
+            btn.addEventListener('click', function() {
+                addMessage(item.question, 'user');
+                addMessage(item.answer, 'bot');
+                showRelatedSuggestions(item);
+                scrollDown();
+            });
+            suggestions.appendChild(btn);
+        });
+        if (filtered.length > suggestionsPerPage) {
+            var moreBtn = document.createElement('button');
+            moreBtn.className = 'chatbot-suggestion-btn chatbot-suggestion-btn--more';
+            moreBtn.textContent = 'Altre domande...';
+            moreBtn.addEventListener('click', function() {
+                suggestionsPage++;
+                showSuggestions(excludeQuestion);
+                scrollDown();
+            });
+            suggestions.appendChild(moreBtn);
+        }
+    }
+
+    function showRelatedSuggestions(answeredItem) {
+        if (!suggestions) return;
+        suggestions.innerHTML = '';
+        var related = findRelated(answeredItem, 3);
+        if (related.length === 0) {
+            showSuggestions(answeredItem.question);
+            return;
+        }
+        var label = document.createElement('div');
+        label.className = 'chatbot-related-label';
+        label.textContent = 'Potrebbe interessarti anche:';
+        suggestions.appendChild(label);
+        related.forEach(function(item) {
+            var btn = document.createElement('button');
+            btn.className = 'chatbot-suggestion-btn';
+            btn.textContent = item.question;
+            btn.addEventListener('click', function() {
+                addMessage(item.question, 'user');
+                addMessage(item.answer, 'bot');
+                showRelatedSuggestions(item);
+                scrollDown();
+            });
+            suggestions.appendChild(btn);
+        });
+        var allBtn = document.createElement('button');
+        allBtn.className = 'chatbot-suggestion-btn chatbot-suggestion-btn--more';
+        allBtn.textContent = 'Tutte le domande...';
+        allBtn.addEventListener('click', function() {
+            suggestionsPage = 0;
+            showSuggestions();
+            scrollDown();
+        });
+        suggestions.appendChild(allBtn);
+    }
+
+    function findRelated(item, count) {
+        var itemKw = new Set(item.keywords.map(function(k) { return normalize(k); }));
+        var scored = [];
+        faqData.forEach(function(other) {
+            if (other.question === item.question) return;
+            var overlap = 0;
+            other.keywords.forEach(function(k) {
+                var nk = normalize(k);
+                itemKw.forEach(function(ik) {
+                    if (nk.indexOf(ik) !== -1 || ik.indexOf(nk) !== -1) overlap++;
+                });
+            });
+            if (overlap > 0) scored.push({ item: other, score: overlap });
+        });
+        scored.sort(function(a, b) { return b.score - a.score; });
+        return scored.slice(0, count).map(function(s) { return s.item; });
+    }
+
+    function normalize(str) {
+        return (str || '').toLowerCase()
+            .replace(/[àáâãäå]/g, 'a')
+            .replace(/[èéêë]/g, 'e')
+            .replace(/[ìíîï]/g, 'i')
+            .replace(/[òóôõö]/g, 'o')
+            .replace(/[ùúûü]/g, 'u')
+            .replace(/[^a-z0-9\s]/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    function findBestAnswer(query) {
+        var q = normalize(query);
+        var words = q.split(' ').filter(function(w) { return w.length > 2; });
+        if (words.length === 0) return null;
+
+        var best = null;
+        var bestScore = 0;
+
+        faqData.forEach(function(item) {
+            var score = 0;
+            var kwJoined = normalize(item.keywords.join(' ') + ' ' + item.question);
+
+            words.forEach(function(w) {
+                if (kwJoined.indexOf(w) !== -1) score += 2;
+                item.keywords.forEach(function(kw) {
+                    var nkw = normalize(kw);
+                    if (nkw.indexOf(w) !== -1 || w.indexOf(nkw) !== -1) score += 3;
+                });
+            });
+
+            if (score > bestScore) {
+                bestScore = score;
+                best = item;
+            }
+        });
+
+        return bestScore >= 2 ? best : null;
+    }
+
+    function addMessage(text, type) {
+        var div = document.createElement('div');
+        div.className = 'chatbot-msg chatbot-msg--' + type;
+        div.textContent = text;
+        chatMessages.appendChild(div);
+    }
+
+    function scrollDown() {
+        setTimeout(function() {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }, 50);
+    }
+
+    function handleUserInput() {
+        var text = (chatInput.value || '').trim();
+        if (!text) return;
+        chatInput.value = '';
+
+        addMessage(text, 'user');
+
+        var match = findBestAnswer(text);
+        if (match) {
+            addMessage(match.answer, 'bot');
+            showRelatedSuggestions(match);
+        } else {
+            addMessage('Mi dispiace, non ho trovato una risposta precisa. Prova con parole diverse oppure sfoglia le domande qui sotto. Per questioni specifiche puoi sempre contattare gli organizzatori.', 'bot');
+            suggestionsPage = 0;
+            showSuggestions();
+        }
+        scrollDown();
+    }
+
+    if (chatToggle) {
+        chatToggle.addEventListener('click', function() {
+            chatWindow.style.display = chatWindow.style.display === 'none' ? 'flex' : 'none';
+            if (chatWindow.style.display === 'flex') {
+                chatInput.focus();
+                scrollDown();
+            }
+        });
+    }
+    if (chatClose) {
+        chatClose.addEventListener('click', function() {
+            chatWindow.style.display = 'none';
+        });
+    }
+    if (chatSend) {
+        chatSend.addEventListener('click', handleUserInput);
+    }
+    if (chatInput) {
+        chatInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                handleUserInput();
+            }
+        });
+    }
+})();
+</script>
+
 </body>
 </html>

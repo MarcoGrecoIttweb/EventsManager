@@ -33,6 +33,31 @@ return [
 
     'lifetime' => env('SESSION_LIFETIME', 120),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Online timeout (visualizzazione "Utenti online")
+    |--------------------------------------------------------------------------
+    |
+    | Dopo questi minuti senza alcuna richiesta HTTP, l'utente non viene più
+    | mostrato nella sidebar "Utenti online" e il record in utentionline viene
+    | rimosso da TrackOnlineUsers. L'utente resta comunque collegato.
+    |
+    */
+
+    'online_timeout' => env('SESSION_ONLINE_TIMEOUT', 3),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Idle timeout (logout per inattività)
+    |--------------------------------------------------------------------------
+    |
+    | Dopo questi minuti senza alcuna richiesta HTTP, l'utente viene disconnesso
+    | (logout forzato). Allineato al lifetime della sessione.
+    |
+    */
+
+    'idle_timeout' => env('SESSION_IDLE_TIMEOUT', 30),
+
     'expire_on_close' => false,
 
     /*

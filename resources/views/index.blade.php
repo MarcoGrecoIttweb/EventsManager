@@ -105,7 +105,7 @@
                             <div class="card-footer bg-transparent">
                                 <a href="{{ route('events.show', $event) }}" class="btn btn-{{ $event->isFull() ? 'outline-secondary' : 'primary' }} w-100">
                                     <i class="fas fa-eye"></i>
-                                    {{ $event->isFull() ? 'Visualizza (Completo)' : 'Dettagli Evento' }}
+                                    Visualizza Dettagli Evento
                                 </a>
                             </div>
                         </div>

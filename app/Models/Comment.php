@@ -17,7 +17,7 @@ class Comment extends Model
     public $timestamps = false;
     const CREATED_AT = 'data';
 
-    protected $fillable = ['testo', 'id_evento', 'id_utente', 'edited_at'];
+    protected $fillable = ['testo', 'id_evento', 'id_utente', 'data', 'edited_at'];
 
     protected $casts = [
         'data' => 'datetime',

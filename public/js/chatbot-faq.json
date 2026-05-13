@@ -1,0 +1,272 @@
+[
+  {
+    "keywords": ["cos'è", "cosa è", "excursio", "chi siete", "chi siamo", "di cosa si tratta", "spiegami", "che sito è"],
+    "question": "Cos'è Excursio?",
+    "answer": "Excursio è una community di amici che organizza eventi e uscite a Milano. L'obiettivo è offrire opportunità per conoscere nuove persone e fare amicizia, uscendo dalla routine quotidiana. Gli eventi hanno costi modesti e a volte sono gratuiti, senza alcun fine di lucro. La registrazione è completamente gratuita!"
+  },
+  {
+    "keywords": ["dove", "milano", "città", "zona", "luogo"],
+    "question": "Dove si svolgono gli eventi?",
+    "answer": "Gli eventi di Excursio si svolgono a Milano e dintorni. Ogni evento ha un indirizzo preciso indicato nella sua pagina: troverai il nome del locale, la via, il numero civico e la città, così puoi raggiungerlo facilmente."
+  },
+  {
+    "keywords": ["registr", "iscri", "creare account", "nuovo account", "come mi registro", "come faccio a registrarmi", "entrare nel sito"],
+    "question": "Come mi registro?",
+    "answer": "Dalla pagina principale clicca su «Registrati» nella barra in alto. Dovrai compilare un modulo con: nome, cognome, nickname (che userai per accedere), email, data di nascita, telefono, sesso, una tua foto e opzionalmente una breve descrizione di te. Devi accettare la privacy policy e poi inviare. Il tuo account verrà controllato da un amministratore prima di essere attivato."
+  },
+  {
+    "keywords": ["nickname", "nome utente", "username", "come scegliere nickname"],
+    "question": "Come scelgo il nickname?",
+    "answer": "Il nickname è il nome che userai per accedere al sito e che gli altri vedranno. Deve essere unico: se è già in uso, dovrai sceglierne un altro. Può avere al massimo 20 caratteri. Scegli qualcosa che ti rappresenti e che sia facile da ricordare!"
+  },
+  {
+    "keywords": ["foto registrazione", "foto obbligatoria", "quale foto", "immagine profilo registrazione"],
+    "question": "Devo caricare una foto per registrarmi?",
+    "answer": "Sì, una foto è richiesta durante la registrazione. Può essere un tuo ritratto, una foto che ti rappresenta o anche un'immagine simpatica. Formati accettati: JPG, PNG, WebP o GIF, massimo 4 MB. Questa foto sarà visibile sul tuo profilo e aiuta gli altri membri a riconoscerti."
+  },
+  {
+    "keywords": ["approvazione", "attesa", "account in attesa", "non riesco ad accedere", "non posso entrare", "quanto tempo", "quando approvano"],
+    "question": "Mi sono registrato ma non riesco ad accedere",
+    "answer": "Dopo la registrazione, il tuo account resta in attesa di approvazione da parte di un amministratore. Di solito avviene in tempi brevi, ma può servire qualche ora. Riceverai una email all'indirizzo che hai indicato quando il profilo sarà stato attivato. Nel frattempo non potrai accedere: è normale! Se passano diversi giorni senza risposta, prova a contattare gli organizzatori."
+  },
+  {
+    "keywords": ["accedere", "login", "loggare", "entrare", "accesso", "come entro", "dove scrivo la password"],
+    "question": "Come accedo al sito?",
+    "answer": "Clicca su «Accedi» nella barra in alto. Inserisci il tuo nickname (non l'email, ma il nome utente che hai scelto durante la registrazione) e la tua password. Poi premi il pulsante per entrare. Se hai dimenticato la password, c'è un link apposito nella pagina di login."
+  },
+  {
+    "keywords": ["password dimenticata", "recuper", "non ricordo", "reset password", "cambiare password", "reimpostare"],
+    "question": "Ho dimenticato la password, come faccio?",
+    "answer": "Nella pagina di login trovi il link «Password dimenticata?». Cliccaci e inserisci l'indirizzo email che hai usato in fase di registrazione. Riceverai un'email con un link per creare una nuova password. Il link ha una scadenza, quindi usalo al più presto. Se non trovi l'email, controlla nella cartella spam o posta indesiderata."
+  },
+  {
+    "keywords": ["cambiare password", "modifica password", "nuova password", "password attuale"],
+    "question": "Come cambio la mia password?",
+    "answer": "Vai sul tuo profilo cliccando «Profilo» nella barra di navigazione. Nella pagina del profilo troverai la sezione per cambiare la password: dovrai inserire la password attuale e poi quella nuova due volte per conferma. Salva e il gioco è fatto."
+  },
+  {
+    "keywords": ["evento", "eventi", "uscite", "cosa sono gli eventi", "prossimi eventi", "homepage"],
+    "question": "Cosa sono gli eventi?",
+    "answer": "Gli eventi sono le uscite e le attività organizzate dalla community: cene al ristorante, aperitivi, passeggiate, gite fuori porta, serate a tema e molto altro. Dopo aver effettuato l'accesso li trovi nella homepage, ordinati per data. Ogni evento mostra il titolo, la data, il luogo, una breve descrizione, il prezzo (se previsto) e quanti posti sono ancora disponibili."
+  },
+  {
+    "keywords": ["dettaglio evento", "informazioni evento", "cosa c'è scritto", "pagina evento"],
+    "question": "Cosa trovo nella pagina di un evento?",
+    "answer": "Cliccando su un evento dalla homepage si apre la sua pagina completa. Lì trovi: la descrizione dettagliata dell'attività, la data e l'ora, il luogo con indirizzo completo, il prezzo, il numero massimo di partecipanti, l'elenco degli iscritti, il forum per i commenti, e i pulsanti per iscriverti o cancellarti. Se c'è una foto di copertina o un album fotografico, li vedrai lì."
+  },
+  {
+    "keywords": ["iscrivermi evento", "partecipare", "partecipo", "come mi iscrivo", "prenotare", "prenotarmi", "voglio venire"],
+    "question": "Come mi iscrivo a un evento?",
+    "answer": "Dopo aver effettuato l'accesso, vai sulla homepage e clicca sull'evento che ti interessa per aprire la sua pagina. Troverai il pulsante «Iscriviti»: cliccalo e la tua partecipazione sarà registrata. Il tuo nome apparirà nell'elenco dei partecipanti. Nessun obbligo: l'adesione è libera e puoi sempre cancellarti."
+  },
+  {
+    "keywords": ["scadenza iscrizioni", "termine iscrizioni", "fino a quando posso iscrivermi", "chiusura iscrizioni"],
+    "question": "C'è una scadenza per iscriversi?",
+    "answer": "Alcuni eventi hanno una scadenza per le iscrizioni, indicata nella pagina dell'evento. Dopo quella data non sarà più possibile iscriversi. Se non c'è indicata una scadenza, puoi iscriverti fino alla data dell'evento, sempre che ci siano posti disponibili."
+  },
+  {
+    "keywords": ["annullare", "cancellare iscrizione", "disiscriv", "non vengo più", "togliermi", "rinunciare"],
+    "question": "Come annullo la mia iscrizione a un evento?",
+    "answer": "Vai nella pagina dell'evento a cui sei iscritto e troverai il pulsante «Annulla iscrizione». Cliccalo e la tua partecipazione verrà cancellata immediatamente. Se c'è qualcuno in lista d'attesa, verrà avvisato automaticamente via email che si è liberato un posto."
+  },
+  {
+    "keywords": ["lista d'attesa", "lista attesa", "completo", "posti finiti", "pieno", "tutto esaurito", "non ci sono posti"],
+    "question": "L'evento è al completo, cosa posso fare?",
+    "answer": "Se un evento ha esaurito i posti, puoi metterti in lista d'attesa cliccando il pulsante apposito. Verrai inserito in coda: se qualcuno si cancella e si libera un posto, riceverai una email con l'invito a iscriverti. Puoi anche toglierti dalla lista d'attesa in qualsiasi momento."
+  },
+  {
+    "keywords": ["ospite", "ospiti", "portare amico", "invitare qualcuno", "accompagnatore", "portare una persona"],
+    "question": "Posso portare un ospite a un evento?",
+    "answer": "Dipende dall'evento. Se l'organizzatore ha abilitato la possibilità di portare ospiti, vedrai l'opzione nella pagina dell'evento dopo esserti iscritto. Potrai aggiungere uno o più ospiti (fino al limite indicato) e inserire il loro nome. L'ospite non ha bisogno di essere registrato sul sito."
+  },
+  {
+    "keywords": ["invitare amico evento", "segnalare evento amico", "dire a un amico"],
+    "question": "Come invito un amico a un evento?",
+    "answer": "Nella pagina dell'evento, se sei iscritto, troverai l'opzione per invitare un amico che è già registrato sul sito. Seleziona il suo nome dalla lista dei tuoi amici e l'invito verrà inviato. È un modo carino per coinvolgere le persone che conosci!"
+  },
+  {
+    "keywords": ["profilo", "il mio profilo", "vedere profilo", "dati personali", "le mie info"],
+    "question": "Come vedo il mio profilo?",
+    "answer": "Clicca su «Profilo» nella barra di navigazione in alto. Si aprirà la tua pagina personale con tutte le tue informazioni: foto, nome, nickname, descrizione, data di nascita, residenza e telefono. Da lì puoi anche accedere alla modifica del profilo."
+  },
+  {
+    "keywords": ["modificare profilo", "cambiare foto", "aggiornare dati", "modificare informazioni", "avatar", "foto profilo"],
+    "question": "Come modifico il mio profilo o la foto?",
+    "answer": "Vai sul tuo profilo cliccando «Profilo» nella barra di navigazione, poi clicca «Modifica profilo». Potrai aggiornare la tua foto, la descrizione, la residenza, il telefono e altre informazioni. Carica una nuova immagine per cambiare la tua foto. Ricorda di salvare le modifiche!"
+  },
+  {
+    "keywords": ["descrizione profilo", "presentazione", "chi sono", "parlare di me"],
+    "question": "A cosa serve la descrizione nel profilo?",
+    "answer": "La descrizione è un breve testo libero dove puoi raccontare qualcosa di te: i tuoi interessi, hobby, cosa ti piace fare. Non è obbligatoria ma aiuta gli altri membri a conoscerti meglio. Puoi modificarla quando vuoi dalla pagina di modifica del profilo."
+  },
+  {
+    "keywords": ["commento", "commentare", "forum", "scrivere", "dire la mia", "opinione", "messaggio evento"],
+    "question": "Come scrivo un commento nel forum di un evento?",
+    "answer": "Vai nella pagina dell'evento e scorri verso il basso: troverai la sezione «Forum» con i commenti degli altri partecipanti. In basso c'è un riquadro di testo (un editor) dove puoi scrivere il tuo messaggio. Puoi formattare il testo in grassetto, corsivo, inserire link e anche immagini. Quando hai finito, clicca «Invia» per pubblicarlo."
+  },
+  {
+    "keywords": ["modificare commento", "editare commento", "cambiare commento", "correggere commento", "errore nel commento"],
+    "question": "Posso modificare un commento che ho scritto?",
+    "answer": "Sì! Accanto al tuo commento troverai un'icona (matita) per modificarlo. Cliccaci e si aprirà una pagina con l'editor dove potrai correggere o aggiornare il testo. Dopo il salvataggio, il commento verrà riposizionato in cima come se fosse appena stato scritto, e accanto comparirà l'indicazione «Modificato il...» con la data."
+  },
+  {
+    "keywords": ["eliminare commento", "cancellare commento", "rimuovere commento", "togliere commento"],
+    "question": "Posso eliminare un commento?",
+    "answer": "Sì, puoi eliminare i tuoi commenti. Accanto al commento troverai un'icona per cancellarlo. Ti verrà chiesta conferma prima della cancellazione definitiva. Gli amministratori possono eliminare anche i commenti di altri utenti, se necessario."
+  },
+  {
+    "keywords": ["immagine commento", "foto commento", "caricare foto forum", "inserire immagine"],
+    "question": "Posso inserire immagini nei commenti?",
+    "answer": "Sì! L'editor dei commenti permette di inserire immagini. Puoi caricare una foto dal tuo dispositivo usando il pulsante apposito nell'editor. L'immagine verrà mostrata direttamente nel commento, visibile a tutti i partecipanti."
+  },
+  {
+    "keywords": ["amici", "amicizia", "aggiungere amico", "lista amici", "i miei amici"],
+    "question": "Come funziona la sezione Amici?",
+    "answer": "Nella barra di navigazione trovi il link «Amici». Da lì vedi l'elenco dei tuoi amici con le loro foto e nickname. Per aggiungere un amico, cerca il suo profilo (tramite «Cerca utenti») e clicca «Aggiungi amico». Puoi anche rimuovere un'amicizia in qualsiasi momento. Avere amici ti permette di invitarli agli eventi!"
+  },
+  {
+    "keywords": ["cercare", "ricerca", "trovare utente", "cerco una persona", "cercare persone"],
+    "question": "Come cerco un utente?",
+    "answer": "Clicca su «Cerca utenti» nella barra di navigazione. Si aprirà una pagina dove puoi digitare il nickname della persona che cerchi. Man mano che scrivi, il sito ti suggerisce i risultati. Cliccando su un nome vai al suo profilo dove puoi vedere le sue info e aggiungerlo come amico."
+  },
+  {
+    "keywords": ["profilo altri", "vedere profilo altri", "chi è questa persona", "informazioni utente"],
+    "question": "Posso vedere il profilo degli altri utenti?",
+    "answer": "Sì! Puoi visitare il profilo di qualsiasi utente registrato cliccando sul suo nome (dalla lista utenti online, dall'elenco partecipanti di un evento, dalla sezione amici o dai commenti nel forum). Vedrai la sua foto, il nickname, la descrizione e altre informazioni che ha condiviso."
+  },
+  {
+    "keywords": ["mercatino", "vendere", "comprare", "annuncio", "vetrina", "oggetti"],
+    "question": "Cos'è il Mercatino?",
+    "answer": "Il Mercatino è uno spazio riservato ai membri della community per pubblicare annunci di oggetti in vendita, in scambio o in regalo. Puoi creare un annuncio con titolo, descrizione, categoria, prezzo, condizione dell'oggetto, zona di ritiro e fino a 3 foto. Gli annunci vengono pubblicati nella «Vetrina» visibile a tutti i membri e restano attivi per 30 giorni."
+  },
+  {
+    "keywords": ["creare annuncio", "pubblicare annuncio", "mettere in vendita", "come pubblico"],
+    "question": "Come pubblico un annuncio nel Mercatino?",
+    "answer": "Vai nella sezione «Mercatino» dalla barra di navigazione. Compila il modulo con: titolo, categoria, descrizione dell'oggetto, tipo di prezzo (fisso, gratis o scambio), condizione, zona di ritiro e come preferisci essere contattato. Puoi aggiungere fino a 3 foto. Accetta le condizioni e clicca «Pubblica»: il tuo annuncio apparirà subito nella vetrina."
+  },
+  {
+    "keywords": ["modificare annuncio", "cambiare annuncio", "aggiornare annuncio", "correggere annuncio"],
+    "question": "Posso modificare un annuncio pubblicato?",
+    "answer": "Sì! Nella vetrina del Mercatino, sul tuo annuncio troverai il pulsante «Modifica». Potrai aggiornare testo, prezzo, foto e tutte le informazioni. Le modifiche si vedranno subito."
+  },
+  {
+    "keywords": ["rinnovare annuncio", "scadenza annuncio", "30 giorni", "prolungare annuncio"],
+    "question": "Gli annunci scadono?",
+    "answer": "Sì, gli annunci nel Mercatino restano visibili per 30 giorni dalla pubblicazione (o dall'ultimo rinnovo). Quando un annuncio sta per scadere, puoi rinnovarlo cliccando «Rinnova» sul tuo annuncio nella vetrina: resterà visibile per altri 30 giorni. Gli annunci scaduti vengono rimossi automaticamente."
+  },
+  {
+    "keywords": ["contattare venditore", "scrivere inserzionista", "comprare oggetto", "sono interessato"],
+    "question": "Come contatto chi ha pubblicato un annuncio?",
+    "answer": "Nella vetrina del Mercatino, su ogni annuncio troverai un pulsante per contattare l'inserzionista. Scrivi il tuo messaggio e verrà inviato via email direttamente a chi ha pubblicato l'annuncio. Se ti risponde, riceverai la risposta sulla tua email."
+  },
+  {
+    "keywords": ["chat", "salottino", "messaggi", "scrivere a tutti", "chiacchierare"],
+    "question": "Cos'è il Salottino delle chat?",
+    "answer": "Il Salottino delle chat è uno spazio informale dove i membri della community possono chiacchierare liberamente. Puoi scrivere messaggi visibili a tutti, rispondere agli altri, e restare in contatto anche quando non ci sono eventi in programma. È come una bacheca dove si parla di tutto un po'!"
+  },
+  {
+    "keywords": ["scrivere chat", "come scrivo nella chat", "inviare messaggio chat"],
+    "question": "Come scrivo nella chat?",
+    "answer": "Vai nel «Salottino delle chat» dalla barra di navigazione. In basso trovi il campo per scrivere il tuo messaggio. Digita quello che vuoi dire e premi Invio o il pulsante di invio. Il messaggio apparirà subito nella conversazione, visibile a tutti i membri."
+  },
+  {
+    "keywords": ["modificare messaggio chat", "cancellare messaggio chat", "editare chat"],
+    "question": "Posso modificare o cancellare un messaggio in chat?",
+    "answer": "Sì! Accanto ai tuoi messaggi nella chat trovi le opzioni per modificarli o eliminarli. Se modifichi un messaggio, gli altri vedranno la versione aggiornata. Se lo elimini, verrà rimosso dalla conversazione."
+  },
+  {
+    "keywords": ["eventi passati", "storico", "vecchi eventi", "archivio", "eventi conclusi"],
+    "question": "Posso vedere gli eventi passati?",
+    "answer": "Sì! Clicca su «Eventi passati» nella barra di navigazione (o su «Storico Excursio» nella barra laterale). Si aprirà la pagina con tutti gli eventi già conclusi, dal più recente al più vecchio. Puoi cercarli per titolo o descrizione. È un bel modo per rivivere i momenti passati insieme!"
+  },
+  {
+    "keywords": ["cercare eventi passati", "trovare evento vecchio", "ricerca storico"],
+    "question": "Come cerco un evento passato specifico?",
+    "answer": "Nella pagina «Eventi passati» trovi una barra di ricerca in alto. Puoi cercare per titolo dell'evento o per descrizione. Scrivi una parola chiave e il sito ti mostrerà gli eventi corrispondenti. Puoi anche filtrare per vedere solo gli eventi a cui hai partecipato tu."
+  },
+  {
+    "keywords": ["album foto", "foto eventi", "galleria", "immagini", "google foto"],
+    "question": "Dove trovo le foto degli eventi?",
+    "answer": "Nella barra di navigazione c'è il link «Album foto Eventi». Lì trovi le gallerie fotografiche degli eventi passati: sono album di Google Foto condivisi dagli organizzatori. Cliccando su un album si apre la raccolta con tutte le foto dell'evento. Se cerchi un album specifico, puoi usare la barra di ricerca nella pagina."
+  },
+  {
+    "keywords": ["costo", "prezzo", "quanto costa", "gratis", "gratuito", "pagare", "spese"],
+    "question": "Gli eventi sono a pagamento?",
+    "answer": "La registrazione al sito è completamente gratuita e senza impegno. Gli eventi possono avere un piccolo costo (per esempio per una cena al ristorante o un biglietto d'ingresso), sempre indicato chiaramente nella pagina dell'evento. Molti eventi sono gratuiti. Non c'è alcun fine di lucro: eventuali costi servono solo a coprire le spese dell'attività."
+  },
+  {
+    "keywords": ["obbligatorio", "obbligo", "devo partecipare", "impegno", "vincolo"],
+    "question": "Sono obbligato a partecipare dopo essermi iscritto?",
+    "answer": "No, non c'è nessun obbligo! L'adesione è sempre libera. Però, per correttezza verso gli organizzatori e gli altri partecipanti, se sai che non potrai venire, cancella la tua iscrizione il prima possibile. In questo modo, se qualcuno è in lista d'attesa, potrà prendere il tuo posto."
+  },
+  {
+    "keywords": ["minimo partecipanti", "evento annullato", "cancellazione evento", "troppo pochi"],
+    "question": "Un evento può essere annullato?",
+    "answer": "Sì, in alcuni casi. Gli eventi sono momenti di convivialità e servono abbastanza partecipanti perché siano piacevoli. Se un evento non raggiunge un numero minimo di iscritti (di solito 6-8 persone) nei giorni prima della data, potrebbe essere annullato dall'organizzatore. Per questo è importante iscriversi per tempo!"
+  },
+  {
+    "keywords": ["contatto", "contattare", "email", "scrivere", "informazioni", "assistenza", "aiuto", "supporto"],
+    "question": "Come contatto gli organizzatori?",
+    "answer": "Hai diverse opzioni: puoi scrivere nel forum dell'evento per fare domande specifiche su quell'uscita, puoi contattare gli organizzatori via email (trovi i riferimenti nella pagina «Chi siamo e cosa facciamo»), oppure puoi usare questo chatbot per le domande più comuni. Per questioni urgenti o problemi con il tuo account, scrivi direttamente all'email indicata nel sito."
+  },
+  {
+    "keywords": ["online", "utenti online", "chi è collegato", "connessi", "pallino verde"],
+    "question": "Come vedo chi è online?",
+    "answer": "Nella barra laterale sinistra della homepage trovi il riquadro «Utenti online» con i pallini verdi. Sono elencati gli utenti che stanno navigando il sito in questo momento. Dopo 3 minuti di inattività, un utente scompare dall'elenco. Cliccando sul nome di un utente puoi visitare il suo profilo."
+  },
+  {
+    "keywords": ["organizzare", "creare evento", "proporre evento", "organizzatore", "diventare organizzatore"],
+    "question": "Posso organizzare un evento?",
+    "answer": "Se sei un organizzatore abilitato, nella barra di navigazione trovi il menu «Gestione Eventi» dove puoi creare nuovi eventi e gestire quelli esistenti. Se non sei ancora organizzatore ma ti piacerebbe proporre delle attività, puoi fare richiesta dalla pagina «Richiesta organizzatore» accessibile dal sito. Un amministratore valuterà la tua richiesta."
+  },
+  {
+    "keywords": ["i miei eventi", "eventi attivi", "a cosa sono iscritto", "le mie iscrizioni"],
+    "question": "Come vedo gli eventi a cui sono iscritto?",
+    "answer": "Clicca su «I Tuoi Eventi Attivi» nella barra di navigazione. Vedrai l'elenco di tutti gli eventi futuri a cui ti sei iscritto, con le date e i dettagli. Così hai tutto sotto controllo e non rischi di dimenticare nessuna uscita!"
+  },
+  {
+    "keywords": ["privacy", "dati personali", "cookie", "informativa", "gdpr", "sicurezza dati"],
+    "question": "Come vengono trattati i miei dati?",
+    "answer": "I tuoi dati personali sono protetti secondo la normativa vigente sulla privacy (GDPR). Puoi consultare l'informativa completa dalla pagina «Privacy Policy» raggiungibile dal fondo di ogni pagina del sito. Usiamo solo i cookie necessari al funzionamento. Puoi gestire le tue preferenze cliccando su «Preferenze cookie» nel footer del sito."
+  },
+  {
+    "keywords": ["cookie", "preferenze cookie", "consenso cookie"],
+    "question": "Come gestisco i cookie?",
+    "answer": "La prima volta che visiti il sito ti viene mostrata una finestra per accettare o rifiutare i cookie. Puoi modificare le tue scelte in qualsiasi momento cliccando su «Preferenze cookie» nel footer (in fondo a ogni pagina del sito). Trovi anche il link alla Cookie Policy completa."
+  },
+  {
+    "keywords": ["newsletter", "email promozionali", "aggiornamenti email"],
+    "question": "Riceverò email dal sito?",
+    "answer": "Potresti ricevere email in questi casi: quando il tuo account viene approvato, quando si libera un posto in lista d'attesa, comunicazioni dagli organizzatori riguardo un evento a cui sei iscritto, e se gli amministratori inviano una newsletter. Le email sono sempre relative alla vita della community, mai spam."
+  },
+  {
+    "keywords": ["sicuro", "sicurezza", "truffa", "affidabile", "fidare"],
+    "question": "Il sito è sicuro?",
+    "answer": "Sì! Excursio è una community gestita da persone reali. Ogni nuovo iscritto viene verificato e approvato manualmente da un amministratore prima di poter accedere. Le tue informazioni personali sono protette e non vengono condivise con terzi. Gli eventi sono organizzati in buona fede, senza scopo di lucro."
+  },
+  {
+    "keywords": ["età", "maggiorenne", "quanti anni", "minorenne", "limite età"],
+    "question": "Ci sono limiti di età?",
+    "answer": "Per registrarsi su Excursio devi essere maggiorenne (avere almeno 18 anni). Questo viene verificato durante la registrazione tramite la data di nascita."
+  },
+  {
+    "keywords": ["eliminare account", "cancellare account", "rimuovere profilo", "non voglio più"],
+    "question": "Posso eliminare il mio account?",
+    "answer": "Se desideri eliminare il tuo account, contatta un amministratore via email o scrivendolo nel forum. L'amministratore potrà disattivare o rimuovere il tuo profilo. Non è possibile farlo autonomamente per motivi di sicurezza."
+  },
+  {
+    "keywords": ["segnalare", "problema", "bug", "errore", "non funziona", "malfunzionamento"],
+    "question": "Qualcosa non funziona, come lo segnalo?",
+    "answer": "Se riscontri un problema tecnico o qualcosa che non funziona come dovrebbe, puoi segnalarlo scrivendo agli organizzatori via email o nel Salottino delle chat. Descrivi cosa è successo e su quale pagina: ci aiuterà a risolvere più velocemente!"
+  },
+  {
+    "keywords": ["grazie", "thanks", "ti ringrazio", "gentile"],
+    "question": "Grazie!",
+    "answer": "Di nulla! Sono qui per aiutarti. Se hai altre domande su Excursio, non esitare a chiedere. Buon divertimento con la community!"
+  },
+  {
+    "keywords": ["ciao", "buongiorno", "salve", "hey", "ehi", "buonasera"],
+    "question": "Ciao!",
+    "answer": "Ciao! Benvenuto nell'assistente di Excursio. Come posso aiutarti? Puoi chiedermi qualsiasi cosa riguardo al sito: come registrarti, come partecipare agli eventi, come usare il mercatino, e tanto altro!"
+  }
+]

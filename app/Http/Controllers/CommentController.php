@@ -98,6 +98,7 @@ class CommentController extends Controller
 
             $comment->update([
                 'testo' => $cleanContent,
+                'data' => now(),
                 'edited_at' => now(),
             ]);
 

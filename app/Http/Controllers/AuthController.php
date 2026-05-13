@@ -84,6 +84,7 @@ class AuthController extends Controller
 
         Auth::login($user);
         $request->session()->regenerate();
+        $request->session()->put('last_activity_time', time());
 
         // Update last access
         $now = now();

@@ -54,7 +54,7 @@
                                 <div class="col-12 col-lg-6">
                                     <div class="mb-3">
                                         <label for="title" class="form-label">Titolo Evento *</label>
-                                        <input type="text" class="form-control @error('title') is-invalid @enderror"
+                                        <input type="text" class="form-control form-control-sm @error('title') is-invalid @enderror"
                                                id="title" name="title" value="{{ old('title', $event->title) }}" required>
                                         @error('title')
                                         <div class="invalid-feedback">{{ $message }}</div>
@@ -66,13 +66,13 @@
                                         <label class="form-label">Data evento / ora inizio *</label>
                                         <div class="d-flex gap-2">
                                             <input type="date"
-                                                   class="form-control @error('date') is-invalid @enderror"
+                                                   class="form-control form-control-sm border border-2 border-primary @error('date') is-invalid @enderror"
                                                    id="date_only"
                                                    name="date_only"
                                                    value="{{ old('date') ? \Carbon\Carbon::parse(old('date'))->format('Y-m-d') : $event->date->format('Y-m-d') }}"
                                                    required>
                                             <input type="time"
-                                                   class="form-control @error('date') is-invalid @enderror"
+                                                   class="form-control form-control-sm border border-2 border-primary @error('date') is-invalid @enderror"
                                                    id="time_only"
                                                    name="time_only"
                                                    value="{{ old('date') ? \Carbon\Carbon::parse(old('date'))->format('H:i') : $event->date->format('H:i') }}"
@@ -88,7 +88,7 @@
                                 <div class="col-12 col-lg-3">
                                     <div class="mb-3">
                                         <label for="deadline" class="form-label text-primary-emphasis">Scadenza Iscrizioni</label>
-                                        <input type="datetime-local" class="form-control border border-2 border-primary @error('deadline') is-invalid @enderror"
+                                        <input type="datetime-local" class="form-control form-control-sm border border-2 border-primary @error('deadline') is-invalid @enderror"
                                                id="deadline" name="deadline" value="{{ old('deadline', $event->deadline ? $event->deadline->format('Y-m-d\TH:i') : '') }}">
                                         @error('deadline')
                                         <div class="invalid-feedback">{{ $message }}</div>
@@ -501,6 +501,17 @@
         #admin-event-edit-form #date.form-control:focus {
             border-color: #8B4513 !important;
             box-shadow: 0 0 0 0.2rem rgba(139, 69, 19, 0.25);
+        }
+
+        /* Data evento e ora inizio: bordo blu */
+        #admin-event-edit-form #date_only.form-control,
+        #admin-event-edit-form #time_only.form-control {
+            border: 2px solid #0d6efd !important;
+        }
+        #admin-event-edit-form #date_only.form-control:focus,
+        #admin-event-edit-form #time_only.form-control:focus {
+            border-color: #0d6efd !important;
+            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
         }
 
         /* Data, costo, scadenza, città: larghezza proporzionata al contenuto */

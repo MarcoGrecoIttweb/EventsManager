@@ -11,14 +11,16 @@ use Illuminate\Support\Facades\Log;
 
 class TrackOnlineUsers
 {
-    // Minuti di inattività prima di considerare un utente offline
-    const TIMEOUT_MINUTES = 15;
-
     public function handle(Request $request, Closure $next)
     {
         try {
+            $timeoutMinutes = (int) config('session.online_timeout', 3);
+            if ($timeoutMinutes < 1) {
+                $timeoutMinutes = 3;
+            }
+
             $now = time();
-            $cutoff = $now - (self::TIMEOUT_MINUTES * 60);
+            $cutoff = $now - ($timeoutMinutes * 60);
 
             // Sempre: rimuovi record scaduti (anche per visitatori sulla home pubblica)
             DB::table('utentionline')->where('time', '<', $cutoff)->delete();

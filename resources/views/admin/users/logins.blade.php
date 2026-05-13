@@ -8,9 +8,18 @@
         <div class="row">
             <div class="col-md-12">
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h1 class="h4 mb-0 fw-semibold">
-                        <i class="fas fa-sign-in-alt me-2"></i>
-                        Ingressi giornalieri
+                    <h1 class="h4 mb-0 fw-semibold d-flex flex-wrap align-items-center gap-2">
+                        <span class="d-inline-flex align-items-center">
+                            <i class="fas fa-sign-in-alt me-2"></i>
+                            Ingressi giornalieri
+                        </span>
+                        @php
+                            $giorniSel = (int) ($days ?? 1);
+                        @endphp
+                        <span class="badge bg-dark rounded-pill fs-6 fw-semibold"
+                              title="Utenti con ultimo accesso negli ultimi {{ $giorniSel }} {{ $giorniSel === 1 ? 'giorno' : 'giorni' }} (come in elenco)">
+                            {{ $users->count() }}
+                        </span>
                     </h1>
                     <div class="d-flex gap-2">
                         <a href="{{ route('admin.users.index') }}" class="btn btn-secondary btn-sm">

@@ -199,7 +199,7 @@
                              class="card h-100 w-100 event-box {{ $event->isFull() ? 'event-box--full' : '' }} {{ session('waitlist_flash_event_id') == $event->getKey() ? 'event-box--flash' : '' }}">
                             @if($event->isFull())
                                 <div class="card-header bg-danger text-white text-center py-2">
-                                    <small><i class="fas fa-exclamation-triangle"></i> <strong>EVENTO AL COMPLETO</strong></small>
+                                    <small class="d-inline-block px-1" style="line-height: 1.35;"><i class="fas fa-exclamation-triangle"></i> <strong>STOP ADESIONI (Aperta Lista Riserva)</strong></small>
                                 </div>
                             @endif
 
@@ -345,7 +345,8 @@
                                                                     data-bs-target="#{{ $wlBoxId }}"
                                                                     aria-expanded="false"
                                                                     aria-controls="{{ $wlBoxId }}">
-                                                                <i class="fas fa-clipboard-list"></i> Inseriscimi in lista di Riserva
+                                                                <i class="fas fa-clipboard-list"></i>
+                                                                <span class="event-waitlist-cta-blink">Inseriscimi in lista di Riserva</span>
                                                             </button>
 
                                                             <div class="collapse mt-2" id="{{ $wlBoxId }}">
@@ -415,7 +416,7 @@
                                         @auth
                                             <a href="{{ route('events.show', $event) }}" class="btn btn-primary w-100">
                                                 <i class="fas fa-eye"></i>
-                                                {{ $event->isFull() ? 'Visualizza (Completo)' : 'Dettagli Evento' }}
+                                                Visualizza Dettagli Evento
                                             </a>
                                         @else
                                             <a href="{{ route('login') }}" class="btn btn-guest-details w-100">
@@ -546,16 +547,9 @@
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
             padding: 1.5rem 1.75rem;
         }
-        /* Visibile solo con URL #descrizione-eventi (click su «Chi siamo e cosa facciamo») */
         #descrizione-eventi {
             display: none;
             scroll-margin-top: 5.5rem;
-        }
-        #descrizione-eventi:target {
-            display: block;
-            outline: 3px solid #0d6efd;
-            outline-offset: 3px;
-            box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.25), 0 1px 3px rgba(0, 0, 0, 0.06);
         }
         .intro-box-below-events--empty {
             max-width: 36rem;
@@ -710,6 +704,31 @@
             border: 2px solid rgba(13, 110, 253, 0.35);
             background: rgba(255, 255, 255, 0.85);
         }
+
+        /* Testo CTA lista riserva: lampeggio attenzione */
+        .event-waitlist-cta-blink {
+            display: inline-block;
+            font-weight: 800;
+            animation: eventWaitlistCtaBlink 1.1s ease-in-out infinite;
+        }
+        @keyframes eventWaitlistCtaBlink {
+            0%, 100% {
+                color: inherit;
+                text-shadow: none;
+                transform: scale(1);
+            }
+            50% {
+                color: #9b1c1c;
+                text-shadow: 0 0 10px rgba(220, 53, 69, 0.65);
+                transform: scale(1.02);
+            }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .event-waitlist-cta-blink {
+                animation: none;
+            }
+        }
+
         .event-box.event-box--flash {
             box-shadow: 0 0 0 4px rgba(25, 135, 84, 0.35), 0 8px 22px rgba(0, 0, 0, 0.12);
             border: 2px solid rgba(25, 135, 84, 0.65);

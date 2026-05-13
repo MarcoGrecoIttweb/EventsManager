@@ -105,7 +105,7 @@
                     {{-- Evento al completo: box subito sotto l'immagine --}}
                     @if($event->isFull())
                         <div class="event-closed-box mt-2">
-                            CHIUSE ADESIONI
+                            STOP ADESIONI - ( Aperta Lista Riserva)
                         </div>
                     @endif
 
@@ -277,7 +277,8 @@
                                                                             data-bs-target="#{{ $wlBoxId }}"
                                                                             aria-expanded="false"
                                                                             aria-controls="{{ $wlBoxId }}">
-                                                                        <i class="fas fa-clipboard-list"></i> Vuoi inserirti in lista di attesa?
+                                                                        <i class="fas fa-clipboard-list"></i>
+                                                                        <span class="event-waitlist-cta-blink">Inseriscimi in lista di Riserva</span>
                                                                     </button>
 
                                                                     <div class="collapse mt-2" id="{{ $wlBoxId }}">
@@ -536,6 +537,9 @@
                                             <span class="event-meta-label-liberi">Lib.</span> <strong>{{ $postiLiberi !== null ? $postiLiberi : '—' }}</strong>
                                             <span class="event-meta-posti-sep"> / </span>
                                             <span class="event-meta-label-totali">Tot.</span> <strong>{{ $postiTotali !== null ? $postiTotali : '—' }}</strong>
+                                            @if($eventMetaPostiGapBlink)
+                                                <span class="event-meta-ultimi-posti ms-1">Ultimi Posti Disponibili</span>
+                                            @endif
                                             @if($postiTotali === null)
                                                 <small class="event-meta-posti-hint"> (posti illimitati)</small>
                                             @endif
@@ -1741,6 +1745,15 @@
             cursor: help;
         }
 
+        .event-meta-ultimi-posti {
+            font-weight: 800;
+            font-size: 0.82rem;
+            letter-spacing: 0.04em;
+            color: #b00000;
+            text-shadow: 0 0 2px #fff, 0 0 4px #fff;
+            white-space: nowrap;
+        }
+
         /* Quasi al completo: solo sfondo lampeggiante; Iscr./Lib./Tot. restano rosso/verde/arancio come prima */
         .event-meta-posti-box--part-gap {
             border: 2px solid rgba(114, 10, 10, 0.85) !important;
@@ -2086,14 +2099,16 @@
             background: #dc3545;
             color: #fff;
             border-radius: 0.5rem;
-            padding: 0.38rem 0.65rem;
-            font-size: 0.95rem;
-            line-height: 1.2;
+            padding: 0.45rem 0.65rem;
+            font-size: 0.88rem;
+            line-height: 1.35;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 800;
-            letter-spacing: 0.06em;
+            letter-spacing: 0.04em;
+            text-align: center;
+            text-wrap: balance;
         }
 
         .event-waitlist-box {
@@ -2104,6 +2119,30 @@
             border: 2px solid rgba(13, 110, 253, 0.35);
             background: rgba(255, 255, 255, 0.85);
         }
+
+        .event-waitlist-cta-blink {
+            display: inline-block;
+            font-weight: 800;
+            animation: eventWaitlistCtaBlink 1.1s ease-in-out infinite;
+        }
+        @keyframes eventWaitlistCtaBlink {
+            0%, 100% {
+                color: inherit;
+                text-shadow: none;
+                transform: scale(1);
+            }
+            50% {
+                color: #9b1c1c;
+                text-shadow: 0 0 10px rgba(220, 53, 69, 0.65);
+                transform: scale(1.02);
+            }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .event-waitlist-cta-blink {
+                animation: none;
+            }
+        }
+
         .event-waitlist-box ul li {
             color: #0d6efd;
             font-weight: 700;

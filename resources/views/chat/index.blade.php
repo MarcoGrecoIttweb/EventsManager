@@ -235,8 +235,35 @@
                              data-message-id="{{ $message->id }}"
                              data-message-update-url="{{ $chatBaseUrl . '/chat/' . $message->id }}">
                             <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <div class="small mb-1">
+                                <div class="min-w-0 flex-grow-1">
+                                    @php
+                                        $chatAvatarUrl = null;
+                                        if ($message->user) {
+                                            $chatAvatarUrl = $message->user->photo_url;
+                                            if (!is_string($chatAvatarUrl) || trim($chatAvatarUrl) === '') {
+                                                $chatAvatarUrl = null;
+                                            }
+                                        }
+                                    @endphp
+                                    <div class="small mb-1 d-flex align-items-start gap-2">
+                                        <div class="flex-shrink-0 pt-1">
+                                            @if($chatAvatarUrl)
+                                                <img src="{{ $chatAvatarUrl }}"
+                                                     alt="Avatar di {{ $msgNick }}"
+                                                     class="chat-message-avatar"
+                                                     width="32"
+                                                     height="32"
+                                                     loading="lazy"
+                                                     decoding="async">
+                                            @else
+                                                <span class="chat-message-avatar chat-message-avatar--placeholder d-inline-flex align-items-center justify-content-center"
+                                                      title="Nessuna foto profilo"
+                                                      aria-hidden="true">
+                                                    <i class="fas fa-user"></i>
+                                                </span>
+                                            @endif
+                                        </div>
+                                        <div class="min-w-0">
                                         <span class="d-inline-flex align-items-center gap-1 flex-wrap fw-semibold chat-nickname">
                                             {{ $msgNick }}
                                             @php
@@ -255,6 +282,7 @@
                                             @endif
                                         </span>
                                         <span style="color:#1B5E20;"> — {{ $message->created_at->format('d/m/Y H:i') }}</span>
+                                        </div>
                                     </div>
                                     @if($message->user && $message->user->isAdmin())
                                         <div class="chat-rich-content">
@@ -563,6 +591,26 @@
         .chat-nickname {
             color: #4b2aad;
             font-size: 1.02rem;
+        }
+
+        .chat-message-avatar {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 50%;
+            object-fit: cover;
+            vertical-align: middle;
+            border: 2px solid var(--user-color, #5dade2);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+        }
+
+        .chat-message-avatar--placeholder {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 50%;
+            font-size: 0.85rem;
+            color: #6c757d;
+            background: #e9ecef;
+            border: 2px dashed color-mix(in srgb, var(--user-color, #adb5bd) 55%, #ced4da 45%);
         }
 
         .chat-rich-content img {

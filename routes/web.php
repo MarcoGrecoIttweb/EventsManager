@@ -322,7 +322,7 @@ Route::get('/mercatino/vetrina', function () {
     $vetrinaHeaderImage = MercatinoVetrinaHeaderImageController::headerPublicRelative();
 
     return view('mercatino.vetrina', compact('annunci', 'vetrinaHeaderImage'));
-})->name('mercatino.vetrina')->middleware(['feature:mercatino']);
+})->name('mercatino.vetrina')->middleware(['auth', 'approved', 'feature:mercatino']);
 
 // Mercatino: contatta inserzionista (via email)
 Route::post('/mercatino/contatta', function (Request $request) {
