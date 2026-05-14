@@ -1155,7 +1155,7 @@ document.addEventListener('DOMContentLoaded', function () {
 </style>
 <script>
 (function() {
-    var faqData = [];
+    var faqData = @json(json_decode(file_get_contents(public_path('js/chatbot-faq.json'))));
     var chatWindow = document.getElementById('chatbot-window');
     var chatToggle = document.getElementById('chatbot-toggle');
     var chatClose = document.getElementById('chatbot-close');
@@ -1163,14 +1163,6 @@ document.addEventListener('DOMContentLoaded', function () {
     var chatInput = document.getElementById('chatbot-input');
     var chatSend = document.getElementById('chatbot-send');
     var suggestions = document.getElementById('chatbot-suggestions');
-
-    fetch('{{ asset("js/chatbot-faq.json") }}')
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-            faqData = data;
-            showSuggestions();
-        })
-        .catch(function() {});
 
     var suggestionsPage = 0;
     var suggestionsPerPage = 5;
@@ -1363,6 +1355,8 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     }
+
+    showSuggestions();
 })();
 </script>
 
