@@ -135,19 +135,109 @@
     "answer": "Sì! Puoi visitare il profilo di qualsiasi utente registrato cliccando sul suo nome (dalla lista utenti online, dall'elenco partecipanti di un evento, dalla sezione amici o dai commenti nel forum). Vedrai la sua foto, il nickname, la descrizione e altre informazioni che ha condiviso."
   },
   {
-    "keywords": ["mercatino", "vendere", "comprare", "annuncio", "vetrina", "oggetti"],
+    "keywords": ["mercatino", "vendere", "comprare", "annuncio", "vetrina", "oggetti", "usato", "seconda mano", "bazaar", "cosa è il mercatino", "che cos'è il mercatino"],
     "question": "Cos'è il Mercatino?",
-    "answer": "Il Mercatino è uno spazio riservato ai membri della community per pubblicare annunci di oggetti in vendita, in scambio o in regalo. Puoi creare un annuncio con titolo, descrizione, categoria, prezzo, condizione dell'oggetto, zona di ritiro e fino a 3 foto. Gli annunci vengono pubblicati nella «Vetrina» visibile a tutti i membri e restano attivi per 30 giorni."
+    "answer": "Il Mercatino è la bacheca degli annunci di Excursio, riservata ai membri registrati e approvati. Non è una chat: serve per vendere, regalare o scambiare oggetti tra amici della community. Dal menu «Mercatino» compili il modulo di inserimento; con «Pubblica in vetrina» l'annuncio diventa visibile a tutti nella pagina Vetrina. Ogni annuncio include titolo, categoria, descrizione, tipo di prezzo, stato dell'oggetto, zona di ritiro, modalità di contatto e fino a 3 foto. Resta online 30 giorni (rinnovabile)."
   },
   {
-    "keywords": ["creare annuncio", "pubblicare annuncio", "mettere in vendita", "come pubblico"],
+    "keywords": ["dove trovo mercatino", "accesso mercatino", "entrare mercatino", "link mercatino", "menu mercatino", "barra navigazione mercatino"],
+    "question": "Dove trovo il Mercatino sul sito?",
+    "answer": "Devi aver effettuato l'accesso con un account approvato. Nella barra di navigazione in alto cerca la voce «Mercatino» e cliccaci: si apre la pagina per creare un nuovo annuncio o gestire le bozze. Per vedere tutti gli annunci già pubblicati clicca su «Vetrina» (dalla stessa area Mercatino o dal link dedicato)."
+  },
+  {
+    "keywords": ["vetrina", "vetrina mercatino", "vedere annunci", "elenco annunci", "annunci pubblicati", "sfogliare mercatino"],
+    "question": "Cos'è la Vetrina del Mercatino?",
+    "answer": "La Vetrina è la pagina dove sono elencati tutti gli annunci già pubblicati dai membri. Da lì puoi sfogliare titolo, foto, prezzo e descrizione, contattare chi vende e (se è il tuo annuncio) modificarlo, rinnovarlo o eliminarlo. Si raggiunge dal Mercatino o dal menu con la voce dedicata alla vetrina."
+  },
+  {
+    "keywords": ["bozza", "salva bozza", "bozze mercatino", "non pubblicare", "salvare senza pubblicare"],
+    "question": "Posso salvare un annuncio senza pubblicarlo subito?",
+    "answer": "Sì. Nella pagina Mercatino hai due pulsanti utili: «Salva bozza» salva il lavoro sul tuo dispositivo/account senza pubblicare (compare nell'elenco bozze in fondo alla pagina); «Pubblica in vetrina» invece rende l'annuncio pubblico subito. Puoi modificare una bozza tutte le volte che vuoi prima di pubblicare. Quando pubblichi, la bozza collegata viene eliminata automaticamente: non serve cancellarla a mano. Se modifichi titolo, prezzo o foto dopo la pubblicazione, usa «Modifica» direttamente in vetrina (non la bozza)."
+  },
+  {
+    "keywords": ["eliminare annuncio", "cancellare annuncio", "rimuovere annuncio", "togliere dalla vetrina"],
+    "question": "Come elimino un mio annuncio dalla vetrina?",
+    "answer": "Vai nella Vetrina del Mercatino, trova il tuo annuncio e usa il pulsante per eliminarlo (solo tu, inserzionista, o un amministratore puoi farlo). L'annuncio viene rimosso dalla vetrina pubblica. Se avevi ancora una bozza collegata con lo stesso nome, anche quella viene gestita automaticamente al prossimo accesso alla pagina Mercatino."
+  },
+  {
+    "keywords": ["categoria", "categorie mercatino", "tipo oggetto", "elettronica", "abbigliamento", "casa"],
+    "question": "Quali categorie posso scegliere per un annuncio?",
+    "answer": "Nel modulo scegli una categoria obbligatoria dall'elenco del sito, ad esempio: Abbigliamento, Libri e riviste, Giochi e videogiochi, Sport e hobby, Tecnologia ed elettronica, Audio e TV, Idee regalo, In omaggio, Biciclette, Veicoli, Telefonia, Casa, Sport, Elettronica e videogiochi, Altro. La categoria compare in vetrina e aiuta chi scorre gli annunci a orientarsi rapidamente."
+  },
+  {
+    "keywords": ["prezzo", "gratis", "scambio", "regalo", "omaggio", "trattabile", "quanto chiedere", "tipo prezzo"],
+    "question": "Che tipi di prezzo posso impostare?",
+    "answer": "Nel modulo «Tipo prezzo» puoi scegliere: Prezzo fisso (indichi l'importo in euro; opzionalmente spunti «Trattabile» se accetti trattative); Gratis / omaggio (nessun pagamento); Solo scambio (baratto, non vendita). Se scegli fisso senza importo ma con «Trattabile», in vetrina può comparire come prezzo da concordare. Gratis e scambio non richiedono l'importo numerico."
+  },
+  {
+    "keywords": ["foto mercatino", "immagini annuncio", "quante foto", "caricare foto", "fotografie annuncio"],
+    "question": "Quante foto posso mettere in un annuncio?",
+    "answer": "Puoi allegare fino a 3 fotografie per ogni annuncio. Le immagini aiutano molto chi consulta la vetrina. Formati come JPG o PNG sono i più usati; in modifica puoi sostituire o aggiornare le foto dal pulsante «Modifica» sul tuo annuncio in vetrina."
+  },
+  {
+    "keywords": ["condizione", "stato oggetto", "nuovo", "usato", "ottime condizioni", "da sistemare"],
+    "question": "Cosa significa il campo «Stato» dell'oggetto?",
+    "answer": "Nel modulo «Stato» scegli tra: Nuovo, Ottimo, Buono, Discreto, Altro. Serve a descrivere le condizioni reali dell'oggetto (non è il tipo di prezzo). Chi legge in vetrina capisce subito se è quasi nuovo o usato; sii onesto per evitare malintesi quando vi incontrate per il ritiro."
+  },
+  {
+    "keywords": ["zona ritiro", "dove ritiro", "consegna", "spedizione", "luogo ritiro", "milano ritiro"],
+    "question": "Devo indicare dove si ritira l'oggetto?",
+    "answer": "Sì, nel modulo c'è un campo per la zona di ritiro (ad esempio un quartiere o una città). Serve a chi legge l'annuncio per capire se l'oggetto è comodo da recuperare. Eventuali accordi su consegna o spedizione li gestite direttamente tra voi via email."
+  },
+  {
+    "keywords": ["chi può mercatino", "serve login mercatino", "registrato mercatino", "account mercatino", "non vedo mercatino"],
+    "question": "Chi può usare il Mercatino?",
+    "answer": "Solo i membri registrati e con account approvato, dopo aver effettuato l'accesso. Se non vedi la voce «Mercatino» nel menu, verifica di essere loggato e che il tuo profilo sia attivo; in alcuni casi la sezione può essere temporaneamente disattivata dagli amministratori."
+  },
+  {
+    "keywords": ["cercare annuncio", "ricerca vetrina", "trovare oggetto", "filtro mercatino"],
+    "question": "Come cerco un annuncio nella vetrina?",
+    "answer": "Apri la Vetrina del Mercatino: lì trovi l'elenco degli annunci attivi. Puoi scorrere l'elenco e leggere titoli, categorie e prezzi. Se la pagina prevede ricerca o filtri, usali in alto; altrimenti scorri fino a trovare l'oggetto che ti interessa e clicca per i dettagli e per contattare l'inserzionista."
+  },
+  {
+    "keywords": ["email mercatino", "risposta messaggio", "non risponde venditore", "contatto email annuncio"],
+    "question": "Come funziona il contatto via email sul Mercatino?",
+    "answer": "Dalla vetrina, su un annuncio che ti interessa, clicca il pulsante per contattare l'inserzionista e scrivi il messaggio. Il sito invia una email all'indirizzo registrato di chi ha pubblicato l'annuncio (in copia nascosta possono esserci gli admin). Le risposte arrivano sulla tua casella email personale: non è una chat interna al sito."
+  },
+  {
+    "keywords": ["regole mercatino", "vietato", "annuncio non ammesso", "prodotti illegali", "responsabilità annuncio"],
+    "question": "Ci sono regole per pubblicare annunci?",
+    "answer": "Sì. È severamente vietato pubblicare prodotti illegali, contraffatti o non pertinenti alle categorie del sito. Ogni inserzionista è l'unico responsabile (civile e penale) di ciò che propone. Prima di pubblicare devi accettare le condizioni nel modulo. Gli amministratori possono rimuovere annunci non conformi. Il Mercatino non gestisce pagamenti online: eventuali soldi si accordano privatamente tra le parti."
+  },
+  {
+    "keywords": ["contatto excursio", "contatto email telefono", "come mi contattano", "modalità contatto", "preferisco email", "preferisco telefono"],
+    "question": "Come scelgo come essere contattato per un annuncio?",
+    "answer": "Nel modulo c'è il campo «Contatto» con tre opzioni: tramite Excursio (messaggio dal sito che ti arriva via email), oppure indichi che preferisci essere contattato direttamente via email o via telefono (i tuoi recapiti devono essere coerenti con quanto hai messo nel profilo). Chi è interessato userà il pulsante «Contatta» in vetrina: il messaggio parte dal sito e arriva alla tua email registrata."
+  },
+  {
+    "keywords": ["foto obbligatorie", "pubblicare senza foto", "serve foto", "mancano foto"],
+    "question": "Devo inserire le foto per pubblicare?",
+    "answer": "Per «Pubblica in vetrina» le foto sono richieste (almeno una): il modulo lo indica come obbligatorio per la pubblicazione. Con «Salva bozza» invece puoi salvare il testo anche senza foto e aggiungerle dopo. Puoi caricare fino a 3 immagini (JPG, PNG, WebP, GIF, max circa 4 MB ciascuna). In modifica puoi aggiungere, sostituire o rimuovere le singole foto."
+  },
+  {
+    "keywords": ["mercatino e chat", "differenza mercatino chat", "annuncio o chat", "vendere in chat"],
+    "question": "Mercatino e Salottino chat: qual è la differenza?",
+    "answer": "Sono due sezioni diverse. Il Mercatino serve per annunci di oggetti (vendita, regalo, scambio): ogni annuncio ha scheda, foto, prezzo e contatto via email dal sito. Il Salottino delle chat è una conversazione pubblica tra tutti i membri, per chiacchierare; non va usato per vendere oggetti al posto del Mercatino. Per un divano in vendita usa il Mercatino; per salutare il gruppo usa la chat."
+  },
+  {
+    "keywords": ["annuncio scaduto", "non vedo più annuncio", "sparito vetrina", "scadenza automatica"],
+    "question": "Il mio annuncio è sparito dalla vetrina, perché?",
+    "answer": "Probabilmente sono passati 30 giorni dalla pubblicazione o dall'ultimo rinnovo: gli annunci scaduti vengono rimossi automaticamente dalla vetrina. Controlla se avevi dimenticato di rinnovare. Se non era scaduto, potrebbe essere stato eliminato da te o da un amministratore. Puoi sempre creare un nuovo annuncio dal Mercatino."
+  },
+  {
+    "keywords": ["notifica admin mercatino", "email nuovo annuncio", "avviso amministratore annuncio"],
+    "question": "Chi viene avvisato quando pubblico un annuncio?",
+    "answer": "Quando pubblichi in vetrina, il sistema può inviare una email agli amministratori per segnalare il nuovo annuncio (con titolo e dati principali). Gli altri membri non ricevono email automatica per ogni annuncio: scoprono le novità entrando nella Vetrina. Chi ti contatta tramite il pulsante «Contatta» riceve risposta sulla propria email."
+  },
+  {
+    "keywords": ["creare annuncio", "pubblicare annuncio", "mettere in vendita", "come pubblico", "inserire annuncio", "nuovo annuncio", "pubblica in vetrina"],
     "question": "Come pubblico un annuncio nel Mercatino?",
-    "answer": "Vai nella sezione «Mercatino» dalla barra di navigazione. Compila il modulo con: titolo, categoria, descrizione dell'oggetto, tipo di prezzo (fisso, gratis o scambio), condizione, zona di ritiro e come preferisci essere contattato. Puoi aggiungere fino a 3 foto. Accetta le condizioni e clicca «Pubblica»: il tuo annuncio apparirà subito nella vetrina."
+    "answer": "Accedi al sito, poi clicca «Mercatino» nel menu. Compila il modulo: titolo, categoria, descrizione, tipo di prezzo (fisso, trattabile, gratis o scambio), stato dell'oggetto, zona di ritiro, modalità di contatto e fino a 3 foto. Accetta le condizioni e clicca «Pubblica in vetrina»: l'annuncio compare subito nella Vetrina per tutti i membri. Puoi anche «Salva bozza» e pubblicare più tardi."
   },
   {
     "keywords": ["modificare annuncio", "cambiare annuncio", "aggiornare annuncio", "correggere annuncio"],
     "question": "Posso modificare un annuncio pubblicato?",
-    "answer": "Sì! Nella vetrina del Mercatino, sul tuo annuncio troverai il pulsante «Modifica». Potrai aggiornare testo, prezzo, foto e tutte le informazioni. Le modifiche si vedranno subito."
+    "answer": "Sì. Nella Vetrina, sul tuo annuncio (solo tu o un amministratore), clicca «Modifica». Puoi aggiornare titolo, categoria, descrizione, tipo di prezzo, importo, stato oggetto, zona di ritiro e modalità di contatto. Puoi anche sostituire o rimuovere fino a 3 foto (foto_1, foto_2, foto_3). Le modifiche aggiornano subito la scheda in vetrina; la data di scadenza dei 30 giorni non si resetta automaticamente con la modifica (per quello usa «Rinnova» se serve)."
   },
   {
     "keywords": ["rinnovare annuncio", "scadenza annuncio", "30 giorni", "prolungare annuncio"],
@@ -155,24 +245,79 @@
     "answer": "Sì, gli annunci nel Mercatino restano visibili per 30 giorni dalla pubblicazione (o dall'ultimo rinnovo). Quando un annuncio sta per scadere, puoi rinnovarlo cliccando «Rinnova» sul tuo annuncio nella vetrina: resterà visibile per altri 30 giorni. Gli annunci scaduti vengono rimossi automaticamente."
   },
   {
-    "keywords": ["contattare venditore", "scrivere inserzionista", "comprare oggetto", "sono interessato"],
+    "keywords": ["contattare venditore", "scrivere inserzionista", "comprare oggetto", "sono interessato", "messaggio venditore", "contatta inserzionista", "interessato annuncio"],
     "question": "Come contatto chi ha pubblicato un annuncio?",
-    "answer": "Nella vetrina del Mercatino, su ogni annuncio troverai un pulsante per contattare l'inserzionista. Scrivi il tuo messaggio e verrà inviato via email direttamente a chi ha pubblicato l'annuncio. Se ti risponde, riceverai la risposta sulla tua email."
+    "answer": "Apri la Vetrina del Mercatino, clicca sull'annuncio che ti interessa e usa il pulsante «Contatta» (o simile). Scrivi il messaggio nel modulo: verrà inviato via email all'inserzionista. Non puoi contattare il tuo stesso annuncio. La risposta ti arriverà sull'email che hai indicato nel profilo."
   },
   {
-    "keywords": ["chat", "salottino", "messaggi", "scrivere a tutti", "chiacchierare"],
+    "keywords": ["chat", "salottino", "messaggi", "scrivere a tutti", "chiacchierare", "bacheca", "salotto chat"],
     "question": "Cos'è il Salottino delle chat?",
-    "answer": "Il Salottino delle chat è uno spazio informale dove i membri della community possono chiacchierare liberamente. Puoi scrivere messaggi visibili a tutti, rispondere agli altri, e restare in contatto anche quando non ci sono eventi in programma. È come una bacheca dove si parla di tutto un po'!"
+    "answer": "Il Salottino delle chat di Excursio è una chat pubblica condivisa da tutti i membri abilitati: un unico «salotto» dove leggere e scrivere messaggi, come una bacheca sempre aperta. Si trova nel menu (voce dedicata alla chat / Salottino). Non sostituisce il forum degli eventi (che resta legato a ogni singola uscita) né il Mercatino (annunci oggetti). È ideale per saluti, aggiornamenti e conversazioni informali quando non ci sono eventi in programma."
   },
   {
-    "keywords": ["scrivere chat", "come scrivo nella chat", "inviare messaggio chat"],
-    "question": "Come scrivo nella chat?",
-    "answer": "Vai nel «Salottino delle chat» dalla barra di navigazione. In basso trovi il campo per scrivere il tuo messaggio. Digita quello che vuoi dire e premi Invio o il pulsante di invio. Il messaggio apparirà subito nella conversazione, visibile a tutti i membri."
+    "keywords": ["dove chat", "accesso chat", "menu chat", "entrare salottino", "link chat"],
+    "question": "Dove trovo il Salottino delle chat?",
+    "answer": "Devi essere loggato con account approvato. Nella barra di navigazione cerca la voce del Salottino (icona commenti / «Salottino delle chat» o simile). Si apre la pagina /chat con l'elenco degli ultimi messaggi e il modulo per scrivere in basso. Se non la vedi, verifica di essere registrato e attivo, oppure che la funzione non sia temporaneamente disattivata dagli admin."
   },
   {
-    "keywords": ["modificare messaggio chat", "cancellare messaggio chat", "editare chat"],
-    "question": "Posso modificare o cancellare un messaggio in chat?",
-    "answer": "Sì! Accanto ai tuoi messaggi nella chat trovi le opzioni per modificarli o eliminarli. Se modifichi un messaggio, gli altri vedranno la versione aggiornata. Se lo elimini, verrà rimosso dalla conversazione."
+    "keywords": ["chi può chat", "serve login chat", "registrato chat", "non posso scrivere chat"],
+    "question": "Chi può leggere e scrivere in chat?",
+    "answer": "Solo utenti registrati e con profilo approvato (stesso requisito del Mercatino e degli eventi). I visitatori non loggati vedono un invito ad accedere o registrarsi. Ogni messaggio mostra nickname, avatar (se presente) e data/ora. In pagina vengono caricati gli ultimi 100 messaggi, dal più vecchio al più recente in alto nella lista."
+  },
+  {
+    "keywords": ["scrivere chat", "come scrivo nella chat", "inviare messaggio chat", "pubblicare messaggio"],
+    "question": "Come scrivo un messaggio in chat?",
+    "answer": "Apri il Salottino, scorri in basso al riquadro verde «Inserisci il tuo messaggio», scrivi il testo e clicca «Invia» (icona aereo). Gli utenti normali hanno testo semplice fino a circa 1000 caratteri. Sotto il modulo trovi anche pulsanti emoji per inserire faccia sorridenti e simboli. L'amministratore ha un editor più ricco (testo formattato e immagini)."
+  },
+  {
+    "keywords": ["regole chat", "regole della casa", "cosa non si può dire", "vietato chat", "moderazione chat"],
+    "question": "Quali sono le regole del Salottino?",
+    "answer": "In pagina trovi i pulsanti «Le regole della casa» e «Salottino: come funziona» con il dettaglio. In sintesi: rispetto e buone maniere (niente insulti o toni aggressivi); evitare politica e sesso; zero discriminazione; niente spam o link pubblicitari non richiesti; sei responsabile di ciò che scrivi. In caso di lamentele fondate o comportamenti gravi, l'account può essere sospeso o bannato."
+  },
+  {
+    "keywords": ["email vietata chat", "telefono vietato chat", "numero bloccato", "messaggio rimosso email", "non posso scrivere email chat"],
+    "question": "Posso scrivere email o numeri di telefono in chat?",
+    "answer": "No, per proteggere la privacy. Se un messaggio contiene un indirizzo email o un numero di telefono, il sistema lo blocca e al suo posto compare l'avviso: «Messaggio rimosso: è vietato inviare Email e numero di telefono». Per scambiare contatti usa il profilo, il Mercatino (contatto via email dal sito) o accordi privati fuori dalla chat."
+  },
+  {
+    "keywords": ["rispondere chat", "risposta messaggio", "risponde a", "reply chat", "citare messaggio"],
+    "question": "Come rispondo a un messaggio specifico?",
+    "answer": "Accanto a ogni messaggio c'è il pulsante «Rispondi» (icona freccia). Cliccandolo si apre in basso un'etichetta «@ Risponde a NICKNAME (data/ora)» e il cursore nel modulo di scrittura. Il tuo messaggio pubblicato includerà quel riferimento in testa, evidenziato in giallo/chiaro, così tutti capiscono a chi stai rispondendo. Puoi annullare la risposta con «Annulla risposta» prima di inviare."
+  },
+  {
+    "keywords": ["menzione", "menzionare", "taggare", "chi mi ha scritto", "avviso menzione", "@nickname"],
+    "question": "Cosa succede se scrivo @nickname in chat?",
+    "answer": "Se menzioni qualcuno con @ seguito dal suo nickname (es. @Mario), quella persona — quando entra in chat — vede in alto un avviso giallo con l'anteprima del messaggio. Può chiudere il singolo avviso o «Chiudi tutti». Le righe che iniziano con @ possono essere evidenziate. Usa le menzioni per chiamare qualcuno in modo gentile, senza spam."
+  },
+  {
+    "keywords": ["email notifica chat", "ricevo email risposta", "avviso email chat", "notifica risposta"],
+    "question": "Ricevo una email quando qualcuno mi risponde in chat?",
+    "answer": "Quando qualcuno usa «Rispondi» sul tuo messaggio (con riferimento al tuo nickname e alla data), di solito parte una email di notifica al tuo indirizzo registrato, con anteprima del testo. Se sei admin e indirizzi un messaggio solo tramite la ricerca utente (senza rispondere a un messaggio specifico), puoi scegliere se inviare o meno l'email. Controlla anche la cartella spam."
+  },
+  {
+    "keywords": ["modificare messaggio chat", "cancellare messaggio chat", "editare chat", "elimino messaggio", "correggere chat"],
+    "question": "Posso modificare o cancellare un mio messaggio?",
+    "answer": "Sì. Accanto ai tuoi messaggi (e per l'admin anche su quelli altrui) trovi «Modifica» e «Elimina». Modifica apre un piccolo modulo inline: salva o annulla. Elimina chiede conferma e rimuove il messaggio dalla lista. Dopo la modifica tutti vedono il testo aggiornato. Ricorda: non inserire email o telefoni nel testo modificato, altrimenti verrà bloccato di nuovo."
+  },
+  {
+    "keywords": ["emoji chat", "faccina", "emoticon", "simboli chat"],
+    "question": "Posso usare le emoji in chat?",
+    "answer": "Sì. Sotto il pulsante «Invia» trovi una riga di emoji cliccabili (faccine, cuori, pollice su/giù, ecc.). Cliccando un'emoji viene inserita nel campo messaggio alla posizione del cursore. Puoi usarle da solo o nel testo. Funziona per utenti normali e admin."
+  },
+  {
+    "keywords": ["admin chat", "amministratore chat", "messaggio admin", "immagini chat admin"],
+    "question": "Cosa può fare l'amministratore in chat?",
+    "answer": "L'amministratore può scrivere messaggi con editor avanzato (grassetto, link, immagini) fino a circa 10000 caratteri; può modificare o eliminare qualsiasi messaggio; può cambiare l'immagine di intestazione del Salottino; può cercare un utente abilitato e «indirizzare» un messaggio a lui, scegliendo se inviare solo in chat o anche email di notifica."
+  },
+  {
+    "keywords": ["chat forum evento", "differenza chat evento", "forum o salottino"],
+    "question": "Chat Salottino e forum dell'evento: sono la stessa cosa?",
+    "answer": "No. Il forum è dentro la pagina di ogni singolo evento: i commenti riguardano solo quell'uscita (organizzazione, logistica, ecc.). Il Salottino è unico e globale per tutta la community, indipendente dagli eventi. Per chiedere «a che ora ci vediamo sabato?» usa il forum dell'evento; per parlare con tutti in generale usa il Salottino."
+  },
+  {
+    "keywords": ["quanti messaggi chat", "messaggi vecchi", "cronologia chat", "storico chat"],
+    "question": "Vedo tutti i messaggi vecchi della chat?",
+    "answer": "La pagina mostra gli ultimi 100 messaggi salvati, ordinati dal più recente al più vecchio nella visualizzazione (scorri la lista per leggere la conversazione). I messaggi più antichi non restano visibili in pagina ma sono ancora nel database. Non c'è ricerca full-text nella chat: se cerchi qualcosa di molto vecchio, chiedi agli amici o guarda se è ancora tra gli ultimi 100."
   },
   {
     "keywords": ["eventi passati", "storico", "vecchi eventi", "archivio", "eventi conclusi"],

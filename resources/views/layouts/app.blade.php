@@ -975,7 +975,7 @@ document.addEventListener('DOMContentLoaded', function () {
         </div>
         <div id="chatbot-messages">
             <div class="chatbot-msg chatbot-msg--bot">
-                Ciao! Sono l'assistente di Excursio. Chiedimi qualsiasi cosa sul sito, oppure scegli una domanda qui sotto.
+                Ciao! Sono l'assistente di Excursio. Chiedimi su eventi, mercatino, registrazione, profilo, chat e altro — oppure scegli una domanda qui sotto.
             </div>
             <div id="chatbot-suggestions"></div>
         </div>
@@ -1271,21 +1271,32 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function findBestAnswer(query) {
         var q = normalize(query);
-        var words = q.split(' ').filter(function(w) { return w.length > 2; });
-        if (words.length === 0) return null;
+        if (!q) return null;
 
+        var words = q.split(' ').filter(function(w) { return w.length > 1; });
         var best = null;
         var bestScore = 0;
 
         faqData.forEach(function(item) {
             var score = 0;
-            var kwJoined = normalize(item.keywords.join(' ') + ' ' + item.question);
+            var nQuestion = normalize(item.question).replace(/\?/g, '');
+            var kwJoined = normalize(item.keywords.join(' ') + ' ' + nQuestion + ' ' + (item.answer || ''));
+
+            if (nQuestion.indexOf(q) !== -1 || q.indexOf(nQuestion) !== -1) {
+                score += 20;
+            }
+            if (kwJoined.indexOf(q) !== -1) {
+                score += 12;
+            }
 
             words.forEach(function(w) {
+                if (w.length < 3) return;
+                if (nQuestion.indexOf(w) !== -1) score += 5;
                 if (kwJoined.indexOf(w) !== -1) score += 2;
                 item.keywords.forEach(function(kw) {
                     var nkw = normalize(kw);
-                    if (nkw.indexOf(w) !== -1 || w.indexOf(nkw) !== -1) score += 3;
+                    if (nkw === w) score += 10;
+                    else if (nkw.indexOf(w) !== -1 || w.indexOf(nkw) !== -1) score += 6;
                 });
             });
 
@@ -1296,6 +1307,15 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         return bestScore >= 2 ? best : null;
+    }
+
+    function findFaqByTopic(topic) {
+        var t = normalize(topic);
+        if (!t) return [];
+        return faqData.filter(function(item) {
+            var blob = normalize(item.keywords.join(' ') + ' ' + item.question);
+            return blob.indexOf(t) !== -1;
+        });
     }
 
     function addMessage(text, type) {
@@ -1323,9 +1343,39 @@ document.addEventListener('DOMContentLoaded', function () {
             addMessage(match.answer, 'bot');
             showRelatedSuggestions(match);
         } else {
-            addMessage('Mi dispiace, non ho trovato una risposta precisa. Prova con parole diverse oppure sfoglia le domande qui sotto. Per questioni specifiche puoi sempre contattare gli organizzatori.', 'bot');
-            suggestionsPage = 0;
-            showSuggestions();
+            var qn = normalize(text);
+            var topicHints = [];
+            if (qn.indexOf('mercatino') !== -1 || qn.indexOf('vetrina') !== -1 || qn.indexOf('annuncio') !== -1
+                || qn.indexOf('vend') !== -1 || qn.indexOf('compr') !== -1 || qn.indexOf('bozza') !== -1
+                || qn.indexOf('scambio') !== -1 || qn.indexOf('inserzion') !== -1) {
+                topicHints = findFaqByTopic('mercatino');
+            } else if (qn.indexOf('evento') !== -1 || qn.indexOf('iscriv') !== -1) {
+                topicHints = findFaqByTopic('evento');
+            } else if (qn.indexOf('chat') !== -1 || qn.indexOf('salottino') !== -1 || qn.indexOf('messagg') !== -1
+                || qn.indexOf('rispond') !== -1 || qn.indexOf('emoji') !== -1 || qn.indexOf('menzion') !== -1) {
+                topicHints = findFaqByTopic('chat');
+            }
+            if (topicHints.length > 0) {
+                addMessage('Non ho una risposta esatta alla tua domanda, ma forse ti interessa una di queste sullo stesso argomento:', 'bot');
+                if (!suggestions) return;
+                suggestions.innerHTML = '';
+                topicHints.slice(0, 6).forEach(function(item) {
+                    var btn = document.createElement('button');
+                    btn.className = 'chatbot-suggestion-btn';
+                    btn.textContent = item.question;
+                    btn.addEventListener('click', function() {
+                        addMessage(item.question, 'user');
+                        addMessage(item.answer, 'bot');
+                        showRelatedSuggestions(item);
+                        scrollDown();
+                    });
+                    suggestions.appendChild(btn);
+                });
+            } else {
+                addMessage('Mi dispiace, non ho trovato una risposta precisa. Prova con parole diverse oppure sfoglia le domande qui sotto. Per questioni specifiche puoi sempre contattare gli organizzatori.', 'bot');
+                suggestionsPage = 0;
+                showSuggestions();
+            }
         }
         scrollDown();
     }
