@@ -21,10 +21,7 @@
             color: #000;
         }
         .event-main-card .event-description {
-            color: #000 !important;
-        }
-        .event-main-card .event-description :where(p, li, td, th, div, span, h1, h2, h3, h4, h5, h6, blockquote, figcaption, font, em, strong, b, i) {
-            color: inherit !important;
+            color: #000;
         }
         .event-main-card .event-description a {
             color: #0a58ca !important;
@@ -32,8 +29,8 @@
         .event-main-card .event-description a:hover {
             color: #084298 !important;
         }
-        .event-main-card .event-description blockquote {
-            color: #000 !important;
+        .event-main-card .event-description blockquote:not([style*="color"]) {
+            color: #000;
         }
     </style>
     @php

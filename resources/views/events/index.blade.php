@@ -198,8 +198,10 @@
                         <div id="event-card-{{ $event->getKey() }}"
                              class="card h-100 w-100 event-box {{ $event->isFull() ? 'event-box--full' : '' }} {{ session('waitlist_flash_event_id') == $event->getKey() ? 'event-box--flash' : '' }}">
                             @if($event->isFull())
-                                <div class="card-header bg-danger text-white text-center py-2">
-                                    <small class="d-inline-block px-1" style="line-height: 1.35;"><i class="fas fa-exclamation-triangle"></i> <strong>STOP ADESIONI (Aperta Lista Riserva)</strong></small>
+                                <div class="card-header event-full-banner text-white text-center py-2">
+                                    <span class="event-full-banner__blink">
+                                        <i class="fas fa-ban"></i> COMPLETO &mdash; {{ $event->participants_count }}@if($event->max_participants)/{{ (int)$event->max_participants }}@endif Adesioni &mdash; <i class="fas fa-clipboard-list"></i> Aperta Lista Riserva
+                                    </span>
                                 </div>
                             @endif
 
@@ -742,6 +744,35 @@
 
         .card-img-top {
             border-bottom: 1px solid rgba(0,0,0,0.125);
+        }
+
+        /* Banner COMPLETO lampeggiante in cima alla card */
+        .event-full-banner {
+            background: linear-gradient(135deg, #b02a37, #dc3545);
+            border-bottom: 3px solid #720a0a;
+            padding: 0.6rem 0.75rem !important;
+        }
+        .event-full-banner__blink {
+            display: inline-block;
+            font-size: 1.05rem;
+            font-weight: 900;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            animation: eventFullBlink 0.9s ease-in-out infinite;
+            white-space: nowrap;
+        }
+        @keyframes eventFullBlink {
+            0%, 100% {
+                opacity: 1;
+                text-shadow: 0 0 6px rgba(255,255,255,0.3);
+            }
+            50% {
+                opacity: 0.25;
+                text-shadow: 0 0 20px rgba(255,255,255,0.9);
+            }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .event-full-banner__blink { animation: none; }
         }
 
         /* Migliora l'aspetto dei badge sulla thumbnail */

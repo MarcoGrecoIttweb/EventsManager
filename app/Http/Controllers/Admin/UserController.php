@@ -105,14 +105,35 @@ class UserController extends Controller
             $days = 10;
         }
 
-        // Il sito legacy (parallelo) tipicamente aggiorna solo `utente.ultimo_accesso`,
-        // mentre `user_login_events` viene popolata dal sito nuovo al momento del login.
-        // Per mostrare gli accessi di ENTRAMBE le versioni, usiamo `ultimo_accesso`.
+        $since = now()->subDays($days);
+
+        $loginByUser = \App\Models\UserLoginEvent::query()
+            ->where('logged_in_at', '>=', $since)
+            ->selectRaw('user_id, source, MAX(logged_in_at) as last_at')
+            ->groupBy('user_id', 'source')
+            ->get()
+            ->groupBy('user_id');
+
         $users = User::query()
-            ->whereNotNull('ultimo_accesso')
-            ->where('ultimo_accesso', '>=', now()->subDays($days))
-            ->orderByDesc('ultimo_accesso')
-            ->get();
+            ->whereIn('userID', $loginByUser->keys())
+            ->get()
+            ->map(function (User $user) use ($loginByUser) {
+                $rows = $loginByUser->get($user->userID, collect());
+                $laravel = $rows->firstWhere('source', \App\Models\UserLoginEvent::SOURCE_LARAVEL);
+                $legacy = $rows->firstWhere('source', \App\Models\UserLoginEvent::SOURCE_LEGACY);
+
+                $user->last_login_laravel = $laravel?->last_at;
+                $user->last_login_legacy = $legacy?->last_at;
+
+                return $user;
+            })
+            ->sortByDesc(function (User $user) {
+                $laravel = $user->last_login_laravel ? strtotime($user->last_login_laravel) : 0;
+                $legacy = $user->last_login_legacy ? strtotime($user->last_login_legacy) : 0;
+
+                return max($laravel, $legacy);
+            })
+            ->values();
 
         return view('admin.users.logins', compact('users', 'days'));
     }

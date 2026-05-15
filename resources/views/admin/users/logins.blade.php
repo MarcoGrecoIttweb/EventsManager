@@ -17,7 +17,7 @@
                             $giorniSel = (int) ($days ?? 1);
                         @endphp
                         <span class="badge bg-dark rounded-pill fs-6 fw-semibold"
-                              title="Utenti con ultimo accesso negli ultimi {{ $giorniSel }} {{ $giorniSel === 1 ? 'giorno' : 'giorni' }} (come in elenco)">
+                              title="Utenti con almeno un ingresso registrato negli ultimi {{ $giorniSel }} {{ $giorniSel === 1 ? 'giorno' : 'giorni' }}">
                             {{ $users->count() }}
                         </span>
                     </h1>
@@ -62,7 +62,8 @@
                                         <th>Nome</th>
                                         <th>Cognome</th>
                                         <th>Stato</th>
-                                        <th>Ultimo accesso (data e ora)</th>
+                                        <th>Sito nuovo (Laravel)</th>
+                                        <th>Sito vecchio (excursio.org)</th>
                                     </tr>
                                     </thead>
                                     <tbody>
@@ -94,7 +95,18 @@
                                                 @endif
                                             </td>
                                             <td>
-                                                {{ $user->ultimo_accesso ? $user->ultimo_accesso->format('d/m/Y H:i') : '—' }}
+                                                @if($user->last_login_laravel)
+                                                    <span class="badge bg-success">{{ \Carbon\Carbon::parse($user->last_login_laravel)->format('d/m/Y H:i') }}</span>
+                                                @else
+                                                    <span class="text-muted">—</span>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if($user->last_login_legacy)
+                                                    <span class="badge bg-primary">{{ \Carbon\Carbon::parse($user->last_login_legacy)->format('d/m/Y H:i') }}</span>
+                                                @else
+                                                    <span class="text-muted">—</span>
+                                                @endif
                                             </td>
                                         </tr>
                                     @endforeach

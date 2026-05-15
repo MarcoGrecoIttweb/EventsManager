@@ -11,11 +11,13 @@
         $ckPMargin = $editable_p_margin;
     }
     $ckCssParts = [
-        '.cke_editable{font-size:14px;line-height:' . $ckLh . ';color:#212529!important;background:#fff!important;}',
-        '.cke_editable p,.cke_editable li,.cke_editable td,.cke_editable th{color:#212529;}',
+        // Default nero senza !important: altrimenti i colori scelti con l'editor (span style="color:…") non si vedono in modifica.
+        '.cke_editable{font-size:14px;line-height:' . $ckLh . ';color:#212529;background:#fff!important;}',
+        // Testo incollato bianco/invisibile (Word): forzalo leggibile senza bloccare i colori scelti a mano.
+        '.cke_editable [style*="color: white"],.cke_editable [style*="color:#fff"],.cke_editable [style*="color: #fff"],.cke_editable [style*="color:#ffffff"],.cke_editable [style*="color: #ffffff"]{color:#212529!important;}',
         // Nota admin "Gli eventi proposti..." inserita come blockquote: mostrala marrone anche in editor, senza linea a sinistra.
-        '.cke_editable blockquote{color:#8B4513;border-left:0!important;padding-left:0!important;margin-left:0!important;}',
-        '.cke_editable blockquote p,.cke_editable blockquote li{color:#8B4513;}',
+        '.cke_editable blockquote:not([style*="color"]){color:#8B4513;border-left:0!important;padding-left:0!important;margin-left:0!important;}',
+        '.cke_editable blockquote:not([style*="color"]) p,.cke_editable blockquote:not([style*="color"]) li{color:#8B4513;}',
         '.cke_editable ::selection{background:rgba(13,110,253,.35);}',
     ];
     if ($ckPMargin !== null) {
