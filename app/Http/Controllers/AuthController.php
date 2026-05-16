@@ -97,7 +97,6 @@ class AuthController extends Controller
                 'user_id' => $user->getKey(),
                 'logged_in_at' => $now,
                 'ip_address' => $request->ip(),
-                'source' => \App\Models\UserLoginEvent::SOURCE_LARAVEL,
             ]);
         } catch (\Throwable $e) {
             // In caso di errore sul log, non bloccare il login utente

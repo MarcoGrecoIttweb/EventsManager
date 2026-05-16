@@ -1,7 +1,6 @@
 <?php
 session_start();
 include('../include/utility.php');
-include('../include/log_user_login_event.php');
 include('../include/class.mysql.php');
 $user     = clean($_POST['user']);
 $plainpassword = clean($_POST['password']);
@@ -30,7 +29,9 @@ if (mysqli_num_rows($dati) === 1 ) {
 }
 if($presente){
     session_regenerate_id();
-    log_user_login_event_legacy($mysqli, (int) $array['userID']);
+    $uid = (int) $array['userID'];
+    $nowLogin = date('Y-m-d H:i:s');
+    @mysqli_query($mysqli, "UPDATE utente SET ultimo_accesso = '$nowLogin' WHERE userID = $uid");
 	header("location: index.php");
 }else 
 	header("location: index.php?er=1");

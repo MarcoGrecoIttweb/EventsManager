@@ -105,35 +105,12 @@ class UserController extends Controller
             $days = 10;
         }
 
-        $since = now()->subDays($days);
-
-        $loginByUser = \App\Models\UserLoginEvent::query()
-            ->where('logged_in_at', '>=', $since)
-            ->selectRaw('user_id, source, MAX(logged_in_at) as last_at')
-            ->groupBy('user_id', 'source')
-            ->get()
-            ->groupBy('user_id');
-
+        // Ultimo accesso da `utente.ultimo_accesso` (aggiornato da sito nuovo e sito vecchio).
         $users = User::query()
-            ->whereIn('userID', $loginByUser->keys())
-            ->get()
-            ->map(function (User $user) use ($loginByUser) {
-                $rows = $loginByUser->get($user->userID, collect());
-                $laravel = $rows->firstWhere('source', \App\Models\UserLoginEvent::SOURCE_LARAVEL);
-                $legacy = $rows->firstWhere('source', \App\Models\UserLoginEvent::SOURCE_LEGACY);
-
-                $user->last_login_laravel = $laravel?->last_at;
-                $user->last_login_legacy = $legacy?->last_at;
-
-                return $user;
-            })
-            ->sortByDesc(function (User $user) {
-                $laravel = $user->last_login_laravel ? strtotime($user->last_login_laravel) : 0;
-                $legacy = $user->last_login_legacy ? strtotime($user->last_login_legacy) : 0;
-
-                return max($laravel, $legacy);
-            })
-            ->values();
+            ->whereNotNull('ultimo_accesso')
+            ->where('ultimo_accesso', '>=', now()->subDays($days))
+            ->orderByDesc('ultimo_accesso')
+            ->get();
 
         return view('admin.users.logins', compact('users', 'days'));
     }

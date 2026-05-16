@@ -1,28 +1,22 @@
-# Deploy login legacy su excursio.org
+# Deploy sito vecchio excursio.org
 
-File da caricare sul server del **sito vecchio** (stesso database del nuovo Laravel).
+## valida.php (login)
 
-## Prerequisito (sito nuovo Laravel)
+Carica su excursio.org:
 
-```bash
-php artisan migrate
+| File | Destinazione |
+|------|----------------|
+| `it/valida.php` | `/eventi/it/valida.php` |
+| `italia/valida.php` | `/eventi/italia/valida.php` (se usata) |
+
+Al login aggiorna solo `utente.ultimo_accesso` (nessun tracciamento `source` / `user_login_events`).
+
+Il file `include/log_user_login_event.php` **non serve più**: puoi rimuoverlo dal server se era stato caricato.
+
+## Sviluppo locale
+
+```powershell
+.\deploy-to-local-xampp.ps1
 ```
 
-Serve la tabella `user_login_events` con colonna `source`.
-
-## File da copiare (FTP / cPanel)
-
-| Da (questo repo) | Su excursio.org |
-|------------------|-----------------|
-| `include/log_user_login_event.php` | `/eventi/include/log_user_login_event.php` |
-| `it/valida.php` | `/eventi/it/valida.php` |
-| `italia/valida.php` | `/eventi/italia/valida.php` (se la cartella è ancora in uso) |
-
-## Verifica
-
-1. Login su https://www.excursio.org/eventi/it/
-2. In admin Laravel: **Utenti → Logins** → colonna «Sito vecchio» con data/ora aggiornata.
-
-## Sviluppo locale (XAMPP)
-
-Copia gli stessi file in `c:\xampp\htdocs\eventi\` (già allineati se lavori dalla stessa macchina).
+Copia solo i `valida.php` in `c:\xampp\htdocs\eventi\`.
