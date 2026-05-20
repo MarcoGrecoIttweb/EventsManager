@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Event;
+use App\Support\AdminNotifier;
 use App\Support\OspitiGuestStore;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -51,6 +52,8 @@ class GuestController extends Controller
                 'ospiti_inseriti_il' => OspitiGuestStore::encode($entries),
             ]);
 
+            AdminNotifier::notifyGuestAddedToEvent($event, Auth::user());
+
             return back()->with('success', 'Aggiunta una riga amico: inserisci il nome nel campo sotto.')
                 ->with('scrollTo', 'participant-' . Auth::id());
         } catch (\Exception $e) {
@@ -95,6 +98,8 @@ class GuestController extends Controller
                 'amici' => $currentGuests - 1,
                 'ospiti_inseriti_il' => OspitiGuestStore::encode($entries),
             ]);
+
+            AdminNotifier::notifyGuestRemovedFromEvent($event, Auth::user());
 
             return back()->with('success', 'Amico rimosso dall\'elenco.')
                 ->with('scrollTo', 'participant-' . Auth::id());

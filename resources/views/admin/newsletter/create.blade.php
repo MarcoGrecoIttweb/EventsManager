@@ -48,9 +48,10 @@
                                 </label>
                                 <select class="form-select" id="target" name="target" required onchange="toggleUserSelection()">
                                     <option value="all" style="color:#6c757d; font-weight:800;">Tutti gli utenti</option>
-                                    <option value="approved" style="color:#198754; font-weight:800;">Solo utenti attivati</option>
-                                    <option value="approved_newsletter_off" style="color:#6f42c1; font-weight:800;">Solo attivati con newsletter disattivata</option>
-                                    <option value="news" selected style="color:#0aa2c0; font-weight:800;">Solo utenti con News attiva (newsletter)</option>
+                                    <option value="approved" style="color:#198754; font-weight:800;">Solo utenti (Attivi)</option>
+                                    <option value="newsletter_on" style="color:#0d6efd; font-weight:800;">Solo con News Attiva</option>
+                                    <option value="approved_newsletter_off" style="color:#6f42c1; font-weight:800;">Attivi con News (disattiva)</option>
+                                    <option value="news" selected style="color:#0aa2c0; font-weight:800;">Attivi con News (attiva)</option>
                                     <option value="participants" style="color:#b88400; font-weight:800;">Solo utenti che partecipano ad eventi</option>
                                     <option value="never_participated" style="color:#6f42c1; font-weight:800;">Solo utenti che non hanno mai partecipato ad eventi</option>
                                     <option value="pending" style="color:#fd7e14; font-weight:800;">Solo utenti in attesa di approvazione</option>
@@ -61,7 +62,7 @@
                             <div class="mb-3 border rounded p-3 bg-light" id="newsGroupPanel">
                                 <h6 class="mb-2"><i class="fas fa-layer-group me-1"></i> Invio a gruppi (solo con destinatari «<span class="text-success fw-bold">News attiva</span>»</h6>
                                 <div id="newsGroupPanelHint" class="alert alert-info py-2 px-3 small mb-3 d-none" role="status">
-                                    Seleziona <strong>“Solo utenti con News attiva”</strong> in <strong>Destinatari</strong> per attivare l’invio a gruppi.
+                                    Seleziona <strong>“Attivi con News (attiva)”</strong> in <strong>Destinatari</strong> per attivare l’invio a gruppi.
                                 </div>
                                 <p class="small mb-3 newsletter-groups-desc">
                                     Gli iscritti sono ordinati in modo fisso (per ID utente) e divisi in blocchi della dimensione che scegli (es. 80).
@@ -263,35 +264,43 @@
                     </div>
                     <div class="card-body">
                         <div class="mb-3">
-                            <strong>Tutti gli utenti (non admin):</strong>
-                            <span class="badge bg-primary float-end newsletter-stat-open cursor-pointer" role="button" tabindex="0" data-stat-list="all_non_admin" title="Apre l’elenco di tutti gli utenti non amministratori">{{ number_format($totalUsersCount ?? $usersCount) }}</span>
+                            <strong>Tutti gli utenti:</strong>
+                            <span class="badge bg-primary float-end newsletter-stat-open cursor-pointer" role="button" tabindex="0" data-stat-list="all_non_admin" title="Tutti gli utenti">{{ number_format($totalUsersCount ?? $usersCount) }}</span>
                         </div>
                         <div class="mb-3">
-                            <strong>Utenti approvati:</strong>
-                            <span class="badge bg-success float-end newsletter-stat-open cursor-pointer" role="button" tabindex="0" data-stat-list="approved" title="Apre l’elenco degli utenti approvati / attivati (con o senza News)">{{ number_format($usersCount) }}</span>
+                            <strong>Solo utenti (Attivi):</strong>
+                            <span class="badge bg-success float-end newsletter-stat-open cursor-pointer" role="button" tabindex="0" data-stat-list="approved" title="Solo utenti (Attivi)">{{ number_format($usersCount) }}</span>
                         </div>
                         <div class="mb-3">
-                            <strong>Con News attiva (newsletter):</strong>
-                            <span class="badge bg-info float-end newsletter-stat-open cursor-pointer" role="button" tabindex="0" data-stat-list="news_active" title="Apre l’elenco degli utenti con News attiva e indirizzo email valido">{{ number_format($newsSubscribersCount) }}</span>
+                            <strong>Solo con News Attiva:</strong>
+                            <span class="badge bg-info float-end newsletter-stat-open cursor-pointer" role="button" tabindex="0" data-stat-list="newsletter_on" title="Solo con News Attiva">{{ number_format($newsletterOnAnyStatusCount ?? 0) }}</span>
                         </div>
                         <div class="mb-3">
-                            <strong>Attivati con newsletter disattivata:</strong>
-                            <span class="badge bg-secondary float-end newsletter-stat-open cursor-pointer" role="button" tabindex="0" data-stat-list="approved_newsletter_off" title="Apre l’elenco degli utenti attivati con newsletter disattivata e indirizzo email valido">{{ number_format($approvedNewsletterOffCount ?? 0) }}</span>
+                            <strong>Attivi con News (disattiva):</strong>
+                            <span class="badge bg-secondary float-end newsletter-stat-open cursor-pointer" role="button" tabindex="0" data-stat-list="approved_newsletter_off" title="Attivi con News (disattiva)">{{ number_format($approvedNewsletterOffCount ?? 0) }}</span>
                         </div>
                         <div class="mb-3">
-                            <strong>Partecipanti ad eventi:</strong>
-                            <span class="badge bg-warning text-dark float-end newsletter-stat-open cursor-pointer" role="button" tabindex="0" data-stat-list="participants" title="Apre l’elenco degli utenti attivati iscritti ad almeno un evento">{{ number_format($participantsCount) }}</span>
+                            <strong>Attivi con News (attiva):</strong>
+                            <span class="badge bg-info float-end newsletter-stat-open cursor-pointer" role="button" tabindex="0" data-stat-list="news_active" title="Attivi con News (attiva)">{{ number_format($newsSubscribersCount) }}</span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Solo utenti che partecipano ad eventi:</strong>
+                            <span class="badge bg-warning text-dark float-end newsletter-stat-open cursor-pointer" role="button" tabindex="0" data-stat-list="participants" title="Solo utenti che partecipano ad eventi">{{ number_format($participantsCount) }}</span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Solo utenti che non hanno mai partecipato ad eventi:</strong>
+                            <span class="badge bg-warning text-dark float-end newsletter-stat-open cursor-pointer" role="button" tabindex="0" data-stat-list="never_participated" title="Solo utenti che non hanno mai partecipato ad eventi">{{ number_format($neverParticipatedCount ?? 0) }}</span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Solo utenti in attesa di approvazione:</strong>
+                            <span class="badge bg-secondary float-end newsletter-stat-open cursor-pointer" role="button" tabindex="0" data-stat-list="pending" title="Solo utenti in attesa di approvazione">{{ number_format($users->where('status', 'awaiting')->count()) }}</span>
                         </div>
                         <div class="mb-3">
                             <strong>Attivati con meno di 2 eventi:</strong>
                             <span class="float-end d-inline-flex align-items-center flex-wrap justify-content-end gap-1">
-                                <span class="badge bg-primary newsletter-stat-open cursor-pointer" role="button" tabindex="0" data-stat-list="low_participation" title="Apre l’elenco degli utenti attivati iscritti a 0 o 1 evento">{{ number_format($lowEventParticipationUsersCount ?? 0) }}</span>
+                                <span class="badge bg-primary newsletter-stat-open cursor-pointer" role="button" tabindex="0" data-stat-list="low_participation" title="Attivati con meno di 2 eventi">{{ number_format($lowEventParticipationUsersCount ?? 0) }}</span>
                                 <span class="badge bg-light text-dark border" title="Somma delle partecipazioni a eventi di questi utenti (ciascuno ha al massimo 1 evento in questo elenco)">{{ number_format($lowEventParticipationTotalEvents ?? 0) }}</span>
                             </span>
-                        </div>
-                        <div class="mb-3">
-                            <strong>In attesa di approvazione:</strong>
-                            <span class="badge bg-secondary float-end newsletter-stat-open cursor-pointer" role="button" tabindex="0" data-stat-list="pending" title="Apre l’elenco degli utenti in attesa di approvazione">{{ number_format($users->where('status', 'awaiting')->count()) }}</span>
                         </div>
                         @if(($newsBatchCount ?? 0) > 0)
                             <div class="mb-3">
@@ -712,13 +721,15 @@
                 titleEl.textContent = 'Elenco destinatari — ' + (function () {
                     switch (payload.target) {
                         case 'all': return 'Tutti gli utenti';
-                        case 'approved': return 'Solo utenti attivati';
-                        case 'approved_newsletter_off': return 'Solo attivati con newsletter disattivata';
+                        case 'approved': return 'Solo utenti (Attivi)';
+                        case 'newsletter_on': return 'Solo con News Attiva';
+                        case 'approved_newsletter_off': return 'Attivi con News (disattiva)';
                         case 'participants': return 'Partecipanti ad eventi';
                         case 'never_participated': return 'Mai partecipato ad eventi';
                         case 'pending': return 'In attesa di approvazione';
                         case 'low_participation': return 'Attivati con meno di 2 eventi';
-                        default: return 'Newsletter attiva (News)';
+                        case 'news': return 'Attivi con News (attiva)';
+                        default: return 'Destinatari newsletter';
                     }
                 })();
             }
@@ -823,6 +834,7 @@
                 'target-theme-all',
                 'target-theme-approved',
                 'target-theme-approved-news-off',
+                'target-theme-newsletter-on',
                 'target-theme-news',
                 'target-theme-participants',
                 'target-theme-never',
@@ -857,6 +869,11 @@
                     if (previewBox) previewBox.classList.add('target-theme-approved-news-off');
                     if (modalTitle) modalTitle.classList.add('target-theme-approved-news-off');
                     break;
+                case 'newsletter_on':
+                    sel.classList.add('target-theme-newsletter-on');
+                    if (previewBox) previewBox.classList.add('target-theme-newsletter-on');
+                    if (modalTitle) modalTitle.classList.add('target-theme-newsletter-on');
+                    break;
                 case 'participants':
                     sel.classList.add('target-theme-participants');
                     if (previewBox) previewBox.classList.add('target-theme-participants');
@@ -888,10 +905,13 @@
             if (infoBox) {
                 switch (v) {
                     case 'approved':
-                        infoBox.innerHTML = 'Invia email a <strong>tutti gli utenti attivati</strong> con email valida (con o senza newsletter)';
+                        infoBox.innerHTML = 'Invia email a <strong>Solo utenti (Attivi)</strong> con email valida (con o senza News)';
                         break;
                     case 'approved_newsletter_off':
                         infoBox.innerHTML = 'Invia email solo agli <strong>attivati</strong> che hanno <strong>disattivato</strong> la newsletter (flag News off)';
+                        break;
+                    case 'newsletter_on':
+                        infoBox.innerHTML = 'Invia email a <strong>Solo con News Attiva</strong> (attivi o meno), con email valida';
                         break;
                     case 'all':
                         infoBox.innerHTML = 'Invia email a tutti gli utenti';
@@ -967,14 +987,17 @@
                     message = '<span><i class="fas fa-users"></i> Tutti gli utenti' + groupsExtra + '</span>';
                     break;
                 case 'approved':
-                    message = '<span><i class="fas fa-check-circle"></i> Tutti gli utenti attivati' + groupsExtra + '</span>';
+                    message = '<span><i class="fas fa-check-circle"></i> Solo utenti (Attivi)' + groupsExtra + '</span>';
+                    break;
+                case 'newsletter_on':
+                    message = '<span><i class="fas fa-newspaper"></i> Solo con News Attiva' + groupsExtra + '</span>';
                     break;
                 case 'approved_newsletter_off':
-                    message = '<span><i class="fas fa-newspaper"></i> Attivati con newsletter disattivata' + groupsExtra + '</span>';
+                    message = '<span><i class="fas fa-newspaper"></i> Attivi con News (disattiva)' + groupsExtra + '</span>';
                     break;
                 case 'news':
                     {
-                        message = '<span><i class="fas fa-newspaper"></i> Iscritti newsletter (News attiva)' + groupsExtra + '</span>';
+                        message = '<span><i class="fas fa-newspaper"></i> Attivi con News (attiva)' + groupsExtra + '</span>';
                     }
                     break;
                 case 'participants':
@@ -1290,6 +1313,10 @@
             border: 2px solid #6610f2 !important;
             background-color: rgba(102, 16, 242, 0.10) !important;
         }
+        #target.target-theme-newsletter-on {
+            border: 2px solid #0d6efd !important;
+            background-color: rgba(13, 110, 253, 0.10) !important;
+        }
         #target.target-theme-news {
             border: 2px solid #0dcaf0 !important;
             background-color: rgba(13, 202, 240, 0.12) !important;
@@ -1322,6 +1349,7 @@
         #newsletterPreviewRecipientsModalLabel.target-theme-all { color: #6c757d; }
         #newsletterPreviewRecipientsModalLabel.target-theme-approved { color: #198754; }
         #newsletterPreviewRecipientsModalLabel.target-theme-approved-news-off { color: #6610f2; }
+        #newsletterPreviewRecipientsModalLabel.target-theme-newsletter-on { color: #0d6efd; }
         #newsletterPreviewRecipientsModalLabel.target-theme-news { color: #0aa2c0; }
         #newsletterPreviewRecipientsModalLabel.target-theme-participants { color: #b88400; }
         #newsletterPreviewRecipientsModalLabel.target-theme-never { color: #6f42c1; }

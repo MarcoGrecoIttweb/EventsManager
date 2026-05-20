@@ -162,7 +162,9 @@
                                                 @endif
                                             </td>
                                             <td>{{ $event->date ? $event->date->format('d/m/y H:i') : '—' }}</td>
-                                            <td>{{ $event->city }}</td>
+                                            <td>
+                                                {{ $event->city }}@if($event->address)<span class="text-muted"> · {{ $event->address }}</span>@endif
+                                            </td>
                                             <td>
                                                 <span class="badge bg-info">
                                                     {{ $event->participants_count }}

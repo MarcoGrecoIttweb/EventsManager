@@ -518,7 +518,7 @@ class EventController extends Controller
         $this->imageService->deleteEventFolder($event->getKey());
         $event->delete();
 
-        return redirect()->route('admin.events.index')
+        return redirect()->route('home')
             ->with('success', 'Evento eliminato con successo!');
     }
 

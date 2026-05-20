@@ -834,7 +834,6 @@ Route::middleware(['auth', 'approved'])->group(function () {
         ->middleware('admin');
 
     // Invito amici a evento
-    Route::post('/events/{event}/invite', [FriendController::class, 'inviteToEvent'])->name('events.invite');
 
     // Route per i profili utente
     Route::get('/profile/{user}', [ProfileController::class, 'show'])->name('profile.show');

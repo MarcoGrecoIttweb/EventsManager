@@ -6,14 +6,17 @@
 
 @section('content')
     <style>
+        /* Rispetta width/height dall'editor (CKEditor); max-width evita overflow su mobile */
         .event-description img {
             max-width: 100%;
             height: auto;
-            max-height: 250px;
-            width: auto;
             object-fit: contain;
             display: block;
             margin: 8px auto;
+        }
+        /* Descrizioni legacy senza ridimensionamento in editor */
+        .event-description img:not([width]) {
+            max-height: 250px;
         }
 
         /* Dettagli evento: corpo descrizione in nero (link restano riconoscibili) */
@@ -827,30 +830,10 @@
                         @endif
                     </div>
 
-                    {{-- Invita un amico (mobile) --}}
+                    {{-- Porta un amico / ospite (mobile) --}}
                     @auth
-                        @if($userParticipating && auth()->user()->friends()->count() > 0)
+                        @if($userParticipating && $event->allow_guests)
                             <div class="mt-3 p-3 bg-light rounded event-invite-box">
-                                <form action="{{ route('events.invite', $event) }}" method="POST"
-                                      class="d-flex flex-wrap align-items-center gap-2 mb-0">
-                                    @csrf
-                                    <h6 class="mb-0 text-nowrap flex-shrink-0" title="Invia un invito a un tuo amico per partecipare a questo evento.">
-                                        <i class="fas fa-envelope"></i> Invita un amico
-                                    </h6>
-                                    <select name="friend_id"
-                                            class="form-select form-select-sm"
-                                            style="width: auto; max-width: 11rem; min-width: 7rem;">
-                                        @foreach(auth()->user()->friends()->orderBy('nome')->get() as $friend)
-                                            @if(!$event->participants->contains('userID', $friend->userID))
-                                                <option value="{{ $friend->getKey() }}">{{ $friend->nickname }}</option>
-                                            @endif
-                                        @endforeach
-                                    </select>
-                                    <button type="submit" class="btn btn-sm btn-primary flex-shrink-0">
-                                        <i class="fas fa-paper-plane"></i>
-                                    </button>
-                                </form>
-                                @if($event->allow_guests)
                                     @php
                                         $authCanAddMoreGuests = auth()->user()->isApproved() && $event->canAddMoreGuests(auth()->user());
                                         $addGuestBlockReasonInvite = '';
@@ -862,7 +845,7 @@
                                             }
                                         }
                                     @endphp
-                                    <form action="{{ route('events.add-guest', $event) }}" method="POST" class="mt-2 mb-0">
+                                    <form action="{{ route('events.add-guest', $event) }}" method="POST" class="mb-0">
                                         @csrf
                                         <button type="submit" class="btn btn-success btn-sm w-100"
                                                 @if(!$authCanAddMoreGuests) disabled aria-disabled="true" @endif
@@ -870,7 +853,6 @@
                                             <i class="fas fa-user-plus"></i> Porta un amico
                                         </button>
                                     </form>
-                                @endif
                             </div>
                         @endif
                     @endauth
@@ -1221,50 +1203,29 @@
                         @endif
                 </div>
 
-                        {{-- Invita un amico --}}
+                        {{-- Porta un amico / ospite (desktop) --}}
                         @auth
-                            @if($userParticipating && auth()->user()->friends()->count() > 0)
+                            @if($userParticipating && $event->allow_guests)
+                                @php
+                                    $authCanAddMoreGuests = auth()->user()->isApproved() && $event->canAddMoreGuests(auth()->user());
+                                    $addGuestBlockReasonInvite = '';
+                                    if (!$authCanAddMoreGuests) {
+                                        if ($event->isFull()) {
+                                            $addGuestBlockReasonInvite = 'L\'evento è al completo: non puoi aggiungere altri ospiti.';
+                                        } else {
+                                            $addGuestBlockReasonInvite = 'Hai raggiunto il limite di ospiti consentiti per questo evento.';
+                                        }
+                                    }
+                                @endphp
                                 <div class="mt-3 p-3 bg-light rounded event-invite-box d-none d-md-block">
-                                    <form action="{{ route('events.invite', $event) }}" method="POST"
-                                          class="d-flex flex-wrap align-items-center gap-2 mb-0">
+                                    <form action="{{ route('events.add-guest', $event) }}" method="POST" class="mb-0">
                                         @csrf
-                                        <h6 class="mb-0 text-nowrap flex-shrink-0" title="Invia un invito a un tuo amico per partecipare a questo evento.">
-                                            <i class="fas fa-envelope"></i> Invita un amico
-                                        </h6>
-                                        <select name="friend_id"
-                                                class="form-select form-select-sm"
-                                                style="width: auto; max-width: 11rem; min-width: 7rem;">
-                                            @foreach(auth()->user()->friends()->orderBy('nome')->get() as $friend)
-                                                @if(!$event->participants->contains('userID', $friend->userID))
-                                                    <option value="{{ $friend->getKey() }}">{{ $friend->nickname }}</option>
-                                                @endif
-                                            @endforeach
-                                        </select>
-                                        <button type="submit" class="btn btn-sm btn-primary flex-shrink-0">
-                                            <i class="fas fa-paper-plane"></i>
+                                        <button type="submit" class="btn btn-success btn-sm w-100"
+                                                @if(!$authCanAddMoreGuests) disabled aria-disabled="true" @endif
+                                                title="{{ $authCanAddMoreGuests ? 'Aggiungi una riga ospite in elenco' : $addGuestBlockReasonInvite }}">
+                                            <i class="fas fa-user-plus"></i> Porta un amico
                                         </button>
                                     </form>
-                                    @if($event->allow_guests)
-                                        @php
-                                            $authCanAddMoreGuests = auth()->user()->isApproved() && $event->canAddMoreGuests(auth()->user());
-                                            $addGuestBlockReasonInvite = '';
-                                            if (!$authCanAddMoreGuests) {
-                                                if ($event->isFull()) {
-                                                    $addGuestBlockReasonInvite = 'L\'evento è al completo: non puoi aggiungere altri ospiti.';
-                                                } else {
-                                                    $addGuestBlockReasonInvite = 'Hai raggiunto il limite di ospiti consentiti per questo evento.';
-                                                }
-                                            }
-                                        @endphp
-                                        <form action="{{ route('events.add-guest', $event) }}" method="POST" class="mt-2 mb-0">
-                                            @csrf
-                                            <button type="submit" class="btn btn-success btn-sm w-100"
-                                                    @if(!$authCanAddMoreGuests) disabled aria-disabled="true" @endif
-                                                    title="{{ $authCanAddMoreGuests ? 'Aggiungi una riga ospite in elenco' : $addGuestBlockReasonInvite }}">
-                                                <i class="fas fa-user-plus"></i> Porta un amico
-                                            </button>
-                                        </form>
-                                    @endif
                                 </div>
                             @endif
                         @endauth

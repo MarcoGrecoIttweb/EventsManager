@@ -25,6 +25,9 @@
                         <form action="{{ route('profile.update', $user) }}" method="POST" enctype="multipart/form-data">
                             @csrf
                             @method('PUT')
+                            @if(!empty($profileReturnUrl))
+                                <input type="hidden" name="return" value="{{ $profileReturnUrl }}">
+                            @endif
 
                             @if($isAdminViewer)
                                 <div class="mb-3">
@@ -188,9 +191,15 @@
                                         @if(!$isAdminResettingOther)
                                         <div class="col-12">
                                             <label for="current_password" class="form-label mb-0">Password attuale</label>
-                                            <input type="password" id="current_password" name="current_password"
-                                                   class="form-control form-control-sm @error('current_password') is-invalid @enderror"
-                                                   required autocomplete="current-password">
+                                            <div class="input-group input-group-sm password-reveal-group">
+                                                <input type="password" id="current_password" name="current_password"
+                                                       data-password-managed="1"
+                                                       class="form-control form-control-sm @error('current_password') is-invalid @enderror"
+                                                       required autocomplete="current-password">
+                                                <button type="button" class="btn btn-outline-secondary password-reveal-btn" tabindex="-1" title="Mostra o nascondi password" aria-label="Mostra o nascondi password attuale">
+                                                    <i class="fas fa-eye" aria-hidden="true"></i>
+                                                </button>
+                                            </div>
                                             @error('current_password')
                                             <div class="invalid-feedback d-block">{{ $message }}</div>
                                             @enderror
@@ -198,20 +207,33 @@
                                         @endif
                                         <div class="col-12">
                                             <label for="new_password" class="form-label mb-0">Nuova password</label>
-                                            <input type="password" id="new_password" name="password"
-                                                   class="form-control form-control-sm @error('password') is-invalid @enderror"
-                                                   required minlength="4" autocomplete="new-password">
+                                            <div class="input-group input-group-sm password-reveal-group">
+                                                <input type="password" id="new_password" name="password"
+                                                       data-password-managed="1"
+                                                       class="form-control form-control-sm @error('password') is-invalid @enderror"
+                                                       required minlength="4" autocomplete="new-password">
+                                                <button type="button" class="btn btn-outline-secondary password-reveal-btn" tabindex="-1" title="Mostra o nascondi password" aria-label="Mostra o nascondi nuova password">
+                                                    <i class="fas fa-eye" aria-hidden="true"></i>
+                                                </button>
+                                            </div>
                                             @error('password')
                                             <div class="invalid-feedback d-block">{{ $message }}</div>
                                             @enderror
                                         </div>
                                         <div class="col-12">
                                             <label for="new_password_confirmation" class="form-label mb-0">Conferma password</label>
-                                            <input type="password" id="new_password_confirmation" name="password_confirmation"
-                                                   class="form-control form-control-sm"
-                                                   required minlength="4" autocomplete="new-password">
+                                            <div class="input-group input-group-sm password-reveal-group">
+                                                <input type="password" id="new_password_confirmation" name="password_confirmation"
+                                                       data-password-managed="1"
+                                                       class="form-control form-control-sm"
+                                                       required minlength="4" autocomplete="new-password">
+                                                <button type="button" class="btn btn-outline-secondary password-reveal-btn" tabindex="-1" title="Mostra o nascondi password" aria-label="Mostra o nascondi conferma password">
+                                                    <i class="fas fa-eye" aria-hidden="true"></i>
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
+                                    <p class="form-text mb-0 mt-2">Clicca nel campo o sull'icona <i class="fas fa-eye" aria-hidden="true"></i> per vedere i caratteri che digiti. Il sito non può mostrare la password salvata: devi inserire quella che ricordi.</p>
 
                                     <button type="submit" class="btn btn-outline-secondary btn-sm mt-2">
                                         <i class="fas fa-save"></i> {{ $isAdminResettingOther ? 'Salva password utente' : 'Salva nuova password' }}
@@ -254,5 +276,39 @@
             padding-bottom: 0.1rem !important;
             line-height: 1.1;
         }
+        #selfPasswordCollapse .password-reveal-btn {
+            height: 31px;
+            min-height: 31px;
+            padding: 0 0.55rem;
+        }
     </style>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('#selfPasswordCollapse .password-reveal-group').forEach(function (group) {
+        var input = group.querySelector('input');
+        var btn = group.querySelector('.password-reveal-btn');
+        var icon = btn ? btn.querySelector('i') : null;
+        if (!input || !btn || !icon) return;
+
+        function setVisible(show) {
+            input.type = show ? 'text' : 'password';
+            icon.className = show ? 'fas fa-eye-slash' : 'fas fa-eye';
+            btn.setAttribute('aria-pressed', show ? 'true' : 'false');
+        }
+
+        btn.addEventListener('click', function () {
+            setVisible(input.type === 'password');
+        });
+
+        input.addEventListener('click', function () {
+            if (input.type === 'password') {
+                setVisible(true);
+            }
+        });
+    });
+});
+</script>
+@endpush

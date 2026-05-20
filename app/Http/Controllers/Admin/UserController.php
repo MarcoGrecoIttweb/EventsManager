@@ -4,10 +4,104 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
+    /**
+     * Evita open-redirect: solo stesso sito o path locale.
+     */
+    private function safeInternalReturnUrl(?string $url): ?string
+    {
+        if ($url === null) {
+            return null;
+        }
+        $url = trim($url);
+        if ($url === '') {
+            return null;
+        }
+
+        $root = rtrim(request()->root(), '/');
+
+        if (filter_var($url, FILTER_VALIDATE_URL)) {
+            $urlNorm = rtrim($url, '/');
+            $rootNorm = rtrim($root, '/');
+            if ($urlNorm === $rootNorm || str_starts_with($url, $root . '/')) {
+                return $url;
+            }
+
+            return null;
+        }
+
+        if (isset($url[0]) && $url[0] === '/' && ! str_starts_with($url, '//')) {
+            return $root . $url;
+        }
+
+        return null;
+    }
+
+    /**
+     * Torna alla lista utenti (vista completa o filtrata) mantenendo scroll e riga.
+     */
+    private function backToUsersList(
+        User $user,
+        string $message,
+        string $flashKey = 'success',
+        ?Request $request = null,
+        ?int $highlightUserId = null
+    ): RedirectResponse {
+        $request = $request ?? request();
+        $scrollTop = $request->input('_list_scroll');
+        $windowScroll = $request->input('_list_win_scroll');
+        $userId = $highlightUserId ?? $user->getKey();
+
+        $target = $this->safeInternalReturnUrl($request->input('_list_return'));
+        if ($target === null) {
+            $target = route('admin.users.index', $request->only(['status', 'registrations']));
+        }
+
+        // Rimuovi eventuale hash: il browser lo interpreta e riporta la pagina all'inizio.
+        $target = preg_replace('/#.*$/', '', $target) ?: $target;
+
+        if (is_numeric($scrollTop)) {
+            $query = array_filter([
+                '_rs' => max(0, (int) $scrollTop),
+                '_rw' => is_numeric($windowScroll) ? max(0, (int) $windowScroll) : 0,
+                '_ru' => $userId,
+            ], static fn ($v) => $v !== null && $v !== '');
+            $target .= (str_contains($target, '?') ? '&' : '?') . http_build_query($query);
+        }
+
+        return redirect()
+            ->to($target)
+            ->with($flashKey, $message);
+    }
+
+    /**
+     * Risposta JSON (AJAX, senza ricaricare pagina) oppure redirect alla lista.
+     */
+    private function usersListActionResponse(
+        Request $request,
+        User $user,
+        string $message,
+        string $flashKey = 'success',
+        ?int $highlightUserId = null
+    ): JsonResponse|RedirectResponse {
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => $flashKey === 'success',
+                'message' => $message,
+                'status' => $user->status,
+                'invia' => (bool) $user->invia,
+                'user_id' => $highlightUserId ?? $user->getKey(),
+            ]);
+        }
+
+        return $this->backToUsersList($user, $message, $flashKey, $request, $highlightUserId);
+    }
+
     /**
      * Display a listing of the users.
      */
@@ -130,77 +224,79 @@ class UserController extends Controller
     /**
      * Approve a user.
      */
-    public function approve(User $user)
+    public function approve(Request $request, User $user)
     {
         if ($user->isAdmin()) {
-            return back()->with('error', 'Non puoi modificare lo stato di un amministratore.');
+            return $this->usersListActionResponse($request, $user, 'Non puoi modificare lo stato di un amministratore.', 'error');
         }
 
         $user->status = 'approved';
         $user->note_utente = null;
         $user->save();
 
-        return back()->with('success', "Utente {$user->nickname} approvato con successo!");
+        return $this->usersListActionResponse($request, $user, "Utente {$user->nickname} approvato con successo!");
     }
 
     /**
      * Ban a user.
      */
-    public function ban(User $user)
+    public function ban(Request $request, User $user)
     {
         if ($user->isAdmin()) {
-            return back()->with('error', 'Non puoi bannare un amministratore.');
+            return $this->backToUsersList($user, 'Non puoi bannare un amministratore.', 'error', $request);
         }
 
         $user->status = 'banned';
         $user->save();
 
-        return back()->with('success', "Utente {$user->nickname} bannato con successo!");
+        return $this->backToUsersList($user, "Utente {$user->nickname} bannato con successo!", 'success', $request);
     }
 
     /**
      * Unban a user.
      */
-    public function unban(User $user)
+    public function unban(Request $request, User $user)
     {
         if ($user->isAdmin()) {
-            return back()->with('error', 'Non puoi modificare lo stato di un amministratore.');
+            return $this->backToUsersList($user, 'Non puoi modificare lo stato di un amministratore.', 'error', $request);
         }
 
         $user->status = 'approved';
         $user->note_utente = null;
         $user->save();
 
-        return back()->with('success', "Utente {$user->nickname} sbannato con successo!");
+        return $this->backToUsersList($user, "Utente {$user->nickname} sbannato con successo!", 'success', $request);
     }
 
     /**
      * Suspend an approved user (abilitato 0, distinto dall'iscrizione in attesa = 3).
      */
-    public function suspend(User $user)
+    public function suspend(Request $request, User $user)
     {
         if ($user->isAdmin()) {
-            return back()->with('error', 'Non puoi modificare lo stato di un amministratore.');
+            return $this->usersListActionResponse($request, $user, 'Non puoi modificare lo stato di un amministratore.', 'error');
         }
 
         $user->status = 'suspended';
         $user->save();
 
-        return back()->with('success', "Utente {$user->nickname} sospeso con successo!");
+        return $this->usersListActionResponse($request, $user, "Utente {$user->nickname} sospeso con successo!");
     }
 
     /**
      * Delete a user.
      */
-    public function destroy(User $user)
+    public function destroy(Request $request, User $user)
     {
         if ($user->isAdmin()) {
-            return back()->with('error', 'Non puoi eliminare un amministratore.');
+            return $this->backToUsersList($user, 'Non puoi eliminare un amministratore.', 'error', $request);
         }
 
+        $userId = (int) $user->getKey();
+        $nickname = $user->nickname;
         $user->delete();
 
-        return back()->with('success', "Utente {$user->nickname} eliminato con successo!");
+        return $this->backToUsersList($user, "Utente {$nickname} eliminato con successo!", 'success', $request, $userId);
     }
 
     /**
@@ -214,13 +310,13 @@ class UserController extends Controller
 
         // Non permettere di cambiare il ruolo del proprio account admin a ruoli più bassi per sicurezza minima
         if ($user->isAdmin() && (int) $validated['ruolo'] !== 0) {
-            return back()->with('error', 'Non puoi modificare il ruolo di un amministratore.');
+            return $this->backToUsersList($user, 'Non puoi modificare il ruolo di un amministratore.', 'error', $request);
         }
 
         $user->ruolo = (int) $validated['ruolo'];
         $user->save();
 
-        return back()->with('success', "Ruolo di {$user->nickname} aggiornato a {$user->role_name}.");
+        return $this->backToUsersList($user, "Ruolo di {$user->nickname} aggiornato a {$user->role_name}.", 'success', $request);
     }
 
     /**
@@ -233,13 +329,13 @@ class UserController extends Controller
         ]);
 
         if ($user->isAdmin()) {
-            return back()->with('error', 'Non puoi modificare la newsletter di un amministratore.');
+            return $this->usersListActionResponse($request, $user, 'Non puoi modificare la newsletter di un amministratore.', 'error');
         }
 
         $user->invia = (int) $validated['invia'] === 1;
         $user->save();
 
         $label = $user->invia ? 'attivata' : 'disattivata';
-        return back()->with('success', "Newsletter {$label} per {$user->nickname}.");
+        return $this->usersListActionResponse($request, $user, "Newsletter {$label} per {$user->nickname}.");
     }
 }

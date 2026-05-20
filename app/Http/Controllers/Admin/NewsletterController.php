@@ -19,13 +19,13 @@ class NewsletterController extends Controller
     /** Target destinatari ammessi in invio / anteprima / gruppi. */
     private const NEWSLETTER_TARGET_VALUES = [
         'all', 'approved', 'approved_newsletter_off', 'participants',
-        'never_participated', 'pending', 'low_participation', 'news',
+        'never_participated', 'pending', 'low_participation', 'news', 'newsletter_on',
     ];
 
     /** Elenco utenti per box statistiche pagina newsletter. */
     private const STAT_RECIPIENT_LIST_KEYS = [
-        'all_non_admin', 'approved', 'news_active', 'approved_newsletter_off',
-        'participants', 'low_participation', 'pending',
+        'all_non_admin', 'approved', 'newsletter_on', 'news_active', 'approved_newsletter_off',
+        'participants', 'never_participated', 'pending', 'low_participation',
     ];
 
     /**
@@ -57,6 +57,9 @@ class NewsletterController extends Controller
             case 'news':
                 $query->where('abilitato', 1)->where('invia', true);
                 break;
+            case 'newsletter_on':
+                $query->where('invia', true);
+                break;
         }
     }
 
@@ -73,6 +76,11 @@ class NewsletterController extends Controller
             case 'approved':
                 $query->where('abilitato', 1);
                 break;
+            case 'newsletter_on':
+                $query->where('invia', true)
+                    ->whereNotNull('email')
+                    ->where('email', '!=', '');
+                break;
             case 'news_active':
                 $query->where('abilitato', 1)
                     ->where('invia', true)
@@ -87,6 +95,9 @@ class NewsletterController extends Controller
                 break;
             case 'participants':
                 $query->where('abilitato', 1)->has('events');
+                break;
+            case 'never_participated':
+                $query->where('abilitato', 1)->doesntHave('events');
                 break;
             case 'low_participation':
                 $query->where('abilitato', 1)
@@ -133,6 +144,10 @@ class NewsletterController extends Controller
             ->where('abilitato', 1)
             ->has('events')
             ->count();
+        $neverParticipatedCount = User::nonAdmin()
+            ->where('abilitato', 1)
+            ->doesntHave('events')
+            ->count();
 
         $lowParticipationSub = DB::table('utente')
             ->where('ruolo', '!=', 0)
@@ -177,6 +192,12 @@ class NewsletterController extends Controller
             ->whereNotNull('email')
             ->where('email', '!=', '')
             ->count();
+        // Newsletter abilitata (invia), indipendentemente da attivato / sospeso / in attesa
+        $newsletterOnAnyStatusCount = User::nonAdmin()
+            ->where('invia', true)
+            ->whereNotNull('email')
+            ->where('email', '!=', '')
+            ->count();
 
         $targetEmailTotals = [
             'all' => $allEmailCount,
@@ -187,6 +208,7 @@ class NewsletterController extends Controller
             'pending' => $pendingEmailCount,
             'low_participation' => $lowParticipationEmailCount,
             'news' => $newsSubscribersCount,
+            'newsletter_on' => $newsletterOnAnyStatusCount,
         ];
 
         $newsGroupSizePreview = self::NEWS_GROUP_SIZE_DEFAULT;
@@ -226,6 +248,7 @@ class NewsletterController extends Controller
             'usersCount',
             'totalUsersCount',
             'participantsCount',
+            'neverParticipatedCount',
             'lowEventParticipationUsersCount',
             'lowEventParticipationTotalEvents',
             'newsSubscribersCount',
@@ -236,7 +259,8 @@ class NewsletterController extends Controller
             'users',
             'newsletterActiveUsers',
             'newsletterReceiptAdmins',
-            'targetEmailTotals'
+            'targetEmailTotals',
+            'newsletterOnAnyStatusCount'
         ));
     }
 
@@ -634,13 +658,14 @@ class NewsletterController extends Controller
         return response()->json([
             'target_label' => match ($target) {
                 'all' => 'Tutti gli utenti',
-                'approved' => 'Solo utenti attivati (tutti, con o senza newsletter)',
-                'approved_newsletter_off' => 'Solo utenti attivati con newsletter disattivata',
+                'approved' => 'Solo utenti (Attivi)',
+                'approved_newsletter_off' => 'Attivi con News (disattiva)',
+                'newsletter_on' => 'Solo con News Attiva',
                 'participants' => 'Solo utenti che partecipano ad eventi',
                 'never_participated' => 'Solo utenti che non hanno mai partecipato ad eventi',
                 'pending' => 'Solo utenti in attesa di approvazione',
                 'low_participation' => 'Solo utenti attivati con meno di 2 eventi',
-                'news' => 'Solo utenti attivati con newsletter attiva',
+                'news' => 'Attivi con News (attiva)',
                 'selected' => 'Seleziona utenti specifici',
                 'selected_news' => 'Seleziona Utenti Newsletter Attiva',
                 default => 'Destinatari newsletter',
@@ -664,13 +689,15 @@ class NewsletterController extends Controller
         $query = self::statRecipientsBaseQuery($list);
 
         $titles = [
-            'all_non_admin' => 'Tutti gli utenti (non admin)',
-            'approved' => 'Utenti approvati / attivati',
-            'news_active' => 'Con News attiva (newsletter) — email valida',
-            'approved_newsletter_off' => 'Attivati con newsletter disattivata — email valida',
-            'participants' => 'Partecipanti ad eventi',
+            'all_non_admin' => 'Tutti gli utenti',
+            'approved' => 'Solo utenti (Attivi)',
+            'newsletter_on' => 'Solo con News Attiva',
+            'news_active' => 'Attivi con News (attiva)',
+            'approved_newsletter_off' => 'Attivi con News (disattiva)',
+            'participants' => 'Solo utenti che partecipano ad eventi',
+            'never_participated' => 'Solo utenti che non hanno mai partecipato ad eventi',
+            'pending' => 'Solo utenti in attesa di approvazione',
             'low_participation' => 'Attivati con meno di 2 eventi',
-            'pending' => 'In attesa di approvazione',
         ];
 
         $total = $query->count();

@@ -124,9 +124,39 @@
                         </div>
                     </div>
                     <div class="card-body">
+                        @php
+                            $adminUsersListUrl = preg_replace('/#.*$/', '', request()->fullUrl());
+                            $usersScrollRestore = request()->has('_rs')
+                                ? [
+                                    'scroll_top' => (int) request()->query('_rs', 0),
+                                    'window_scroll' => (int) request()->query('_rw', 0),
+                                    'user_id' => (int) request()->query('_ru', 0),
+                                ]
+                                : session('admin_users_scroll_restore');
+                        @endphp
                         @if($users->count() > 0)
                             {{-- Tabella completa: visibile anche su smartphone (con scroll orizzontale) --}}
-                            <div class="table-responsive admin-users-table-wrapper">
+                            <div id="adminUsersTableScroller" class="table-responsive admin-users-table-wrapper"
+                                @if(!empty($usersScrollRestore))
+                                    data-restore-scroll="{{ (int) ($usersScrollRestore['scroll_top'] ?? 0) }}"
+                                    data-restore-window="{{ (int) ($usersScrollRestore['window_scroll'] ?? 0) }}"
+                                    data-restore-user="{{ (int) ($usersScrollRestore['user_id'] ?? 0) }}"
+                                @endif>
+                                @if(!empty($usersScrollRestore))
+                                    <script>
+                                        (function () {
+                                            var top = {{ (int) ($usersScrollRestore['scroll_top'] ?? 0) }};
+                                            var win = {{ (int) ($usersScrollRestore['window_scroll'] ?? 0) }};
+                                            function applyEarly() {
+                                                var el = document.getElementById('adminUsersTableScroller');
+                                                if (el) el.scrollTop = top;
+                                                if (win > 0) window.scrollTo(0, win);
+                                            }
+                                            applyEarly();
+                                            document.addEventListener('DOMContentLoaded', applyEarly);
+                                        })();
+                                    </script>
+                                @endif
                                 <table class="table table-striped table-hover table-sm align-middle admin-users-table">
                                     <thead>
                                     <tr>
@@ -254,7 +284,10 @@
                                                 default => 3,
                                             };
                                         @endphp
-                                        <tr class="{{ $rowClass }}"
+                                        @php
+                                            $usersListReturn = route('admin.users.index', request()->only(['status', 'registrations']));
+                                        @endphp
+                                        <tr id="admin-user-{{ $user->userID }}" class="{{ $rowClass }}"
                                             data-user-nome="{{ strtolower(trim($user->nome ?? '')) }}"
                                             data-user-cognome="{{ strtolower(trim($user->cognome ?? '')) }}"
                                             data-user-nickname="{{ strtolower(trim($user->nickname ?? $user->username ?? '')) }}"
@@ -276,7 +309,7 @@
                                             <td class="col-nome">{{ $user->nome }}</td>
                                             <td class="col-cognome">{{ $user->cognome }}</td>
                                             <td>
-                                                <a href="{{ route('profile.show', $user) }}" target="_blank">
+                                                <a href="{{ route('profile.show', ['user' => $user, 'return' => $usersListReturn]) }}">
                                                     {{ $user->nickname }}
                                                 </a>
                                             </td>
@@ -290,6 +323,7 @@
                                             <td>
                                                 <form action="{{ route('admin.users.update-role', $user) }}" method="POST" class="d-flex align-items-center gap-1">
                                                     @csrf
+                                                    @include('admin.users._list_scroll_fields')
                                                     <select name="ruolo" class="form-select form-select-sm w-auto">
                                                         <option value="2" {{ (int)$user->ruolo === 2 ? 'selected' : '' }}>Utente</option>
                                                         <option value="1" {{ (int)$user->ruolo === 1 ? 'selected' : '' }}>Organizzatore</option>
@@ -317,6 +351,7 @@
                                                 <div class="d-inline-flex align-items-center gap-2">
                                                     <form action="{{ route('admin.users.update-newsletter', $user) }}" method="POST" class="d-inline m-0 admin-user-news-toggle-form">
                                                         @csrf
+                                                        @include('admin.users._list_scroll_fields')
                                                         <input type="hidden" name="invia" value="{{ $user->invia ? 0 : 1 }}">
                                                         <button type="submit"
                                                                 class="btn btn-sm {{ $user->invia ? 'btn-success' : 'btn-outline-danger' }}"
@@ -333,8 +368,11 @@
                                                     <div class="admin-user-state-checkrow">
                                                         <span class="badge bg-warning text-dark admin-user-state-pill">In attesa</span>
                                                         @if(!$user->isAdmin())
-                                                            <form action="{{ route('admin.users.approve', $user) }}" method="POST" class="d-inline m-0 admin-user-state-toggle-form">
+                                                            <form action="{{ route('admin.users.approve', $user) }}" method="POST" class="d-inline m-0 admin-user-state-toggle-form"
+                                                                  data-url-approve="{{ route('admin.users.approve', $user) }}"
+                                                                  data-url-suspend="{{ route('admin.users.suspend', $user) }}">
                                                                 @csrf
+                                                                @include('admin.users._list_scroll_fields')
                                                                 <input type="checkbox"
                                                                        class="form-check-input admin-user-state-check"
                                                                        aria-label="Attiva utente"
@@ -348,8 +386,11 @@
                                                     <div class="admin-user-state-checkrow">
                                                         <span class="badge bg-danger admin-user-state-pill">Sospeso</span>
                                                         @if(!$user->isAdmin())
-                                                            <form action="{{ route('admin.users.approve', $user) }}" method="POST" class="d-inline m-0 admin-user-state-toggle-form">
+                                                            <form action="{{ route('admin.users.approve', $user) }}" method="POST" class="d-inline m-0 admin-user-state-toggle-form"
+                                                                  data-url-approve="{{ route('admin.users.approve', $user) }}"
+                                                                  data-url-suspend="{{ route('admin.users.suspend', $user) }}">
                                                                 @csrf
+                                                                @include('admin.users._list_scroll_fields')
                                                                 <input type="checkbox"
                                                                        class="form-check-input admin-user-state-check"
                                                                        aria-label="Riattiva utente"
@@ -363,8 +404,11 @@
                                                     <div class="admin-user-state-checkrow">
                                                         <span class="badge bg-success admin-user-state-pill">Attivo</span>
                                                         @if(!$user->isAdmin())
-                                                            <form action="{{ route('admin.users.suspend', $user) }}" method="POST" class="d-inline m-0 admin-user-state-toggle-form">
+                                                            <form action="{{ route('admin.users.suspend', $user) }}" method="POST" class="d-inline m-0 admin-user-state-toggle-form"
+                                                                  data-url-approve="{{ route('admin.users.approve', $user) }}"
+                                                                  data-url-suspend="{{ route('admin.users.suspend', $user) }}">
                                                                 @csrf
+                                                                @include('admin.users._list_scroll_fields')
                                                                 <input type="checkbox"
                                                                        class="form-check-input admin-user-state-check"
                                                                        checked
@@ -385,6 +429,7 @@
                                                     @if(auth()->check() && auth()->user()->isAdmin() && !session()->has('impersonator_id') && !$user->isAdmin() && (int) $user->userID !== (int) auth()->id())
                                                         <form action="{{ route('admin.users.impersonate', $user) }}" method="POST" class="d-inline m-0">
                                                             @csrf
+                                                            @include('admin.users._list_scroll_fields')
                                                             <button type="submit"
                                                                     class="btn btn-outline-primary btn-sm py-0"
                                                                     onclick="return confirm('Impersonare {{ $user->nickname }}?')"
@@ -396,6 +441,7 @@
                                                     @if($user->status !== 'banned')
                                                         <form action="{{ route('admin.users.ban', $user) }}" method="POST" class="d-inline m-0">
                                                             @csrf
+                                                            @include('admin.users._list_scroll_fields')
                                                             <button type="submit" class="btn btn-danger btn-sm py-0" title="Banna">
                                                                 <i class="fas fa-ban"></i>
                                                             </button>
@@ -403,6 +449,7 @@
                                                     @else
                                                         <form action="{{ route('admin.users.unban', $user) }}" method="POST" class="d-inline m-0">
                                                             @csrf
+                                                            @include('admin.users._list_scroll_fields')
                                                             <button type="submit" class="btn btn-warning btn-sm py-0" title="Sbanna">
                                                                 <i class="fas fa-unlock"></i>
                                                             </button>
@@ -411,6 +458,7 @@
 
                                                     <form action="{{ route('admin.users.destroy', $user) }}" method="POST" class="d-inline m-0">
                                                         @csrf
+                                                        @include('admin.users._list_scroll_fields')
                                                         @method('DELETE')
                                                         <button type="submit" class="btn btn-outline-danger btn-sm py-0"
                                                                 onclick="return confirm('Sei sicuro di voler eliminare questo utente?')"
@@ -811,6 +859,14 @@
             max-height: calc(100vh - 260px);
             overflow-y: auto;
         }
+        tr[id^="admin-user-"] {
+            scroll-margin-top: 0.75rem;
+            scroll-margin-bottom: 0.75rem;
+        }
+        .admin-users-table tbody tr.admin-user-row--highlight > td {
+            box-shadow: inset 0 0 0 2px #ffc107;
+            transition: box-shadow 0.2s ease;
+        }
         .btn-group .btn {
             margin-right: 0.25rem;
         }
@@ -821,9 +877,308 @@
 
     @php
         $adminUsersFinderSuggestionsUrl = rtrim(request()->root(), '/') . route('admin.users.finder-suggestions', [], false);
+        $adminUsersListUrl = $adminUsersListUrl ?? request()->fullUrl();
     @endphp
     <script>
         (function () {
+            if ('scrollRestoration' in history) {
+                history.scrollRestoration = 'manual';
+            }
+
+            var adminUsersListUrl = @json($adminUsersListUrl);
+
+            function getUsersTableScroller() {
+                return document.getElementById('adminUsersTableScroller')
+                    || document.querySelector('.admin-users-table-wrapper');
+            }
+
+            function fillUsersListScrollFields(form) {
+                if (!form) return 0;
+                var scroller = getUsersTableScroller();
+                var scrollInput = form.querySelector('input[name="_list_scroll"]');
+                var winInput = form.querySelector('input[name="_list_win_scroll"]');
+                var returnInput = form.querySelector('input[name="_list_return"]');
+                var top = scroller ? scroller.scrollTop : 0;
+                var winY = window.scrollY || window.pageYOffset || 0;
+                if (scrollInput) scrollInput.value = String(top);
+                if (winInput) winInput.value = String(winY);
+                if (returnInput) returnInput.value = adminUsersListUrl;
+                return top;
+            }
+
+            function ensureUsersListScrollFields(form) {
+                if (!form) return;
+                if (!form.querySelector('input[name="_list_scroll"]')) {
+                    var scrollInput = document.createElement('input');
+                    scrollInput.type = 'hidden';
+                    scrollInput.name = '_list_scroll';
+                    scrollInput.value = '';
+                    form.appendChild(scrollInput);
+                }
+                if (!form.querySelector('input[name="_list_win_scroll"]')) {
+                    var winInput = document.createElement('input');
+                    winInput.type = 'hidden';
+                    winInput.name = '_list_win_scroll';
+                    winInput.value = '';
+                    form.appendChild(winInput);
+                }
+                if (!form.querySelector('input[name="_list_return"]')) {
+                    var returnInput = document.createElement('input');
+                    returnInput.type = 'hidden';
+                    returnInput.name = '_list_return';
+                    returnInput.value = adminUsersListUrl;
+                    form.appendChild(returnInput);
+                }
+            }
+
+            function saveUsersListPosition(userId, scrollTop) {
+                if (!userId) return;
+                var scroller = getUsersTableScroller();
+                var top = typeof scrollTop === 'number' ? scrollTop : (scroller ? scroller.scrollTop : 0);
+                try {
+                    sessionStorage.setItem('adminUsersListRestore', JSON.stringify({
+                        userId: String(userId),
+                        scrollTop: top,
+                        windowScrollY: window.scrollY || window.pageYOffset || 0
+                    }));
+                } catch (e) { /* ignore */ }
+            }
+
+            function scrollRowIntoScroller(row, scroller) {
+                if (!row || !scroller) return;
+                var rowRect = row.getBoundingClientRect();
+                var scrollerRect = scroller.getBoundingClientRect();
+                var delta = rowRect.top - scrollerRect.top - (scroller.clientHeight / 2) + (row.offsetHeight / 2);
+                scroller.scrollTop += delta;
+            }
+
+            function cleanUsersListRestoreQuery() {
+                try {
+                    var params = new URLSearchParams(window.location.search);
+                    if (!params.has('_rs')) return;
+                    params.delete('_rs');
+                    params.delete('_rw');
+                    params.delete('_ru');
+                    var qs = params.toString();
+                    var clean = window.location.pathname + (qs ? '?' + qs : '');
+                    history.replaceState(null, '', clean);
+                } catch (e) { /* ignore */ }
+            }
+
+            function restoreUsersListPosition() {
+                var scroller = getUsersTableScroller();
+                if (!scroller) return;
+
+                var userId = null;
+                var scrollTop = null;
+                var windowScrollY = null;
+
+                try {
+                    var params = new URLSearchParams(window.location.search);
+                    if (params.has('_rs')) {
+                        scrollTop = parseInt(params.get('_rs') || '0', 10);
+                        windowScrollY = parseInt(params.get('_rw') || '0', 10);
+                        userId = params.get('_ru') || null;
+                    }
+                } catch (e) { /* ignore */ }
+
+                if (scroller.hasAttribute('data-restore-scroll')) {
+                    scrollTop = parseInt(scroller.getAttribute('data-restore-scroll') || '0', 10);
+                    windowScrollY = parseInt(scroller.getAttribute('data-restore-window') || '0', 10);
+                    userId = userId || String(scroller.getAttribute('data-restore-user') || '');
+                    scroller.removeAttribute('data-restore-scroll');
+                    scroller.removeAttribute('data-restore-window');
+                    scroller.removeAttribute('data-restore-user');
+                }
+
+                try {
+                    var raw = sessionStorage.getItem('adminUsersListRestore');
+                    if (raw) {
+                        var data = JSON.parse(raw);
+                        sessionStorage.removeItem('adminUsersListRestore');
+                        if (!userId && data.userId) userId = data.userId;
+                        if (scrollTop === null && typeof data.scrollTop === 'number') scrollTop = data.scrollTop;
+                        if (windowScrollY === null && typeof data.windowScrollY === 'number') windowScrollY = data.windowScrollY;
+                    }
+                } catch (e) { /* ignore */ }
+
+                if (scrollTop === null && windowScrollY === null && !userId) return;
+
+                var cleaned = false;
+                function applyRestore() {
+                    if (typeof windowScrollY === 'number' && !isNaN(windowScrollY)) {
+                        window.scrollTo(0, windowScrollY);
+                    }
+                    if (scrollTop !== null && !isNaN(scrollTop) && scroller) {
+                        scroller.scrollTop = scrollTop;
+                    }
+                    if (userId) {
+                        var row = document.getElementById('admin-user-' + userId);
+                        if (row) {
+                            if ((scrollTop === null || isNaN(scrollTop)) && scroller) {
+                                scrollRowIntoScroller(row, scroller);
+                            }
+                            row.classList.add('admin-user-row--highlight');
+                            window.setTimeout(function () {
+                                row.classList.remove('admin-user-row--highlight');
+                            }, 2500);
+                        }
+                    }
+                    if (!cleaned) {
+                        cleaned = true;
+                        cleanUsersListRestoreQuery();
+                    }
+                }
+
+                [0, 50, 150, 350, 700, 1200].forEach(function (delay) {
+                    window.setTimeout(applyRestore, delay);
+                });
+            }
+
+            function prepareUsersListFormSubmit(form) {
+                if (!form || !form.closest('.admin-users-table tbody')) return;
+                ensureUsersListScrollFields(form);
+                var top = fillUsersListScrollFields(form);
+                var tr = form.closest('tr');
+                if (tr && tr.id && tr.id.indexOf('admin-user-') === 0) {
+                    saveUsersListPosition(tr.id.slice('admin-user-'.length), top);
+                }
+            }
+
+            document.querySelectorAll('.admin-users-table tbody form').forEach(ensureUsersListScrollFields);
+
+            document.addEventListener('submit', function (e) {
+                var form = e.target && e.target.closest ? e.target.closest('.admin-users-table tbody form') : null;
+                if (form) prepareUsersListFormSubmit(form);
+            }, true);
+
+            document.addEventListener('click', function (e) {
+                var btn = e.target.closest('.admin-users-table tbody button[type="submit"], .admin-users-table tbody input[type="submit"]');
+                if (!btn) return;
+                var form = btn.closest('form');
+                if (form) prepareUsersListFormSubmit(form);
+            }, true);
+
+            function adminUsersAjaxPost(form) {
+                return fetch(form.action, {
+                    method: 'POST',
+                    body: new FormData(form),
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': (form.querySelector('input[name="_token"]') || {}).value || ''
+                    },
+                    credentials: 'same-origin'
+                }).then(function (res) {
+                    return res.json().then(function (data) {
+                        if (!res.ok || !data.success) {
+                            var err = new Error((data && data.message) ? data.message : 'Operazione non riuscita');
+                            err.data = data;
+                            throw err;
+                        }
+                        return data;
+                    });
+                });
+            }
+
+            function applyUserStateUi(row, status) {
+                var form = row.querySelector('.admin-user-state-toggle-form');
+                var cb = form ? form.querySelector('input[type="checkbox"]') : null;
+                var pill = row.querySelector('.admin-user-state-pill');
+                if (!form || !pill) return;
+                var suspendUrl = form.getAttribute('data-url-suspend') || '';
+                var approveUrl = form.getAttribute('data-url-approve') || '';
+                if (status === 'approved') {
+                    row.className = 'admin-user-row admin-user-row--approved';
+                    row.setAttribute('data-user-stato', 'approved');
+                    row.setAttribute('data-user-stato-rank', '0');
+                    pill.className = 'badge bg-success admin-user-state-pill';
+                    pill.textContent = 'Attivo';
+                    form.action = suspendUrl;
+                    if (cb) cb.checked = true;
+                } else if (status === 'suspended') {
+                    row.className = 'admin-user-row admin-user-row--suspended';
+                    row.setAttribute('data-user-stato', 'suspended');
+                    row.setAttribute('data-user-stato-rank', '2');
+                    pill.className = 'badge bg-danger admin-user-state-pill';
+                    pill.textContent = 'Sospeso';
+                    form.action = approveUrl;
+                    if (cb) cb.checked = false;
+                }
+            }
+
+            function flashUserRow(row) {
+                if (!row) return;
+                row.classList.add('admin-user-row--highlight');
+                window.setTimeout(function () {
+                    row.classList.remove('admin-user-row--highlight');
+                }, 2000);
+            }
+
+            document.querySelectorAll('.admin-user-state-toggle-form').forEach(function (form) {
+                var cb = form.querySelector('input[type="checkbox"]');
+                if (!cb) return;
+                cb.addEventListener('change', function (e) {
+                    var msg = cb.checked
+                        ? 'Rendere questo utente ATTIVO?'
+                        : 'SOSPENDERE questo utente?';
+                    if (!window.confirm(msg)) {
+                        e.preventDefault();
+                        cb.checked = !cb.checked;
+                        return;
+                    }
+                    var row = form.closest('tr');
+                    var prevChecked = !cb.checked;
+                    cb.disabled = true;
+                    adminUsersAjaxPost(form)
+                        .then(function (data) {
+                            if (row && data.status) {
+                                applyUserStateUi(row, data.status);
+                                flashUserRow(row);
+                            }
+                        })
+                        .catch(function (err) {
+                            cb.checked = prevChecked;
+                            window.alert((err && err.message) ? err.message : 'Operazione non riuscita.');
+                        })
+                        .finally(function () {
+                            cb.disabled = false;
+                        });
+                });
+            });
+
+            document.querySelectorAll('.admin-user-news-toggle-form').forEach(function (form) {
+                form.addEventListener('submit', function (e) {
+                    e.preventDefault();
+                    var btn = form.querySelector('button[type="submit"]');
+                    var inviaInput = form.querySelector('input[name="invia"]');
+                    if (!btn || !inviaInput) return;
+                    var row = form.closest('tr');
+                    btn.disabled = true;
+                    adminUsersAjaxPost(form)
+                        .then(function (data) {
+                            var on = !!data.invia;
+                            inviaInput.value = on ? '0' : '1';
+                            btn.className = 'btn btn-sm ' + (on ? 'btn-success' : 'btn-outline-danger');
+                            btn.title = on ? 'Disattiva newsletter' : 'Attiva newsletter';
+                            btn.innerHTML = '<i class="fas ' + (on ? 'fa-envelope-open' : 'fa-envelope') + '"></i> ' + (on ? 'Sì' : 'No');
+                            if (row) {
+                                row.setAttribute('data-user-news-rank', on ? '1' : '0');
+                                flashUserRow(row);
+                            }
+                        })
+                        .catch(function (err) {
+                            window.alert((err && err.message) ? err.message : 'Operazione non riuscita.');
+                        })
+                        .finally(function () {
+                            btn.disabled = false;
+                        });
+                });
+            });
+
+            restoreUsersListPosition();
+            window.addEventListener('load', restoreUsersListPosition);
+
             var input = document.getElementById('userFinder');
             var clearBtn = document.getElementById('userFinderClear');
             var fieldSel = document.getElementById('userFinderField');
@@ -1063,22 +1418,6 @@
                 });
             });
 
-            // Toggle attivo/sospeso tramite checkbox nella colonna Stato
-            document.querySelectorAll('.admin-user-state-toggle-form').forEach(function (form) {
-                var cb = form.querySelector('input[type="checkbox"]');
-                if (!cb) return;
-                cb.addEventListener('change', function (e) {
-                    var msg = cb.checked
-                        ? 'Rendere questo utente ATTIVO?'
-                        : 'SOSPENDERE questo utente?';
-                    if (!window.confirm(msg)) {
-                        e.preventDefault();
-                        cb.checked = !cb.checked;
-                        return;
-                    }
-                    form.submit();
-                });
-            });
         })();
     </script>
 @endsection

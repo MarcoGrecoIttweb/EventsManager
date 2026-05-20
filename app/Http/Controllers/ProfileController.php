@@ -66,11 +66,13 @@ class ProfileController extends Controller
         return null;
     }
 
-    public function edit(User $user)
+    public function edit(Request $request, User $user)
     {
         $this->authorize('update', $user);
 
-        return view('profile.edit', compact('user'));
+        $profileReturnUrl = $this->safeInternalReturnUrl($request->query('return'));
+
+        return view('profile.edit', compact('user', 'profileReturnUrl'));
     }
 
     public function update(Request $request, User $user)
@@ -152,6 +154,11 @@ class ProfileController extends Controller
                 'email' => $validated['email'],
                 'telefono' => $validated['telefono'] ?? null,
             ]);
+        }
+
+        $returnUrl = $this->safeInternalReturnUrl($request->input('return'));
+        if ($isAdmin && $returnUrl) {
+            return redirect($returnUrl)->with('success', 'Profilo aggiornato con successo!');
         }
 
         return redirect()->route('profile.show', $user)

@@ -57,10 +57,10 @@ class SafeRichText
             // Convertiamo width/height px in attributi HTML così sopravvivono alla sanificazione.
             if (preg_match('/style\s*=\s*(["\'])(.*?)\1/i', $tag, $stm)) {
                 $style = (string) ($stm[2] ?? '');
-                if (preg_match('/\bwidth\s*:\s*(\d{1,4})\s*px\b/i', $style, $sw)) {
+                if (preg_match('/\bwidth\s*:\s*(\d{1,4})(?:\.\d+)?\s*(?:px)?\b/i', $style, $sw)) {
                     $widthFromStyle = (int) $sw[1];
                 }
-                if (preg_match('/\bheight\s*:\s*(\d{1,4})\s*px\b/i', $style, $sh)) {
+                if (preg_match('/\bheight\s*:\s*(\d{1,4})(?:\.\d+)?\s*(?:px)?\b/i', $style, $sh)) {
                     $heightFromStyle = (int) $sh[1];
                 }
             }

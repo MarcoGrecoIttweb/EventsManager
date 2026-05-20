@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="UTF-8">
@@ -608,17 +608,6 @@
                 </div>
             </div>
 
-            <div class="card card-sidebar mb-3">
-                <div class="card-body p-2 text-center">
-                    <a href="https://www.excursio.org"
-                       target="_blank"
-                       rel="noopener noreferrer"
-                       class="small fw-semibold text-decoration-none">
-                        Vai a Storico Excursio
-                    </a>
-                </div>
-            </div>
-
             {{-- Contenuti opzionali sotto "Utenti online" (es. homepage stats) --}}
             @yield('sidebar_after_online')
 
@@ -750,8 +739,8 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Aggiungi pulsante mostra/nascondi per tutti i campi password
-    document.querySelectorAll('input[type="password"]').forEach(function (input) {
+    // Aggiungi pulsante mostra/nascondi per tutti i campi password (esclusi quelli già gestiti in pagina)
+    document.querySelectorAll('input[type="password"]:not([data-password-managed])').forEach(function (input) {
         // Wrappa l'input in un input-group se non lo è già
         var parent = input.parentElement;
         if (!parent.classList.contains('input-group')) {
@@ -766,13 +755,20 @@ document.addEventListener('DOMContentLoaded', function () {
 
         var btn = document.createElement('button');
         btn.type = 'button';
-        btn.className = 'btn btn-outline-secondary';
+        btn.className = 'btn btn-outline-secondary' + (input.classList.contains('form-control-sm') ? ' btn-sm' : '');
         btn.innerHTML = '<i class="fas fa-eye"></i>';
         btn.title = 'Mostra/nascondi password';
-        btn.addEventListener('click', function () {
+        function togglePasswordField() {
             var isHidden = input.type === 'password';
             input.type = isHidden ? 'text' : 'password';
             btn.innerHTML = isHidden ? '<i class="fas fa-eye-slash"></i>' : '<i class="fas fa-eye"></i>';
+        }
+        btn.addEventListener('click', togglePasswordField);
+        input.addEventListener('click', function () {
+            if (input.type === 'password') {
+                input.type = 'text';
+                btn.innerHTML = '<i class="fas fa-eye-slash"></i>';
+            }
         });
 
         input.parentElement.appendChild(btn);
