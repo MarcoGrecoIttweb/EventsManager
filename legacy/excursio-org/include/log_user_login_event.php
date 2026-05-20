@@ -1,7 +1,7 @@
 <?php
 /**
  * Registra un accesso dal sito legacy (excursio.org) in user_login_events.
- * La tabella (e la colonna source) sono create dalle migration Laravel su excursio.
+ * Compatibile PHP 5.4+ (niente operatore ??).
  */
 function log_user_login_event_legacy($mysqli, $userId)
 {
@@ -10,7 +10,8 @@ function log_user_login_event_legacy($mysqli, $userId)
     }
 
     $uid = (int) $userId;
-    $ip = mysqli_real_escape_string($mysqli, $_SERVER['REMOTE_ADDR'] ?? '');
+    $ipRaw = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '';
+    $ip = mysqli_real_escape_string($mysqli, $ipRaw);
     $nowLogin = date('Y-m-d H:i:s');
 
     $tableCheck = @mysqli_query($mysqli, "SHOW TABLES LIKE 'user_login_events'");

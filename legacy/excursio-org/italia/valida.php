@@ -1,7 +1,10 @@
 <?php
 session_start();
 include('../include/utility.php');
-include('../include/log_user_login_event.php');
+$__log_login_helper = dirname(__FILE__) . '/../include/log_user_login_event.php';
+if (is_readable($__log_login_helper)) {
+    include_once $__log_login_helper;
+}
 include('../include/class.mysql.php');
 $user     = clean($_POST['user']);
 $plainpassword = clean($_POST['password']);
@@ -30,7 +33,13 @@ if (mysqli_num_rows($dati) === 1 ) {
 }
 if($presente){
     session_regenerate_id();
-    log_user_login_event_legacy($mysqli, (int) $array['userID']);
+    if (function_exists('log_user_login_event_legacy')) {
+        log_user_login_event_legacy($mysqli, (int) $array['userID']);
+    } else {
+        $uid = (int) $array['userID'];
+        $nowLogin = date('Y-m-d H:i:s');
+        @mysqli_query($mysqli, "UPDATE utente SET ultimo_accesso = '$nowLogin' WHERE userID = $uid");
+    }
 	header("location: index.php");
 }else 
 	header("location: index.php?er=1");
