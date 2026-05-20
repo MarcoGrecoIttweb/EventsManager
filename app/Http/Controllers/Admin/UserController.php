@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\UserLoginEvent;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -199,14 +200,54 @@ class UserController extends Controller
             $days = 10;
         }
 
-        // Ultimo accesso da `utente.ultimo_accesso` (aggiornato da sito nuovo e sito vecchio).
-        $users = User::query()
-            ->whereNotNull('ultimo_accesso')
-            ->where('ultimo_accesso', '>=', now()->subDays($days))
-            ->orderByDesc('ultimo_accesso')
-            ->get();
+        $since = now()->subDays($days);
 
-        return view('admin.users.logins', compact('users', 'days'));
+        $distinctLaravel = UserLoginEvent::query()
+            ->where('logged_in_at', '>=', $since)
+            ->where('source', UserLoginEvent::SOURCE_LARAVEL)
+            ->distinct()
+            ->count('user_id');
+
+        $distinctLegacy = UserLoginEvent::query()
+            ->where('logged_in_at', '>=', $since)
+            ->where('source', UserLoginEvent::SOURCE_LEGACY)
+            ->distinct()
+            ->count('user_id');
+
+        $loginByUser = UserLoginEvent::query()
+            ->where('logged_in_at', '>=', $since)
+            ->selectRaw('user_id, source, MAX(logged_in_at) as last_at')
+            ->groupBy('user_id', 'source')
+            ->get()
+            ->groupBy('user_id');
+
+        $users = User::query()
+            ->whereIn('userID', $loginByUser->keys())
+            ->get()
+            ->map(function (User $user) use ($loginByUser) {
+                $rows = $loginByUser->get($user->userID, collect());
+                $laravel = $rows->firstWhere('source', UserLoginEvent::SOURCE_LARAVEL);
+                $legacy = $rows->firstWhere('source', UserLoginEvent::SOURCE_LEGACY);
+
+                $user->last_login_laravel = $laravel?->last_at;
+                $user->last_login_legacy = $legacy?->last_at;
+
+                return $user;
+            })
+            ->sortByDesc(function (User $user) {
+                $laravel = $user->last_login_laravel ? strtotime($user->last_login_laravel) : 0;
+                $legacy = $user->last_login_legacy ? strtotime($user->last_login_legacy) : 0;
+
+                return max($laravel, $legacy);
+            })
+            ->values();
+
+        return view('admin.users.logins', compact(
+            'users',
+            'days',
+            'distinctLaravel',
+            'distinctLegacy'
+        ));
     }
 
     /**

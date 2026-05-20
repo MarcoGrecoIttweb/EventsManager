@@ -1,22 +1,23 @@
 # Deploy sito vecchio excursio.org
 
-## valida.php (login)
+## Login + tracciamento ingressi (user_login_events)
 
-Carica su excursio.org:
+Carica su **excursio.org** (cartella `eventi/` sul server):
 
-| File | Destinazione |
-|------|----------------|
+| File in repo | Destinazione su excursio.org |
+|--------------|------------------------------|
+| `include/log_user_login_event.php` | `/eventi/include/log_user_login_event.php` |
 | `it/valida.php` | `/eventi/it/valida.php` |
-| `italia/valida.php` | `/eventi/italia/valida.php` (se usata) |
+| `italia/valida.php` | `/eventi/italia/valida.php` (solo se usi quel percorso di login) |
 
-Al login aggiorna solo `utente.ultimo_accesso` (nessun tracciamento `source` / `user_login_events`).
+Al login il sito vecchio inserisce una riga in `user_login_events` con `source = legacy` e aggiorna `utente.ultimo_accesso`.
 
-Il file `include/log_user_login_event.php` **non serve più**: puoi rimuoverlo dal server se era stato caricato.
+**Prerequisito:** sul database condiviso deve esistere la tabella `user_login_events` con colonna `source` (migration Laravel `2026_05_15_000001_add_source_to_user_login_events_table`).
 
-## Sviluppo locale
+## Sviluppo locale (XAMPP)
 
 ```powershell
 .\deploy-to-local-xampp.ps1
 ```
 
-Copia solo i `valida.php` in `c:\xampp\htdocs\eventi\`.
+Copia i file sopra in `c:\xampp\htdocs\eventi\`.

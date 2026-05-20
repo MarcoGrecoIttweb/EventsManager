@@ -17,7 +17,7 @@
                             $giorniSel = (int) ($days ?? 1);
                         @endphp
                         <span class="badge bg-dark rounded-pill fs-6 fw-semibold"
-                              title="Utenti con ultimo accesso negli ultimi {{ $giorniSel }} {{ $giorniSel === 1 ? 'giorno' : 'giorni' }} (come in elenco)">
+                              title="Utenti con almeno un ingresso registrato negli ultimi {{ $giorniSel }} {{ $giorniSel === 1 ? 'giorno' : 'giorni' }}">
                             {{ $users->count() }}
                         </span>
                     </h1>
@@ -51,6 +51,51 @@
                         </div>
                     </div>
                     <div class="card-body">
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-bordered mb-0 align-middle">
+                                        <thead class="table-success">
+                                        <tr>
+                                            <th colspan="2" class="text-center">
+                                                Sito nuovo (Laravel / amici.excursio.org)
+                                            </th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        <tr>
+                                            <td class="fw-semibold">Visite distinte</td>
+                                            <td class="text-end">
+                                                <span class="badge bg-success fs-6">{{ number_format((int) ($distinctLaravel ?? 0), 0, ',', '.') }}</span>
+                                            </td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-bordered mb-0 align-middle">
+                                        <thead class="table-primary">
+                                        <tr>
+                                            <th colspan="2" class="text-center">
+                                                Sito vecchio (excursio.org)
+                                            </th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        <tr>
+                                            <td class="fw-semibold">Visite distinte</td>
+                                            <td class="text-end">
+                                                <span class="badge bg-primary fs-6">{{ number_format((int) ($distinctLegacy ?? 0), 0, ',', '.') }}</span>
+                                            </td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
                         @if($users->count() > 0)
                             <div class="table-responsive admin-users-table-wrapper">
                                 <table class="table table-striped table-hover table-sm align-middle admin-users-table">
@@ -62,10 +107,14 @@
                                         <th>Nome</th>
                                         <th>Cognome</th>
                                         <th>Stato</th>
-                                        <th>Ultimo accesso (data e ora)</th>
+                                        <th>Sito nuovo (Laravel)</th>
+                                        <th>Sito vecchio (excursio.org)</th>
                                     </tr>
                                     </thead>
                                     <tbody>
+                                    @php
+                                        $loginsListReturn = request()->fullUrl();
+                                    @endphp
                                     @foreach($users as $user)
                                         <tr>
                                             <td class="text-muted d-none d-lg-table-cell">{{ $user->userID }}</td>
@@ -77,7 +126,16 @@
                                                     <span class="text-muted small">—</span>
                                                 @endif
                                             </td>
-                                            <td>{{ $user->nickname ?? '—' }}</td>
+                                            <td>
+                                                @if($user->nickname)
+                                                    <a href="{{ route('profile.show', ['user' => $user, 'return' => $loginsListReturn]) }}"
+                                                       class="text-decoration-none fw-semibold">
+                                                        {{ $user->nickname }}
+                                                    </a>
+                                                @else
+                                                    —
+                                                @endif
+                                            </td>
                                             <td>{{ $user->nome ?? '—' }}</td>
                                             <td>{{ $user->cognome ?? '—' }}</td>
                                             <td>
@@ -94,7 +152,18 @@
                                                 @endif
                                             </td>
                                             <td>
-                                                {{ $user->ultimo_accesso ? $user->ultimo_accesso->format('d/m/Y H:i') : '—' }}
+                                                @if($user->last_login_laravel)
+                                                    <span class="badge bg-success">{{ \Carbon\Carbon::parse($user->last_login_laravel)->format('d/m/Y H:i') }}</span>
+                                                @else
+                                                    <span class="text-muted">—</span>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if($user->last_login_legacy)
+                                                    <span class="badge bg-primary">{{ \Carbon\Carbon::parse($user->last_login_legacy)->format('d/m/Y H:i') }}</span>
+                                                @else
+                                                    <span class="text-muted">—</span>
+                                                @endif
                                             </td>
                                         </tr>
                                     @endforeach
