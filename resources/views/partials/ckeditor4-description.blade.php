@@ -1,8 +1,11 @@
 {{-- CKEditor 4 da CDN: parametro opzionale $field (id textarea, default: description) --}}
 {{-- Opzionali: $editable_line_height (numero, default 1.55), $editable_p_margin (es. "0.2em") per righe più compatte --}}
+{{-- Opzionale: $lazy_field_prefix (es. "replyContent-") per editor su textarea forum risposta --}}
 @php
     $ckHeight = (int) ($height ?? 400);
+    $lazyHeight = (int) ($lazy_height ?? $ckHeight);
     $fieldId = $field ?? 'description';
+    $lazyFieldPrefix = isset($lazy_field_prefix) && is_string($lazy_field_prefix) ? $lazy_field_prefix : null;
     $ckLh = isset($editable_line_height) && is_numeric($editable_line_height)
         ? min(2.0, max(1.0, (float) $editable_line_height))
         : 1.55;
@@ -18,6 +21,8 @@
         // Nota admin "Gli eventi proposti..." inserita come blockquote: mostrala marrone anche in editor, senza linea a sinistra.
         '.cke_editable blockquote:not([style*="color"]){color:#8B4513;border-left:0!important;padding-left:0!important;margin-left:0!important;}',
         '.cke_editable blockquote:not([style*="color"]) p,.cke_editable blockquote:not([style*="color"]) li{color:#8B4513;}',
+        '.cke_editable,.cke_editable p,.cke_editable div,.cke_editable span,.cke_editable li{user-select:text!important;-webkit-user-select:text!important;-moz-user-select:text!important;-ms-user-select:text!important;cursor:text!important;}',
+        '.cke_editable span,.cke_editable font{display:inline!important;float:none!important;}',
         '.cke_editable ::selection{background:rgba(13,110,253,.35);}',
     ];
     if ($ckPMargin !== null) {
@@ -28,31 +33,93 @@
 <script src="https://cdn.ckeditor.com/4.22.1/full/ckeditor.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        var id = @json($fieldId);
-        var el = document.getElementById(id);
-        if (!el || typeof CKEDITOR === 'undefined') {
+        if (typeof CKEDITOR === 'undefined') {
             return;
         }
-        // Contrasto e selezione visibile nell’iframe (incolla da Word/siti con testo bianco o “windowtext”).
+
         var ckCustomCss = @json($ckCustomCssUrl);
-        CKEDITOR.replace(id, {
-            language: 'it',
-            height: {{ $ckHeight }},
-            removePlugins: 'elementspath',
-            resize_dir: 'vertical',
-            versionCheck: false,
-            // Incolla da Word/browser: senza questo CKEditor può scartare o svuotare il contenuto (ACF).
-            // L’HTML viene comunque ripulito al salvataggio da SafeRichText::sanitize.
-            allowedContent: true,
-            pasteFilter: null,
-            pasteFromWordRemoveFontStyles: false,
-            pasteFromWordRemoveStyles: false,
-            contentsCss: [CKEDITOR.getUrl('contents.css'), ckCustomCss],
-            // Upload immagini (tab "Carica" nel dialog "Immagine")
-            filebrowserImageUploadUrl: @json(route('ckeditor.upload', ['_token' => csrf_token()])),
-            // Upload generico (altri dialog)
-            filebrowserUploadUrl: @json(route('ckeditor.upload', ['_token' => csrf_token()])),
-            filebrowserUploadMethod: 'form'
-        });
+        var defaultHeight = {{ $ckHeight }};
+        var lazyHeight = {{ $lazyHeight }};
+        var lazyPrefix = @json($lazyFieldPrefix);
+
+        function bindEditorBehaviors(editor) {
+            editor.on('instanceReady', function () {
+                var body = editor.document && editor.document.getBody();
+                if (body) {
+                    body.setStyle('user-select', 'text');
+                    body.setStyle('-webkit-user-select', 'text');
+                }
+            });
+            editor.on('afterPaste', function () {
+                var html = editor.getData();
+                for (var i = 0; i < 6; i++) {
+                    var next = html
+                        .replace(/<(span|font)\b[^>]*>\s*<\/\1>/gi, '')
+                        .replace(/<(span|font)\b(?![^>]*\bstyle=)[^>]*>([\s\S]*?)<\/\1>/gi, '$1');
+                    if (next === html) {
+                        break;
+                    }
+                    html = next;
+                }
+                if (html !== editor.getData()) {
+                    editor.setData(html);
+                }
+            });
+        }
+
+        function initExcursioCkEditor(fieldId, height) {
+            var el = document.getElementById(fieldId);
+            if (!el) {
+                return null;
+            }
+            if (CKEDITOR.instances[fieldId]) {
+                return CKEDITOR.instances[fieldId];
+            }
+
+            var editor = CKEDITOR.replace(fieldId, {
+                language: 'it',
+                height: height,
+                removePlugins: 'elementspath',
+                resize_dir: 'vertical',
+                versionCheck: false,
+                allowedContent: true,
+                pasteFilter: null,
+                pasteFromWordRemoveFontStyles: false,
+                pasteFromWordRemoveStyles: false,
+                contentsCss: [CKEDITOR.getUrl('contents.css'), ckCustomCss],
+                filebrowserImageUploadUrl: @json(route('ckeditor.upload', ['_token' => csrf_token()])),
+                filebrowserUploadUrl: @json(route('ckeditor.upload', ['_token' => csrf_token()])),
+                filebrowserUploadMethod: 'form'
+            });
+            bindEditorBehaviors(editor);
+
+            return editor;
+        }
+
+        var id = @json($fieldId);
+        if (document.getElementById(id)) {
+            initExcursioCkEditor(id, defaultHeight);
+        }
+
+        if (lazyPrefix) {
+            document.querySelectorAll('textarea[id^="' + lazyPrefix + '"]').forEach(function (textarea) {
+                var panel = textarea.closest('.collapse');
+                if (panel) {
+                    panel.addEventListener('show.bs.collapse', function () {
+                        initExcursioCkEditor(textarea.id, lazyHeight);
+                    });
+                }
+
+                var form = textarea.closest('form');
+                if (form) {
+                    form.addEventListener('submit', function () {
+                        var inst = CKEDITOR.instances[textarea.id];
+                        if (inst) {
+                            textarea.value = inst.getData();
+                        }
+                    });
+                }
+            });
+        }
     });
 </script>

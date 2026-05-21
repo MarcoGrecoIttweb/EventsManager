@@ -860,6 +860,7 @@ Route::middleware(['auth', 'approved'])->group(function () {
 
     // Commenti
     Route::post('/events/{event}/comments', [CommentController::class, 'store'])->name('comments.store');
+    Route::post('/comments/{comment}/reply', [CommentController::class, 'reply'])->name('comments.reply');
     Route::get('/comments/{comment}/edit', [CommentController::class, 'edit'])->name('comments.edit');
     Route::put('/comments/{comment}', [CommentController::class, 'update'])->name('comments.update');
     Route::delete('/comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
@@ -920,6 +921,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         ->name('events.active-published');
     Route::resource('events', \App\Http\Controllers\Admin\EventController::class);
     Route::post('/events/{event}/duplicate', [\App\Http\Controllers\Admin\EventController::class, 'duplicate'])->name('events.duplicate');
+    Route::post('/events/{event}/cancel-duplicate', [\App\Http\Controllers\Admin\EventController::class, 'cancelDuplicate'])->name('events.cancel-duplicate');
     Route::post('/events/{event}/toggle-status', [\App\Http\Controllers\Admin\EventController::class, 'toggleStatus'])->name('events.toggle-status');
     Route::get('/users/finder-suggestions', [\App\Http\Controllers\Admin\UserController::class, 'finderSuggestions'])->name('users.finder-suggestions');
     Route::get('/users', [\App\Http\Controllers\Admin\UserController::class, 'index'])->name('users.index');

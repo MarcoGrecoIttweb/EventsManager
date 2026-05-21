@@ -50,6 +50,50 @@ class CommentController extends Controller
         }
     }
 
+    /**
+     * Risposta admin/organizzatore a un commento nel forum evento (+ email a utente e admin).
+     */
+    public function reply(Request $request, Comment $comment)
+    {
+        if (! Auth::check() || ! $this->userCanReplyForumComment(Auth::user())) {
+            return back()->with('error', 'Solo amministratori e organizzatori possono inviare risposte dal forum.');
+        }
+
+        $comment->loadMissing(['user', 'event']);
+
+        $request->validate([
+            'content' => 'required|string|min:2|max:10000',
+        ]);
+
+        $event = $comment->event;
+        if (! $event) {
+            return back()->with('error', 'Evento non trovato per questo commento.');
+        }
+
+        try {
+            $replyBody = $this->buildAdminReplyHtml($comment, $request->input('content'));
+            $cleanContent = $this->sanitizeHtml($replyBody);
+
+            $reply = Comment::create([
+                'testo' => $cleanContent,
+                'id_evento' => $event->getKey(),
+                'id_utente' => Auth::id(),
+                'data' => now(),
+            ]);
+
+            $this->notifyAdminReply($event, Auth::user(), $comment, $reply);
+
+            return redirect()->to(url('events/' . $event->getKey()))
+                ->with('success', 'Risposta pubblicata nel forum. Email inviata all\'utente.')
+                ->with('scrollTo', 'comment-' . $reply->getKey());
+
+        } catch (\Throwable $e) {
+            \Log::error('Errore risposta admin commento: ' . $e->getMessage());
+
+            return back()->with('error', 'Errore durante l\'invio della risposta.');
+        }
+    }
+
     public function edit(Comment $comment)
     {
         if (!Auth::check()) {
@@ -158,21 +202,135 @@ class CommentController extends Controller
         return (int) $user->getKey() === (int) $comment->id_utente || $user->isAdmin();
     }
 
+    private function userCanReplyForumComment(?User $user): bool
+    {
+        return $user && $user->canManageEvents();
+    }
+
     private function sanitizeHtml(string $content): string
     {
         return SafeRichText::sanitize($content, true);
     }
 
+    private function buildAdminReplyHtml(Comment $parentComment, string $rawReply): string
+    {
+        $nickname = e($parentComment->user?->nickname ?? 'utente');
+        $intro = '<p><em>Risposta a <strong>' . $nickname . '</strong>:</em></p>';
+        $text = trim($rawReply);
+
+        if ($text === '') {
+            return $intro;
+        }
+
+        if (strpos($text, '<') !== false) {
+            return $intro . SafeRichText::sanitize($text, true);
+        }
+
+        return $intro . '<p>' . nl2br(e($text), false) . '</p>';
+    }
+
+    private function resolveNotifyAdmin(): ?User
+    {
+        $adminId = (int) env('ADMIN_NOTIFY_ADMIN_ID', 0);
+
+        return User::query()
+            ->where('ruolo', 0)
+            ->when($adminId > 0, fn ($q) => $q->whereKey($adminId))
+            ->when($adminId <= 0, fn ($q) => $q->where('username', 'scintilla'))
+            ->first();
+    }
+
+    private function plainCommentText(Comment $comment): string
+    {
+        $testo = trim(html_entity_decode(strip_tags($comment->content), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+
+        return $testo !== '' ? $testo : '(vuoto o solo formattazione)';
+    }
+
+    private function userDisplayLabel(?User $user): string
+    {
+        if (! $user) {
+            return 'Utente';
+        }
+
+        $label = trim(($user->nome ?? '') . ' ' . ($user->cognome ?? ''));
+        if ($label === '') {
+            return $user->nickname ?? ('ID ' . $user->getKey());
+        }
+
+        return $label . ' (' . ($user->nickname ?? $user->getKey()) . ')';
+    }
+
+    private function notifyAdminReply(Event $event, User $responder, Comment $parentComment, Comment $reply): void
+    {
+        try {
+            $eventUrl = route('events.show', $event);
+            $parentAnchor = $eventUrl . '#comment-' . $parentComment->getKey();
+            $replyAnchor = $eventUrl . '#comment-' . $reply->getKey();
+            $when = optional($event->date)->timezone(config('app.timezone'))->format('d/m/Y H:i');
+
+            $parentAuthor = $parentComment->user;
+            $parentText = $this->plainCommentText($parentComment);
+            $replyText = $this->plainCommentText($reply);
+            $responderUsername = trim((string) ($responder->username ?? ''));
+            if ($responderUsername === '') {
+                $responderUsername = 'utente';
+            }
+
+            $notifyAdmin = $this->resolveNotifyAdmin();
+            $adminEmail = trim((string) ($notifyAdmin?->email ?? ''));
+
+            if ($parentAuthor) {
+                $userEmail = trim((string) ($parentAuthor->email ?? ''));
+                if ($userEmail !== '') {
+                    $recipientNick = $parentAuthor->nickname ?? 'utente';
+
+                    $subjectUser = 'Excursio - Risposta al tuo commento (' . $event->title . ')';
+                    $bodyUser =
+                        "Ciao {$recipientNick},\n\n" .
+                        "\"{$responderUsername}\" ha risposto al tuo commento nel forum dell'evento.\n\n" .
+                        "Evento: {$event->title}\n" .
+                        "Data evento: {$when}\n" .
+                        "Link risposta: {$replyAnchor}\n\n" .
+                        "Il tuo messaggio:\n" .
+                        $parentText . "\n\n" .
+                        "Risposta di {$responderUsername}\n" .
+                        $replyText . "\n";
+
+                    Mail::raw($bodyUser, function ($message) use ($userEmail, $subjectUser) {
+                        $message->to($userEmail)->subject($subjectUser);
+                    });
+                }
+            }
+
+            if ($adminEmail !== '') {
+                $subjectAdmin = 'Excursio - Risposta forum evento (' . $responderUsername . ')';
+                $bodyAdmin =
+                    "Notifica risposta forum evento\n\n" .
+                    "Risposta di: {$responderUsername}\n" .
+                    "Evento: {$event->title}\n" .
+                    "Data evento: {$when}\n" .
+                    "Utente: " . $this->userDisplayLabel($parentAuthor) . "\n" .
+                    "Link messaggio originale: {$parentAnchor}\n" .
+                    "Link risposta: {$replyAnchor}\n\n" .
+                    "Messaggio utente:\n" .
+                    $parentText . "\n\n" .
+                    "Risposta inviata:\n" .
+                    $replyText . "\n";
+
+                Mail::raw($bodyAdmin, function ($message) use ($adminEmail, $subjectAdmin) {
+                    $message->to($adminEmail)->subject($subjectAdmin);
+                });
+            }
+        } catch (\Throwable $e) {
+            \Log::warning('Notify admin reply failed: ' . $e->getMessage());
+        }
+    }
+
     private function notifyAdminCommentChange(Event $event, User $actor, Comment $comment, string $action): void
     {
         try {
-            $adminId = (int) env('ADMIN_NOTIFY_ADMIN_ID', 0);
-            $admin = User::query()
-                ->where('ruolo', 0)
-                ->when($adminId > 0, fn ($q) => $q->whereKey($adminId))
-                ->when($adminId <= 0, fn ($q) => $q->where('username', 'scintilla'))
-                ->first();
-
+            $admin = $this->resolveNotifyAdmin();
             $notifyEmail = trim((string) ($admin?->email ?? ''));
             if ($notifyEmail === '') {
                 return;
@@ -183,17 +341,9 @@ class CommentController extends Controller
 
             $when = optional($event->date)->timezone(config('app.timezone'))->format('d/m/Y H:i');
 
-            $actorLabel = trim(($actor->nome ?? '') . ' ' . ($actor->cognome ?? ''));
-            if ($actorLabel === '') {
-                $actorLabel = $actor->nickname ?? ('ID ' . $actor->getKey());
-            } else {
-                $actorLabel .= ' (' . ($actor->nickname ?? $actor->getKey()) . ')';
-            }
+            $actorLabel = $this->userDisplayLabel($actor);
 
-            $testoCommento = trim(html_entity_decode(strip_tags($comment->content), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
-            if ($testoCommento === '') {
-                $testoCommento = '(vuoto o solo formattazione)';
-            }
+            $testoCommento = $this->plainCommentText($comment);
 
             $subject = "Excursio - Commento {$action} (evento)";
             $body =

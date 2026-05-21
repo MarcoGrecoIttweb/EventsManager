@@ -23,8 +23,27 @@ class SafeRichText
         $clean = self::sanitizeImgTags($clean);
         $clean = self::sanitizeAnchorTags($clean);
         $clean = self::stripAttributesFromNonMediaTags($clean);
+        $clean = self::unwrapRedundantInlineWrappers($clean);
 
         return $clean;
+    }
+
+    /**
+     * Rimuove span/font vuoti o senza attributi utili (tipico incolla da Word):
+     * facilita la selezione di frasi intere nel forum commenti.
+     */
+    private static function unwrapRedundantInlineWrappers(string $html): string
+    {
+        for ($i = 0; $i < 10; $i++) {
+            $prev = $html;
+            $html = preg_replace('/<(span|font)\b[^>]*>\s*<\/\1>/i', '', $html) ?? $html;
+            $html = preg_replace('/<(span|font)\b(?![^>]*\bstyle=)[^>]*>([\s\S]*?)<\/\1>/i', '$1', $html) ?? $html;
+            if ($html === $prev) {
+                break;
+            }
+        }
+
+        return $html;
     }
 
     private static function sanitizeImgTags(string $html): string

@@ -10,7 +10,7 @@
                     <div class="card-header bg-warning text-white">
                         <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
                             <h4 class="mb-0">
-                                <i class="fas fa-edit"></i> Modifica Evento: {{ $event->title }}
+                                <i class="fas fa-edit"></i> Modifica Evento: {{ $editTitle ?? $event->title }}
                             </h4>
                             <div class="d-flex flex-wrap align-items-center gap-2">
                                 <form action="{{ route('admin.events.duplicate', $event) }}" method="POST"
@@ -38,6 +38,13 @@
                                 </ul>
                             </div>
                         @endif
+                        @if(!empty($isDuplicateDraft))
+                            <div class="alert alert-warning">
+                                <i class="fas fa-copy"></i>
+                                <strong>Copia in bozza.</strong>
+                                Le iscrizioni non sono state copiate. <strong>Annulla</strong> elimina questa copia; <strong>Aggiorna Evento</strong> la conferma.
+                            </div>
+                        @endif
                         @if($event->is_past_event)
                             <div class="alert alert-info">
                                 <i class="fas fa-info-circle"></i>
@@ -48,6 +55,9 @@
                         <form id="admin-event-edit-form" action="{{ route('admin.events.update', $event) }}" method="POST" enctype="multipart/form-data">
                             @csrf
                             @method('PUT')
+                            @if(!empty($isDuplicateDraft))
+                                <input type="hidden" name="duplicate_draft" value="{{ $event->getKey() }}">
+                            @endif
 
                             {{-- Riga 1: Titolo, Data evento, Scadenza iscrizioni --}}
                             <div class="row g-2 event-edit-row-primary">
@@ -55,7 +65,7 @@
                                     <div class="mb-3">
                                         <label for="title" class="form-label">Titolo Evento *</label>
                                         <input type="text" class="form-control form-control-sm @error('title') is-invalid @enderror"
-                                               id="title" name="title" value="{{ old('title', $event->title) }}" required>
+                                               id="title" name="title" value="{{ old('title', $editTitle ?? $event->title) }}" required>
                                         @error('title')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
@@ -308,15 +318,27 @@
                                 </span>
                             </div>
 
-                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        </form>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-3">
+                            @if(!empty($isDuplicateDraft))
+                                <form action="{{ route('admin.events.cancel-duplicate', $event) }}" method="POST" class="me-md-2"
+                                      onsubmit="return confirm('Eliminare la copia duplicata? L\'evento originale non verrà toccato.');">
+                                    @csrf
+                                    <input type="hidden" name="duplicate_draft" value="{{ $event->getKey() }}">
+                                    <button type="submit" class="btn btn-secondary">
+                                        <i class="fas fa-times"></i> Annulla
+                                    </button>
+                                </form>
+                            @else
                                 <a href="{{ route('home') }}" class="btn btn-secondary me-md-2">
                                     <i class="fas fa-times"></i> Annulla
                                 </a>
-                                <button type="submit" class="btn btn-warning">
-                                    <i class="fas fa-save"></i> Aggiorna Evento
-                                </button>
-                            </div>
-                        </form>
+                            @endif
+                            <button type="submit" form="admin-event-edit-form" class="btn btn-warning">
+                                <i class="fas fa-save"></i> Aggiorna Evento
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

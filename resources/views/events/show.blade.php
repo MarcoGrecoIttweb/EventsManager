@@ -947,6 +947,17 @@
                                         {{-- Pulsanti azione --}}
                                         @auth
                                             <div class="btn-group" role="group">
+                                                @if(auth()->user()->canManageEvents() && (int) $comment->id_utente !== (int) auth()->id())
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-outline-success"
+                                                            data-bs-toggle="collapse"
+                                                            data-bs-target="#replyForm-{{ $comment->getKey() }}"
+                                                            aria-expanded="false"
+                                                            aria-controls="replyForm-{{ $comment->getKey() }}"
+                                                            title="Rispondi nel forum (con email all'utente)">
+                                                        <i class="fas fa-reply"></i> Rispondi
+                                                    </button>
+                                                @endif
                                                 {{-- Pulsante modifica (autore o amministratore) --}}
                                                 @if(auth()->id() === $comment->id_utente || auth()->user()->isAdmin())
                                                     <a href="{{ url('comments/' . $comment->getKey() . '/edit') }}"
@@ -983,6 +994,43 @@
                                             alle {{ $comment->edited_at->timezone(config('app.timezone'))->format('H:i') }}
                                         </div>
                                     @endif
+
+                                    @auth
+                                        @if(auth()->user()->canManageEvents() && (int) $comment->id_utente !== (int) auth()->id())
+                                            <div class="collapse mt-3" id="replyForm-{{ $comment->getKey() }}">
+                                                <form action="{{ route('comments.reply', $comment) }}" method="POST">
+                                                    @csrf
+                                                    <label for="replyContent-{{ $comment->getKey() }}" class="form-label small mb-1">
+                                                        <i class="fas fa-reply"></i> Risposta a
+                                                        <strong>{{ $comment->user?->nickname ?? 'utente' }}</strong>
+                                                    </label>
+                                                    <textarea class="form-control"
+                                                              id="replyContent-{{ $comment->getKey() }}"
+                                                              name="content"
+                                                              rows="5"
+                                                              placeholder="Scrivi la risposta…"
+                                                              required></textarea>
+                                                    <p class="small text-muted mb-2 mt-1">
+                                                        <i class="fas fa-info-circle"></i> Puoi usare la formattazione, inserire link e immagini.
+                                                    </p>
+                                                    <div class="d-flex justify-content-end gap-2 mt-2">
+                                                        <button type="button"
+                                                                class="btn btn-sm btn-outline-secondary"
+                                                                data-bs-toggle="collapse"
+                                                                data-bs-target="#replyForm-{{ $comment->getKey() }}">
+                                                            Annulla
+                                                        </button>
+                                                        <button type="submit" class="btn btn-sm btn-success">
+                                                            <i class="fas fa-paper-plane"></i> Invia risposta
+                                                        </button>
+                                                    </div>
+                                                    <p class="small text-muted mb-0 mt-2">
+                                                        Email inviata all'utente.
+                                                    </p>
+                                                </form>
+                                            </div>
+                                        @endif
+                                    @endauth
                                 </div>
                             @endforeach
                         @else
@@ -1245,6 +1293,8 @@
         'height' => 260,
         'editable_line_height' => 1.22,
         'editable_p_margin' => '0.2em',
+        'lazy_field_prefix' => 'replyContent-',
+        'lazy_height' => 260,
     ])
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -1915,7 +1965,6 @@
              line-height: 1.6;
              font-size: 14px;
          }
-
 
         /* Immagini nei commenti: sempre responsive, mai sproporzionate */
         .comment-content img {

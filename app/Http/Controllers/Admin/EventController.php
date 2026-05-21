@@ -292,7 +292,12 @@ class EventController extends Controller
     public function edit(Event $event)
     {
         $event->load('images');
-        return view('admin.events.edit', compact('event'));
+        $isDuplicateDraft = $this->isDuplicateDraft($event, request());
+        $editTitle = $isDuplicateDraft
+            ? $this->stripDuplicateCopySuffix((string) $event->title)
+            : $event->title;
+
+        return view('admin.events.edit', compact('event', 'isDuplicateDraft', 'editTitle'));
     }
 
     /**
@@ -342,9 +347,56 @@ class EventController extends Controller
         $this->duplicateEventCoverFiles($event, $newEvent);
         $this->duplicateEventGalleryFiles($event, $newEvent);
 
+        session(['admin_duplicate_draft_event_id' => $newEvent->getKey()]);
+
         return redirect()
-            ->route('admin.events.edit', $newEvent)
-            ->with('success', 'Evento duplicato. Le iscrizioni non sono state copiate: controlla data e dettagli, poi salva.');
+            ->route('admin.events.edit', [
+                'event' => $newEvent,
+                'duplicate_draft' => $newEvent->getKey(),
+            ])
+            ->with('success', 'Evento duplicato. Controlla data e dettagli, poi salva. Annulla elimina la copia.');
+    }
+
+    /**
+     * Elimina una copia appena duplicata se l'admin annulla la modifica.
+     */
+    public function cancelDuplicate(Request $request, Event $event)
+    {
+        if (!$this->isDuplicateDraft($event, $request)) {
+            return redirect()
+                ->route('home')
+                ->with('error', 'Impossibile annullare: evento non riconosciuto come copia in bozza.');
+        }
+
+        session()->forget('admin_duplicate_draft_event_id');
+
+        DB::table('partecipa')->where('id_evento', $event->getKey())->delete();
+        EventImage::where('event_id', $event->getKey())->delete();
+        $this->imageService->deleteEventFolder($event->getKey());
+        $event->delete();
+
+        return redirect()
+            ->route('home')
+            ->with('success', 'Duplicazione annullata: la copia è stata eliminata.');
+    }
+
+    private function isDuplicateDraft(Event $event, Request $request): bool
+    {
+        $eventId = (int) $event->getKey();
+        $fromSession = (int) session('admin_duplicate_draft_event_id') === $eventId;
+        $fromQuery = (int) $request->query('duplicate_draft') === $eventId;
+        $fromPost = (int) $request->input('duplicate_draft') === $eventId;
+        $looksLikeCopy = Str::endsWith(Str::upper(trim((string) $event->nome)), '(COPIA)');
+
+        return ($fromSession || $fromQuery || $fromPost) && $looksLikeCopy;
+    }
+
+    private function stripDuplicateCopySuffix(string $title): string
+    {
+        $trimmed = trim($title);
+        $stripped = preg_replace('/\s*\(copia\)\s*$/iu', '', $trimmed);
+
+        return trim($stripped) !== '' ? trim($stripped) : $trimmed;
     }
 
     public function update(Request $request, Event $event)
@@ -411,9 +463,14 @@ class EventController extends Controller
         $wasPastEvent = $event->is_past_event;
         $newDate = \Carbon\Carbon::parse($validated['date']);
 
+        $title = $validated['title'];
+        if ($this->isDuplicateDraft($event, $request)) {
+            $title = $this->stripDuplicateCopySuffix($title);
+        }
+
         // Map to legacy columns
         $updateData = [
-            'nome' => Str::upper($validated['title']),
+            'nome' => Str::upper($title),
             'incipit' => $validated['incipit'] ?? null,
             'descrizione' => $validated['description'],
             'dataevento' => $validated['date'],
@@ -488,6 +545,11 @@ class EventController extends Controller
 
         $event->update($updateData);
         $event->refresh();
+
+        if ((int) session('admin_duplicate_draft_event_id') === (int) $event->getKey()) {
+            session()->forget('admin_duplicate_draft_event_id');
+        }
+
         $debugCover['after_immagine'] = $event->immagine;
         try {
             \Log::info('Admin event cover update debug', ['event_id' => $event->getKey(), 'cover' => $debugCover]);
