@@ -4,9 +4,27 @@ namespace App\Support;
 
 use App\Models\Event;
 use App\Models\User;
+use Illuminate\Support\Facades\Schema;
 
 class EventGreetingSettings
 {
+    private static ?bool $databaseReady = null;
+
+    public static function isDatabaseReady(): bool
+    {
+        if (self::$databaseReady !== null) {
+            return self::$databaseReady;
+        }
+
+        try {
+            self::$databaseReady = Schema::hasTable('evento')
+                && Schema::hasColumn('evento', 'greeting_box_enabled');
+        } catch (\Throwable $e) {
+            self::$databaseReady = false;
+        }
+
+        return self::$databaseReady;
+    }
     public static function defaultMessageHtml(): string
     {
         return '<p>Ciao {nickname} {nome}, questo evento è fatto per te</p>';
@@ -14,6 +32,10 @@ class EventGreetingSettings
 
     public static function hasGreetingBox(Event $event): bool
     {
+        if (! self::isDatabaseReady()) {
+            return false;
+        }
+
         return (bool) ($event->greeting_box_enabled ?? false);
     }
 
@@ -99,6 +121,10 @@ class EventGreetingSettings
      */
     public static function payloadFromRequest(\Illuminate\Http\Request $request): array
     {
+        if (! self::isDatabaseReady()) {
+            return [];
+        }
+
         $message = SafeRichText::sanitize((string) $request->input('greeting_box_message', ''), true);
         if ($message === '') {
             $message = self::defaultMessageHtml();
@@ -125,6 +151,10 @@ class EventGreetingSettings
      */
     public static function validationRules(): array
     {
+        if (! self::isDatabaseReady()) {
+            return [];
+        }
+
         return [
             'greeting_box_enabled' => 'sometimes|boolean',
             'greeting_box_duration' => 'nullable|integer|min:1|max:120',
@@ -133,6 +163,29 @@ class EventGreetingSettings
             'greeting_box_border_color' => 'nullable|string|max:20',
             'greeting_box_bg_color' => 'nullable|string|max:20',
         ];
+    }
+
+    public static function migrationRequiredMessage(): string
+    {
+        return 'Il box benvenuto richiede l\'aggiornamento database. Esegui sul server: php artisan migrate --force';
+    }
+
+    /**
+     * @return array<string, string>|null
+     */
+    public static function migrationGuardError(\Illuminate\Http\Request $request): ?array
+    {
+        if (self::isDatabaseReady()) {
+            return null;
+        }
+
+        $wantsGreeting = $request->boolean('greeting_box_enabled');
+
+        if (! $wantsGreeting) {
+            return null;
+        }
+
+        return ['greeting_box' => self::migrationRequiredMessage()];
     }
 
     public static function sanitizeHexColor(string $value, string $default): string

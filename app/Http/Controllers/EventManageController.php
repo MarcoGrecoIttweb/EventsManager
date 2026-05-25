@@ -57,6 +57,11 @@ class EventManageController extends Controller
             'google_album_url' => ($g = trim((string) $request->input('google_album_url', ''))) !== '' ? $g : null,
         ]);
 
+        $user = Auth::user();
+        if ($user->isAdmin() && ($migrationError = EventGreetingSettings::migrationGuardError($request))) {
+            return back()->withErrors($migrationError)->withInput();
+        }
+
         $validated = $request->validate([
             'title' => 'required|string|max:120',
             'incipit' => 'nullable|string|max:500',
@@ -74,9 +79,8 @@ class EventManageController extends Controller
             'max_guests_per_user' => 'nullable|integer|min:1|max:10',
             'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,heic,heif|max:4096',
             'google_album_url' => 'nullable|string|max:2048|url',
-        ] + EventGreetingSettings::validationRules());
+        ] + ($user->isAdmin() ? EventGreetingSettings::validationRules() : []));
 
-        $user = Auth::user();
         $allowGuests = $request->has('allow_guests');
         $isActive = $request->has('is_active') ? 1 : 0;
 
@@ -144,6 +148,10 @@ class EventManageController extends Controller
         $request->merge([
             'google_album_url' => ($g = trim((string) $request->input('google_album_url', ''))) !== '' ? $g : null,
         ]);
+
+        if (Auth::user()->isAdmin() && ($migrationError = EventGreetingSettings::migrationGuardError($request))) {
+            return back()->withErrors($migrationError)->withInput();
+        }
 
         $validated = $request->validate([
             'title' => 'required|string|max:120',

@@ -216,6 +216,10 @@ class EventController extends Controller
             'google_album_url' => ($g = trim((string) $request->input('google_album_url', ''))) !== '' ? $g : null,
         ]);
 
+        if ($migrationError = EventGreetingSettings::migrationGuardError($request)) {
+            return back()->withErrors($migrationError)->withInput();
+        }
+
         $validated = $request->validate([
             'title' => 'required|string|max:120',
             'incipit' => 'nullable|string|max:500',
@@ -434,6 +438,10 @@ class EventController extends Controller
         $request->merge([
             'google_album_url' => ($g = trim((string) $request->input('google_album_url', ''))) !== '' ? $g : null,
         ]);
+
+        if ($migrationError = EventGreetingSettings::migrationGuardError($request)) {
+            return back()->withErrors($migrationError)->withInput();
+        }
 
         $validated = $request->validate([
             'title' => 'required|string|max:120',

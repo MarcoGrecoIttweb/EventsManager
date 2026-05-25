@@ -1,4 +1,5 @@
 @php
+    $greetingDbReady = \App\Support\EventGreetingSettings::isDatabaseReady();
     $greetingEnabled = (bool) old('greeting_box_enabled', $event->greeting_box_enabled ?? false);
     $greetingDuration = (int) old('greeting_box_duration', $event->greeting_box_duration ?? 5);
     $greetingMessage = old('greeting_box_message', $event->greeting_box_message ?? \App\Support\EventGreetingSettings::defaultMessageHtml());
@@ -7,6 +8,12 @@
     $greetingBg = old('greeting_box_bg_color', $event->greeting_box_bg_color ?? '#ffffff');
 @endphp
 
+@if(!$greetingDbReady)
+    <div class="alert alert-warning">
+        <i class="fas fa-database me-1"></i>
+        {{ \App\Support\EventGreetingSettings::migrationRequiredMessage() }}
+    </div>
+@else
 <div class="card border-success mb-3" id="event-greeting-box-settings">
     <div class="card-header bg-success bg-opacity-10 py-2">
         <div class="form-check form-switch m-0">
@@ -80,3 +87,4 @@
         </div>
     </div>
 </div>
+@endif
