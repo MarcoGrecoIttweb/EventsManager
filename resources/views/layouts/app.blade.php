@@ -1406,5 +1406,9 @@ document.addEventListener('DOMContentLoaded', function () {
 })();
 </script>
 
+@auth
+    @include('partials.event-details-greeting')
+@endauth
+
 </body>
 </html>

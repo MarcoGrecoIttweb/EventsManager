@@ -280,9 +280,7 @@
                                                 {{ $event->user->nickname ?? $event->user->nome ?? '—' }}
                                             </span>
                                         </p>
-                                        <div class="card-text small event-preview event-public-desc-preview">
-                                            {{ $event->getHomepagePreview(100) }}
-                                        </div>
+                                        @include('partials.event-public-preview', ['event' => $event, 'charLimit' => 100])
 
                                         @if($event->isFull() && (!auth()->check() || !auth()->user()->isApproved()))
                                             <div class="alert alert-warning alert-sm mb-0 py-2 mt-2">
@@ -416,10 +414,7 @@
 
                                     <div class="card-footer bg-transparent mt-auto">
                                         @auth
-                                            <a href="{{ route('events.show', $event) }}" class="btn btn-primary w-100">
-                                                <i class="fas fa-eye"></i>
-                                                Visualizza Dettagli Evento
-                                            </a>
+                                            @include('partials.event-details-button', ['event' => $event])
                                         @else
                                             <a href="{{ route('login') }}" class="btn btn-guest-details w-100">
                                                 <i class="fas fa-lock"></i> Accedi per vedere i dettagli

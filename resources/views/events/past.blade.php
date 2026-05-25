@@ -147,9 +147,7 @@
                                     <i class="fas fa-map-marker-alt"></i>
                                     <strong>{{ $event->city }}</strong>
                                 </p>
-                                <div class="card-text small event-preview event-public-desc-preview">
-                                    {{ $event->getHomepagePreview() }}
-                                </div>
+                                @include('partials.event-public-preview', ['event' => $event, 'charLimit' => 200])
 
                                 {{-- Indicatore partecipazione --}}
                                 @auth

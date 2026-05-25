@@ -29,6 +29,8 @@ class Event extends Model
         'datascadenza', 'numeromax', 'id_organizzatore', 'sondaggio',
         'url_galleria', 'elenco_visibile', 'pubblicato',
         'allow_guests', 'max_guests_per_user',
+        'greeting_box_enabled', 'greeting_box_duration', 'greeting_box_message',
+        'greeting_box_max_width', 'greeting_box_border_color', 'greeting_box_bg_color',
     ];
 
     protected $casts = [
@@ -38,6 +40,7 @@ class Event extends Model
         'pubblicato' => 'integer',
         'elenco_visibile' => 'boolean',
         'allow_guests' => 'boolean',
+        'greeting_box_enabled' => 'boolean',
     ];
 
     // ─── Accessors (legacy → Laravel names used by views) ─────────
@@ -420,11 +423,27 @@ class Event extends Model
 
     public function getSafeDescriptionAttribute(): string
     {
-        if (empty($this->descrizione)) {
+        $raw = (string) ($this->attributes['descrizione'] ?? '');
+        if ($raw === '') {
             return '';
         }
 
-        return SafeRichText::sanitize($this->descrizione, false);
+        $decoded = $raw;
+        for ($i = 0; $i < 3; $i++) {
+            $next = html_entity_decode($decoded, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            if ($next === $decoded) {
+                break;
+            }
+            $decoded = $next;
+        }
+
+        $cleanContent = SafeRichText::sanitize($decoded, false);
+
+        if ($cleanContent !== '' && strpos($cleanContent, '<') === false) {
+            return nl2br(e($cleanContent), false);
+        }
+
+        return $cleanContent;
     }
 
     public function getSafeDescriptionNoImagesAttribute(): string
@@ -433,8 +452,72 @@ class Event extends Model
         if ($html === '') {
             return '';
         }
-        // Rimuove solo i tag <img ...> (mantiene il resto della formattazione).
-        return preg_replace('/<img\b[^>]*>/i', '', $html) ?: '';
+
+        $html = preg_replace('/<img\b[^>]*>/i', '', $html) ?? $html;
+
+        return $html;
+    }
+
+    /**
+     * Descrizione evento per stampa partecipanti (senza immagini, senza paragrafi vuoti).
+     */
+    public function getPrintDescriptionHtmlAttribute(): string
+    {
+        $html = (string) $this->safe_description_no_images;
+        if ($html !== '') {
+            $html = preg_replace(
+                '/<p\b[^>]*>\s*(?:&nbsp;|\xc2\xa0|<br\s*\/?>)?\s*<\/p>/iu',
+                '',
+                $html
+            ) ?? $html;
+            $html = preg_replace(
+                '/<div\b[^>]*>\s*(?:&nbsp;|\xc2\xa0|<br\s*\/?>)?\s*<\/div>/iu',
+                '',
+                $html
+            ) ?? $html;
+            $html = preg_replace(
+                '/<p\b[^>]*>\s*<span\b[^>]*>\s*<\/span>\s*<\/p>/iu',
+                '',
+                $html
+            ) ?? $html;
+        }
+
+        if ($this->descriptionHasVisibleText($html)) {
+            return trim($html);
+        }
+
+        $incipit = trim((string) ($this->incipit ?? ''));
+        if ($incipit !== '') {
+            return '<p>' . e($incipit) . '</p>';
+        }
+
+        return '';
+    }
+
+    /**
+     * Testo visibile per decidere se mostrare la descrizione in stampa.
+     */
+    public function getPrintDescriptionPlainAttribute(): string
+    {
+        return $this->plainTextFromHtml($this->print_description_html);
+    }
+
+    private function descriptionHasVisibleText(string $html): bool
+    {
+        return $this->plainTextFromHtml($html) !== '';
+    }
+
+    private function plainTextFromHtml(string $html): string
+    {
+        if ($html === '') {
+            return '';
+        }
+
+        $plain = html_entity_decode(strip_tags($html), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $plain = str_replace(["\xc2\xa0", '&nbsp;'], ' ', $plain);
+        $plain = preg_replace('/\s+/u', ' ', $plain) ?? $plain;
+
+        return trim($plain);
     }
 
     public function getShortPreviewAttribute(): string
@@ -461,6 +544,33 @@ class Event extends Model
         $plainText = trim($plainText);
 
         return StrLimit::limit($plainText, $length);
+    }
+
+    /**
+     * Testo completo mostrato nelle liste pubbliche (incipit o descrizione in plain text).
+     */
+    public function getFullPublicPreviewAttribute(): string
+    {
+        if (!empty($this->incipit)) {
+            return trim($this->incipit);
+        }
+
+        if (empty($this->descrizione)) {
+            return '';
+        }
+
+        $plainText = strip_tags($this->descrizione);
+        $plainText = html_entity_decode($plainText, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $plainText = preg_replace('/\s+/', ' ', $plainText);
+
+        return trim($plainText);
+    }
+
+    public function isPublicPreviewTruncated(int $length = 100): bool
+    {
+        $full = $this->full_public_preview;
+
+        return $full !== '' && mb_strlen($full) > $length;
     }
 
     public function getCoverImageUrlAttribute(): ?string

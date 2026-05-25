@@ -41,26 +41,33 @@ class AdminNotifier
     public static function notifyGuestAddedToEvent(Event $event, User $actor): void
     {
         try {
-            $notifyEmail = self::resolveEmail();
+            $adminId = (int) env('ADMIN_NOTIFY_ADMIN_ID', 0);
+            $adminUsernameEnv = trim((string) env('ADMIN_NOTIFY_ADMIN_USERNAME', ''));
+
+            $admin = User::query()
+                ->where('ruolo', 0)
+                ->when($adminId > 0, fn ($q) => $q->whereKey($adminId))
+                ->when($adminId <= 0 && $adminUsernameEnv !== '', fn ($q) => $q->where('username', $adminUsernameEnv))
+                ->when($adminId <= 0 && $adminUsernameEnv === '', fn ($q) => $q->where('username', 'scintilla'))
+                ->first();
+
+            $notifyEmail = trim((string) ($admin?->email ?? ''));
             if ($notifyEmail === '') {
                 return;
             }
 
-            $nickname = trim((string) ($actor->nickname ?? ''));
-            if ($nickname === '') {
-                $nickname = 'ID ' . $actor->getKey();
+            $adminGreeting = trim((string) ($admin->username ?? 'scintilla'));
+            $userUsername = trim((string) ($actor->username ?? ''));
+            if ($userUsername === '') {
+                $userUsername = trim((string) ($actor->nickname ?? 'utente'));
             }
 
-            $eventUrl = route('events.show', $event);
+            $title = trim((string) ($event->title ?? 'Evento'));
             $when = optional($event->date)->timezone(config('app.timezone'))->format('d/m/Y H:i');
 
-            $subject = 'Excursio - Evento: ospite aggiunto';
+            $subject = "un'ospite si è iscritto all'evento {$title}";
             $body =
-                "Notifica ospiti evento\n\n" .
-                "{$nickname} ha invitato un amico dall'evento\n\n" .
-                "Evento: {$event->title}\n" .
-                "Quando: {$when}\n" .
-                "Link evento: {$eventUrl}\n";
+                "Ciao {$adminGreeting}, un amico di {$userUsername} si è appena iscritto al tuo evento {$title} {$when}\n";
 
             Mail::raw($body, function ($message) use ($notifyEmail, $subject) {
                 $message->to($notifyEmail)->subject($subject);
@@ -73,32 +80,66 @@ class AdminNotifier
     public static function notifyGuestRemovedFromEvent(Event $event, User $actor): void
     {
         try {
-            $notifyEmail = self::resolveEmail();
+            $adminId = (int) env('ADMIN_NOTIFY_ADMIN_ID', 0);
+            $adminUsernameEnv = trim((string) env('ADMIN_NOTIFY_ADMIN_USERNAME', ''));
+
+            $admin = User::query()
+                ->where('ruolo', 0)
+                ->when($adminId > 0, fn ($q) => $q->whereKey($adminId))
+                ->when($adminId <= 0 && $adminUsernameEnv !== '', fn ($q) => $q->where('username', $adminUsernameEnv))
+                ->when($adminId <= 0 && $adminUsernameEnv === '', fn ($q) => $q->where('username', 'scintilla'))
+                ->first();
+
+            $notifyEmail = trim((string) ($admin?->email ?? ''));
             if ($notifyEmail === '') {
                 return;
             }
 
-            $nickname = trim((string) ($actor->nickname ?? ''));
-            if ($nickname === '') {
-                $nickname = 'ID ' . $actor->getKey();
+            $adminGreeting = trim((string) ($admin->username ?? 'scintilla'));
+            $userUsername = trim((string) ($actor->username ?? ''));
+            if ($userUsername === '') {
+                $userUsername = trim((string) ($actor->nickname ?? 'utente'));
             }
 
-            $eventUrl = route('events.show', $event);
+            $title = trim((string) ($event->title ?? 'Evento'));
             $when = optional($event->date)->timezone(config('app.timezone'))->format('d/m/Y H:i');
 
-            $subject = 'Excursio - Evento: ospite rimosso';
+            $subject = "un'ospite si è cancellato dall'evento {$title}";
             $body =
-                "Notifica ospiti evento\n\n" .
-                "{$nickname} ha rimosso un amico dall'evento\n\n" .
-                "Evento: {$event->title}\n" .
-                "Quando: {$when}\n" .
-                "Link evento: {$eventUrl}\n";
+                "Ciao {$adminGreeting}, un amico di {$userUsername} si è appena cancellato dal tuo evento {$title} {$when}\n";
 
             Mail::raw($body, function ($message) use ($notifyEmail, $subject) {
                 $message->to($notifyEmail)->subject($subject);
             });
         } catch (\Throwable $e) {
             Log::warning('Notify admin guest removed failed: ' . $e->getMessage());
+        }
+    }
+
+    public static function notifyEventDeleted(Event $event, User $actor): void
+    {
+        try {
+            $notifyEmail = self::resolveEmail();
+            if ($notifyEmail === '') {
+                return;
+            }
+
+            $username = trim((string) ($actor->username ?? ''));
+            if ($username === '') {
+                $username = trim((string) ($actor->nickname ?? 'utente'));
+            }
+
+            $title = trim((string) ($event->title ?? 'Evento'));
+            $when = optional($event->date)->timezone(config('app.timezone'))->format('d/m/Y H:i');
+
+            $subject = "cancellazione evento {$title}";
+            $body = "{$username} ha cancellato l'evento {$title} in programma {$when}\n";
+
+            Mail::raw($body, function ($message) use ($notifyEmail, $subject) {
+                $message->to($notifyEmail)->subject($subject);
+            });
+        } catch (\Throwable $e) {
+            Log::warning('Notify admin event deleted failed: ' . $e->getMessage());
         }
     }
 }

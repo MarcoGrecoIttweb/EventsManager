@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Event;
 use App\Models\EventImage;
 use App\Services\ImageService;
+use App\Support\AdminNotifier;
+use App\Support\EventGreetingSettings;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -232,7 +234,7 @@ class EventController extends Controller
             'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,heic,heif|max:4096',
             'gallery_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,heic,heif|max:10240',
             'google_album_url' => 'nullable|string|max:2048|url',
-        ]);
+        ] + EventGreetingSettings::validationRules());
 
         $allowGuests = $request->boolean('allow_guests');
         $isActive = $request->has('is_active') ? 1 : 0;
@@ -257,7 +259,7 @@ class EventController extends Controller
             'datascadenza' => $validated['deadline'] ?? $validated['date'],
             'allow_guests' => $allowGuests,
             'max_guests_per_user' => $allowGuests ? ($validated['max_guests_per_user'] ?? 3) : 0,
-        ]);
+        ] + EventGreetingSettings::payloadFromRequest($request));
 
         $event->enrollOrganizerAsParticipant();
 
@@ -334,6 +336,12 @@ class EventController extends Controller
                     'allow_guests' => (bool) $event->allow_guests,
                     'max_guests_per_user' => (int) ($event->max_guests_per_user ?? 0),
                     'immagine' => null,
+                    'greeting_box_enabled' => (bool) $event->greeting_box_enabled,
+                    'greeting_box_duration' => (int) ($event->greeting_box_duration ?? 5),
+                    'greeting_box_message' => $event->greeting_box_message,
+                    'greeting_box_max_width' => (int) ($event->greeting_box_max_width ?? 420),
+                    'greeting_box_border_color' => $event->greeting_box_border_color,
+                    'greeting_box_bg_color' => $event->greeting_box_bg_color,
                 ]);
             });
         } catch (\Throwable $e) {
@@ -443,7 +451,7 @@ class EventController extends Controller
             'max_guests_per_user' => 'nullable|integer|min:1|max:10',
             'cover_image_selected' => 'nullable|in:0,1',
             'google_album_url' => 'nullable|string|max:2048|url',
-        ]);
+        ] + EventGreetingSettings::validationRules());
 
         if ($request->hasFile('cover_image')) {
             $request->validate([
@@ -486,7 +494,7 @@ class EventController extends Controller
             'allow_guests' => $allowGuests,
             'max_guests_per_user' => $allowGuests ? ($validated['max_guests_per_user'] ?? 3) : 0,
             'url_galleria' => (string) ($validated['google_album_url'] ?? ''),
-        ];
+        ] + EventGreetingSettings::payloadFromRequest($request);
 
         // Handle cover image removal
         if ($request->has('remove_cover') && $event->immagine) {
@@ -577,6 +585,11 @@ class EventController extends Controller
 
     public function destroy(Event $event)
     {
+        $actor = Auth::user();
+        if ($actor) {
+            AdminNotifier::notifyEventDeleted($event, $actor);
+        }
+
         $this->imageService->deleteEventFolder($event->getKey());
         $event->delete();
 

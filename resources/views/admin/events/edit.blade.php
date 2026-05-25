@@ -303,6 +303,8 @@
                                 </small>
                             </div>
 
+                            @include('admin.events.partials.greeting-box-fields', ['event' => $event])
+
                             <div class="alert alert-info py-2 mb-0">
                                 <span class="d-inline-flex flex-wrap align-items-baseline gap-1 small">
                                     <i class="fas fa-info-circle"></i>
@@ -348,6 +350,7 @@
 
 @section('scripts')
     @include('partials.ckeditor4-description', ['height' => 400])
+    @include('admin.events.partials.greeting-box-scripts', ['formId' => 'admin-event-edit-form'])
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Data+ora: combina `date_only` + `time_only` nel campo hidden `date`
@@ -411,6 +414,9 @@
                 editForm.addEventListener('submit', function () {
                     if (typeof CKEDITOR !== 'undefined' && CKEDITOR.instances.description) {
                         CKEDITOR.instances.description.updateElement();
+                    }
+                    if (typeof CKEDITOR !== 'undefined' && CKEDITOR.instances.greeting_box_message) {
+                        CKEDITOR.instances.greeting_box_message.updateElement();
                     }
                 });
             }

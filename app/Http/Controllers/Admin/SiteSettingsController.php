@@ -31,4 +31,3 @@ class SiteSettingsController extends Controller
             ->with('success', $label . ': ' . ($new ? 'attivato' : 'nascosto') . '.');
     }
 }
-

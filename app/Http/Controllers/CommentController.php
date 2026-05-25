@@ -338,12 +338,39 @@ class CommentController extends Controller
 
             $eventUrl = route('events.show', $event);
             $commentAnchor = $eventUrl . '#comment-' . $comment->getKey();
-
             $when = optional($event->date)->timezone(config('app.timezone'))->format('d/m/Y H:i');
+            $testoCommento = $this->plainCommentText($comment);
+
+            if ($action === 'aggiunto' || $action === 'eliminato') {
+                $adminGreeting = trim((string) ($admin->username ?? 'admin'));
+                $userUsername = trim((string) ($actor->username ?? 'utente'));
+                $userName = trim(trim((string) ($actor->nome ?? '')) . ' ' . trim((string) ($actor->cognome ?? '')));
+                if ($userName === '') {
+                    $userName = trim((string) ($actor->nickname ?? $userUsername));
+                }
+
+                $actionText = $action === 'aggiunto'
+                    ? 'ha scritto in'
+                    : 'ha cancellato un commento in';
+
+                $link = $action === 'aggiunto' ? $commentAnchor : $eventUrl;
+
+                $subject = 'Notifica commento evento';
+                $body =
+                    "Ciao {$adminGreeting}\n\n" .
+                    "{$userUsername} - {$userName}\n" .
+                    "{$actionText} {$event->title} {$when}\n" .
+                    "{$testoCommento}\n" .
+                    "{$link}\n";
+
+                Mail::raw($body, function ($message) use ($notifyEmail, $subject) {
+                    $message->to($notifyEmail)->subject($subject);
+                });
+
+                return;
+            }
 
             $actorLabel = $this->userDisplayLabel($actor);
-
-            $testoCommento = $this->plainCommentText($comment);
 
             $subject = "Excursio - Commento {$action} (evento)";
             $body =

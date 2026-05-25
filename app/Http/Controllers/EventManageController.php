@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Event;
 use App\Models\EventImage;
 use App\Services\ImageService;
+use App\Support\AdminNotifier;
+use App\Support\EventGreetingSettings;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -72,7 +74,7 @@ class EventManageController extends Controller
             'max_guests_per_user' => 'nullable|integer|min:1|max:10',
             'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,heic,heif|max:4096',
             'google_album_url' => 'nullable|string|max:2048|url',
-        ]);
+        ] + EventGreetingSettings::validationRules());
 
         $user = Auth::user();
         $allowGuests = $request->has('allow_guests');
@@ -101,7 +103,7 @@ class EventManageController extends Controller
             'datascadenza' => $validated['deadline'] ?? $validated['date'],
             'allow_guests' => $allowGuests,
             'max_guests_per_user' => $allowGuests ? ($validated['max_guests_per_user'] ?? 3) : 0,
-        ]);
+        ] + ($user->isAdmin() ? EventGreetingSettings::payloadFromRequest($request) : []));
 
         if ($request->hasFile('cover_image')) {
             $coverResult = $this->imageService->uploadCoverImage(
@@ -160,7 +162,7 @@ class EventManageController extends Controller
             'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'cover_image_selected' => 'nullable|in:0,1',
             'google_album_url' => 'nullable|string|max:2048|url',
-        ]);
+        ] + (Auth::user()->isAdmin() ? EventGreetingSettings::validationRules() : []));
 
         $user = Auth::user();
         $allowGuests = $request->has('allow_guests');
@@ -185,7 +187,7 @@ class EventManageController extends Controller
             'allow_guests' => $allowGuests,
             'max_guests_per_user' => $allowGuests ? ($validated['max_guests_per_user'] ?? 3) : 0,
             'url_galleria' => (string) ($validated['google_album_url'] ?? ''),
-        ];
+        ] + (Auth::user()->isAdmin() ? EventGreetingSettings::payloadFromRequest($request) : []);
 
         // Pubblicazione / disattivazione evento gestita dallo switch "Evento attivo",
         // ma un evento con data passata/non futura non può risultare "attivo/pubblicato".
@@ -254,6 +256,12 @@ class EventManageController extends Controller
     public function destroy(Event $event)
     {
         $this->authorizeEvent($event);
+
+        $actor = Auth::user();
+        if ($actor) {
+            AdminNotifier::notifyEventDeleted($event, $actor);
+        }
+
         $this->imageService->deleteEventFolder($event->getKey());
         $event->delete();
 

@@ -89,9 +89,7 @@
                                     <i class="fas fa-map-marker-alt"></i>
                                     <strong>{{ $event->city }}</strong>
                                 </p>
-                                <p class="card-text small event-public-desc-preview">
-                                    {{ $event->short_preview }}
-                                </p>
+                                @include('partials.event-public-preview', ['event' => $event, 'charLimit' => 150])
 
                                 @if($event->isFull())
                                     <div class="alert alert-warning alert-sm mb-0 py-2">
@@ -103,10 +101,17 @@
                                 @endif
                             </div>
                             <div class="card-footer bg-transparent">
-                                <a href="{{ route('events.show', $event) }}" class="btn btn-{{ $event->isFull() ? 'outline-secondary' : 'primary' }} w-100">
-                                    <i class="fas fa-eye"></i>
-                                    Visualizza Dettagli Evento
-                                </a>
+                                @auth
+                                    @include('partials.event-details-button', [
+                                        'event' => $event,
+                                        'btnClass' => 'btn btn-' . ($event->isFull() ? 'outline-secondary' : 'primary') . ' w-100',
+                                    ])
+                                @else
+                                    <a href="{{ route('events.show', $event) }}" class="btn btn-{{ $event->isFull() ? 'outline-secondary' : 'primary' }} w-100">
+                                        <i class="fas fa-eye"></i>
+                                        Visualizza Dettagli Evento
+                                    </a>
+                                @endauth
                             </div>
                         </div>
                     </div>

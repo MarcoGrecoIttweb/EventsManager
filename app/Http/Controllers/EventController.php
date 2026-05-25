@@ -519,6 +519,31 @@ class EventController extends Controller
 
             $eventUrl = route('events.show', $event);
             $when = optional($event->date)->timezone(config('app.timezone'))->format('d/m/Y H:i');
+
+            if ($action === 'iscritto' || $action === 'cancellato') {
+                $adminGreeting = trim((string) ($admin->username ?? 'admin'));
+                $userUsername = trim((string) ($actor->username ?? 'utente'));
+                $userName = trim(trim((string) ($actor->nome ?? '')) . ' ' . trim((string) ($actor->cognome ?? '')));
+                if ($userName === '') {
+                    $userName = trim((string) ($actor->nickname ?? $userUsername));
+                }
+
+                $actionText = $action === 'iscritto'
+                    ? 'si è iscritto ad evento'
+                    : 'si è cancellato dall\'evento';
+
+                $subject = 'Notifica iscrizioni evento';
+                $body =
+                    "Ciao {$adminGreeting}\n\n" .
+                    "{$userUsername} - {$userName} {$actionText} {$event->title} {$when} {$eventUrl}\n";
+
+                Mail::raw($body, function ($message) use ($notifyEmail, $subject) {
+                    $message->to($notifyEmail)->subject($subject);
+                });
+
+                return;
+            }
+
             $actorLabel = trim(($actor->nome ?? '') . ' ' . ($actor->cognome ?? ''));
             if ($actorLabel === '') {
                 $actorLabel = $actor->nickname ?? ('ID ' . $actor->getKey());
@@ -605,6 +630,16 @@ class EventController extends Controller
             ->orderBy('nome')
             ->get();
 
-        return view('events.print', compact('event', 'participants'));
+        $printDescriptionHtml = $event->print_description_html;
+        if ($printDescriptionHtml === '') {
+            $fallback = trim((string) $event->safe_description_no_images);
+            if ($fallback !== '') {
+                $printDescriptionHtml = $fallback;
+            } elseif (trim((string) ($event->incipit ?? '')) !== '') {
+                $printDescriptionHtml = '<p>' . e($event->incipit) . '</p>';
+            }
+        }
+
+        return view('events.print', compact('event', 'participants', 'printDescriptionHtml'));
     }
 }

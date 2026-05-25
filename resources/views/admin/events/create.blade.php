@@ -116,7 +116,7 @@
                         </h4>
                     </div>
                     <div class="card-body">
-                        <form action="{{ route('admin.events.store') }}" method="POST" enctype="multipart/form-data">
+                        <form id="admin-event-create-form" action="{{ route('admin.events.store') }}" method="POST" enctype="multipart/form-data">
                             @csrf
 
                             {{-- Riga: Titolo + Data evento + Ora inizio --}}
@@ -336,6 +336,8 @@
                                 </small>
                             </div>
 
+                            @include('admin.events.partials.greeting-box-fields', ['event' => new \App\Models\Event()])
+
                             <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                                 <a href="{{ route('admin.events.index') }}" class="btn btn-secondary me-md-2">
                                     <i class="fas fa-times"></i> Annulla
@@ -354,6 +356,7 @@
 
 @section('scripts')
     @include('partials.ckeditor4-description', ['height' => 400])
+    @include('admin.events.partials.greeting-box-scripts', ['formId' => 'admin-event-create-form'])
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Data+ora: combina `date_only` + `time_only` nel campo hidden `date`

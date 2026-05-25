@@ -171,6 +171,10 @@
                     @enderror
                 </div>
 
+                @if(auth()->user()->isAdmin())
+                    @include('admin.events.partials.greeting-box-fields', ['event' => $event])
+                @endif
+
             </div>
         </div>
 
@@ -275,6 +279,9 @@
     </div>
 
 @include('partials.ckeditor4-description', ['height' => 400])
+@if(auth()->user()->isAdmin())
+    @include('admin.events.partials.greeting-box-scripts', ['formId' => 'manage-event-edit-form'])
+@endif
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         // Data+ora: combina `date_only` + `time_only` nel campo hidden `date`
@@ -306,6 +313,9 @@
             manageForm.addEventListener('submit', function () {
                 if (typeof CKEDITOR !== 'undefined' && CKEDITOR.instances.description) {
                     CKEDITOR.instances.description.updateElement();
+                }
+                if (typeof CKEDITOR !== 'undefined' && CKEDITOR.instances.greeting_box_message) {
+                    CKEDITOR.instances.greeting_box_message.updateElement();
                 }
             });
         }

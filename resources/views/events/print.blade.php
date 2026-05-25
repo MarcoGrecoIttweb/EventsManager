@@ -112,6 +112,59 @@
             thead {
                 display: table-header-group;
             }
+
+            .print-description {
+                page-break-before: auto;
+            }
+
+            .print-description__body {
+                page-break-inside: auto;
+            }
+
+            .print-description__body,
+            .print-description__body * {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+
+        .print-description h2 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+        }
+
+        .print-description__body {
+            font-size: 0.9rem;
+            line-height: 1.45;
+            color: #212529;
+        }
+
+        .print-description__body p,
+        .print-description__body div,
+        .print-description__body ul,
+        .print-description__body ol,
+        .print-description__body li,
+        .print-description__body h1,
+        .print-description__body h2,
+        .print-description__body h3,
+        .print-description__body h4,
+        .print-description__body h5,
+        .print-description__body h6,
+        .print-description__body blockquote {
+            margin-top: 0 !important;
+            margin-bottom: 0 !important;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+        }
+
+        .print-description__body p:empty,
+        .print-description__body div:empty {
+            display: none;
+        }
+
+        .print-description__body img {
+            display: none !important;
         }
     </style>
 </head>
@@ -259,6 +312,15 @@
                     </tbody>
                 </table>
             </div>
+        @endif
+
+        @if(!empty($printDescriptionHtml))
+            <section class="print-description mt-4 pt-3 border-top">
+                <h2 class="h5">Descrizione evento</h2>
+                <div class="print-description__body">
+                    {!! $printDescriptionHtml !!}
+                </div>
+            </section>
         @endif
 
         <p class="small text-muted mt-3 no-print">
