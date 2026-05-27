@@ -7,6 +7,7 @@ use App\Models\EventImage;
 use App\Services\ImageService;
 use App\Support\AdminNotifier;
 use App\Support\EventGreetingSettings;
+use App\Support\EventoTableSchema;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -87,7 +88,7 @@ class EventManageController extends Controller
         // Forza il titolo evento in MAIUSCOLO
         $validated['title'] = Str::upper((string) $validated['title']);
 
-        $event = Event::create([
+        $event = Event::create(EventoTableSchema::filter([
             'nome' => $validated['title'],
             'incipit' => $validated['incipit'] ?? null,
             'descrizione' => $validated['description'],
@@ -107,7 +108,7 @@ class EventManageController extends Controller
             'datascadenza' => $validated['deadline'] ?? $validated['date'],
             'allow_guests' => $allowGuests,
             'max_guests_per_user' => $allowGuests ? ($validated['max_guests_per_user'] ?? 3) : 0,
-        ] + ($user->isAdmin() ? EventGreetingSettings::payloadFromRequest($request) : []));
+        ] + ($user->isAdmin() ? EventGreetingSettings::payloadFromRequest($request) : [])));
 
         if ($request->hasFile('cover_image')) {
             $coverResult = $this->imageService->uploadCoverImage(
@@ -246,7 +247,15 @@ class EventManageController extends Controller
             }
         }
 
-        $event->update($updateData);
+        try {
+            $event->update(EventoTableSchema::filter($updateData));
+        } catch (\Throwable $e) {
+            report($e);
+
+            return back()
+                ->with('error', 'Salvataggio non riuscito. Se il problema persiste, sul server esegui: php artisan excursio:sync-database')
+                ->withInput();
+        }
 
         $success = 'Evento aggiornato con successo!';
         if ($wasPastEvent && $newDate->gt(now())) {

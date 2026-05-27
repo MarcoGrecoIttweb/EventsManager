@@ -8,6 +8,7 @@ use App\Models\EventImage;
 use App\Services\ImageService;
 use App\Support\AdminNotifier;
 use App\Support\EventGreetingSettings;
+use App\Support\EventoTableSchema;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -244,7 +245,7 @@ class EventController extends Controller
         $isActive = $request->has('is_active') ? 1 : 0;
 
         // Create event with legacy column names
-        $event = Event::create([
+        $event = Event::create(EventoTableSchema::filter([
             'nome' => $validated['title'],
             'incipit' => $validated['incipit'] ?? null,
             'descrizione' => $validated['description'],
@@ -263,7 +264,7 @@ class EventController extends Controller
             'datascadenza' => $validated['deadline'] ?? $validated['date'],
             'allow_guests' => $allowGuests,
             'max_guests_per_user' => $allowGuests ? ($validated['max_guests_per_user'] ?? 3) : 0,
-        ] + EventGreetingSettings::payloadFromRequest($request));
+        ] + EventGreetingSettings::payloadFromRequest($request)));
 
         $event->enrollOrganizerAsParticipant();
 
@@ -544,7 +545,12 @@ class EventController extends Controller
         // Homepage: pubblicato=1 e dataevento > adesso (scope upcoming).
         // Ripubblica se la nuova data è futura e: "Evento attivo" ON, oppure era concluso e ripassato al futuro,
         // oppure la data/ora è stata spostata in avanti (posticipato) rispetto a prima.
-        $oldMoment = $event->dataevento ? $event->date->copy() : null;
+        $oldMoment = null;
+        try {
+            $oldMoment = $event->dataevento ? $event->date->copy() : null;
+        } catch (\Throwable $e) {
+            $oldMoment = null;
+        }
         $datePostponed = $oldMoment && $newDate->gt($oldMoment);
         $republishOnHome = $newDate->gt(now()) && ($isActive || $wasPastEvent || $datePostponed);
         if ($republishOnHome) {
@@ -559,7 +565,15 @@ class EventController extends Controller
             }
         }
 
-        $event->update($updateData);
+        try {
+            $event->update(EventoTableSchema::filter($updateData));
+        } catch (\Throwable $e) {
+            report($e);
+
+            return back()
+                ->with('error', 'Salvataggio non riuscito. Se il problema persiste, sul server esegui: php artisan excursio:sync-database')
+                ->withInput();
+        }
         $event->refresh();
 
         if ((int) session('admin_duplicate_draft_event_id') === (int) $event->getKey()) {

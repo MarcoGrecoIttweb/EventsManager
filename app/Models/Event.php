@@ -644,8 +644,12 @@ class Event extends Model
             return false;
         }
 
-        // Un evento è "passato" solo dal giorno successivo alla sua data.
-        return $this->date->lt(now()->startOfDay());
+        try {
+            // Un evento è "passato" solo dal giorno successivo alla sua data.
+            return $this->date->lt(now()->startOfDay());
+        } catch (\Throwable $e) {
+            return false;
+        }
     }
 
     public function scopeOrdered($query, $direction = 'asc')

@@ -1,8 +1,11 @@
 @auth
 <div id="eventDetailsGreeting" class="event-details-greeting" hidden aria-live="polite" aria-atomic="true">
     <div class="event-details-greeting__backdrop"></div>
-    <div class="event-details-greeting__box" role="status">
-        <div class="event-details-greeting__text"></div>
+    <div class="event-details-greeting__box" role="dialog" aria-modal="true" aria-labelledby="eventDetailsGreetingTitle">
+        <div class="event-details-greeting__text" id="eventDetailsGreetingTitle"></div>
+        <button type="button" class="event-details-greeting__continue btn btn-success btn-sm mt-3">
+            <i class="fas fa-arrow-right me-1"></i> Apri evento
+        </button>
     </div>
 </div>
 
@@ -46,6 +49,19 @@
         margin-bottom: 0;
     }
 
+    .event-details-greeting__continue {
+        min-width: 9rem;
+        font-weight: 600;
+        padding: 0.12rem 0.75rem !important;
+        font-size: 0.82rem;
+        line-height: 1;
+        min-height: 0;
+    }
+
+    .event-details-greeting__continue .fa-arrow-right {
+        font-size: 0.75rem;
+    }
+
     @keyframes eventDetailsGreetingIn {
         from {
             opacity: 0;
@@ -67,15 +83,29 @@
 
         var boxEl = overlay.querySelector('.event-details-greeting__box');
         var textEl = overlay.querySelector('.event-details-greeting__text');
-        var hideTimer = null;
+        var continueBtn = overlay.querySelector('.event-details-greeting__continue');
         var navigateTimer = null;
+        var pendingTargetUrl = null;
+
+        function clearGreetingTimers() {
+            if (navigateTimer) {
+                clearTimeout(navigateTimer);
+                navigateTimer = null;
+            }
+        }
 
         function hideGreeting() {
-            if (hideTimer) {
-                clearTimeout(hideTimer);
-                hideTimer = null;
-            }
+            clearGreetingTimers();
             overlay.hidden = true;
+        }
+
+        function goToEventNow() {
+            var targetUrl = pendingTargetUrl;
+            hideGreeting();
+            pendingTargetUrl = null;
+            if (targetUrl) {
+                window.location.href = targetUrl;
+            }
         }
 
         function parseConfig(link) {
@@ -98,21 +128,22 @@
         }
 
         function showGreetingThenGo(targetUrl, config) {
-            if (navigateTimer) {
-                clearTimeout(navigateTimer);
-                navigateTimer = null;
-            }
-            hideGreeting();
+            clearGreetingTimers();
+            pendingTargetUrl = targetUrl;
             applyConfig(config);
 
             overlay.hidden = false;
 
             var duration = parseInt(config.durationMs, 10) || 5000;
-            hideTimer = setTimeout(hideGreeting, duration);
-            navigateTimer = setTimeout(function () {
-                navigateTimer = null;
-                window.location.href = targetUrl;
-            }, duration);
+            navigateTimer = setTimeout(goToEventNow, duration);
+        }
+
+        if (continueBtn) {
+            continueBtn.addEventListener('click', function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                goToEventNow();
+            });
         }
 
         document.addEventListener('click', function (event) {

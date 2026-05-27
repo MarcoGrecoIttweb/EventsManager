@@ -4,11 +4,16 @@ namespace App\Support;
 
 use App\Models\Event;
 use App\Models\User;
-use Illuminate\Support\Facades\Schema;
+use App\Support\EventoTableSchema;
 
 class EventGreetingSettings
 {
     private static ?bool $databaseReady = null;
+
+    public static function resetDatabaseReadyCache(): void
+    {
+        self::$databaseReady = null;
+    }
 
     public static function isDatabaseReady(): bool
     {
@@ -17,8 +22,7 @@ class EventGreetingSettings
         }
 
         try {
-            self::$databaseReady = Schema::hasTable('evento')
-                && Schema::hasColumn('evento', 'greeting_box_enabled');
+            self::$databaseReady = EventoTableSchema::hasColumn('greeting_box_enabled');
         } catch (\Throwable $e) {
             self::$databaseReady = false;
         }
@@ -167,7 +171,7 @@ class EventGreetingSettings
 
     public static function migrationRequiredMessage(): string
     {
-        return 'Il box benvenuto richiede l\'aggiornamento database. Esegui sul server: php artisan migrate --force';
+        return 'Per usare tutte le funzioni (box benvenuto, ospiti) esegui una volta sul server: php artisan excursio:sync-database';
     }
 
     /**

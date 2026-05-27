@@ -1,5 +1,5 @@
 @php
-    $greetingDbReady = \App\Support\EventGreetingSettings::isDatabaseReady();
+    $eventDbMissing = \App\Support\EventoTableSchema::missingOptionalColumns();
     $greetingEnabled = (bool) old('greeting_box_enabled', $event->greeting_box_enabled ?? false);
     $greetingDuration = (int) old('greeting_box_duration', $event->greeting_box_duration ?? 5);
     $greetingMessage = old('greeting_box_message', $event->greeting_box_message ?? \App\Support\EventGreetingSettings::defaultMessageHtml());
@@ -8,7 +8,7 @@
     $greetingBg = old('greeting_box_bg_color', $event->greeting_box_bg_color ?? '#ffffff');
 @endphp
 
-@if(!$greetingDbReady)
+@if($eventDbMissing !== [])
     <div class="alert alert-warning">
         <i class="fas fa-database me-1"></i>
         {{ \App\Support\EventGreetingSettings::migrationRequiredMessage() }}
