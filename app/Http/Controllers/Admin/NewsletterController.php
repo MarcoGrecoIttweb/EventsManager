@@ -10,6 +10,7 @@ use Illuminate\Validation\Rule;
 use App\Mail\NewsletterMail;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use App\Support\SafeRichText;
 
 class NewsletterController extends Controller
 {
@@ -290,6 +291,7 @@ class NewsletterController extends Controller
         $request->validate($rules);
 
         $testSendToReceiptAdmin = (int) $request->input('newsletter_test_send_to_receipt_admin', 0) === 1;
+        $sanitizedHtmlMessage = SafeRichText::sanitize((string) $request->input('message', ''), true);
 
         $users = new Collection();
         $newsGroupsApplied = [];
@@ -412,7 +414,7 @@ class NewsletterController extends Controller
             try {
                 Mail::to($user->email)->send(new NewsletterMail(
                     $mailSubject,
-                    $request->message,
+                    $sanitizedHtmlMessage,
                     $user
                 ));
                 $sentCount++;

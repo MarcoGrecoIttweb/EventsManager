@@ -384,12 +384,23 @@
                                                                     </div>
                                                                     <div class="mb-0">
                                                                         <label class="form-label fw-semibold" for="eventCommsMessage{{ $event->getKey() }}">Messaggio</label>
+                                                                        @php
+                                                                            $eventDate = $event->date;
+                                                                            $defaultMessage = old('message');
+                                                                            if (!$defaultMessage && $eventDate) {
+                                                                                $domani = now()->addDay()->locale('it')->translatedFormat('l j F Y');
+                                                                                $dataEvento = $eventDate->locale('it')->translatedFormat('l j F Y');
+                                                                                $oraEvento = $eventDate->format('H:i');
+                                                                                $defaultMessage =
+"<p>Ciao</p><p>Ricevi questa comunicazione, per ricordarti che ti sei iscritto/a ad evento di Excursio \"" . e($event->title) . "\" in programma per " . $dataEvento . " ore " . $oraEvento . "<br>L'evento è confermato.</p><p>Se per qualche imprevisto tu ed eventuali amici da te iscritti non potete partecipare e volete disdire, ti chiedo cortesemente di comunicarmelo entro la mattinata " . $domani . " per confermare i posti al Locale.</p><p>Puoi comunicarlo depennandoti dall'evento stesso, dal sito www.excursio.org, o inviando una mail, a excursio@libero.it oppure telefonicamente chiamando, o con sms Cell. 3387717376</p><p>Grazie! Loris</p>";
+                                                                            }
+                                                                        @endphp
                                                                         <textarea class="form-control @error('message') is-invalid @enderror"
                                                                                   id="eventCommsMessage{{ $event->getKey() }}"
                                                                                   name="message"
                                                                                   rows="7"
                                                                                   maxlength="4000"
-                                                                                  required>{{ old('message') }}</textarea>
+                                                                                  required>{{ $defaultMessage }}</textarea>
                                                                         @error('message')
                                                                             <div class="invalid-feedback">{{ $message }}</div>
                                                                         @enderror
@@ -538,7 +549,7 @@
                                             <span class="event-meta-posti-sep"> / </span>
                                             <span class="event-meta-label-totali">Tot.</span> <strong>{{ $postiTotali !== null ? $postiTotali : '—' }}</strong>
                                             @if($eventMetaPostiGapBlink)
-                                                <span class="event-meta-ultimi-posti ms-1">Ultimi Posti Disponibili</span>
+                                                <span class="event-meta-ultimi-posti ms-1">{{ $postiLiberi == 1 ? 'Ultimo Posto Disponibile' : 'Ultimi ' . $postiLiberi . ' Posti Disponibili' }}</span>
                                             @endif
                                             @if($postiTotali === null)
                                                 <small class="event-meta-posti-hint"> (posti illimitati)</small>
@@ -1307,6 +1318,43 @@
                     commentElement.scrollIntoView({ behavior: 'smooth' });
                     commentElement.classList.add('highlight-comment');
                 }, 500);
+            }
+            @endif
+
+            // CKEditor nel modal Comunicazioni agli iscritti: inizializza all'apertura
+            @if(isset($eventCommsModalId))
+            var commsModalEl = document.getElementById(@json($eventCommsModalId));
+            if (commsModalEl) {
+                commsModalEl.addEventListener('show.bs.modal', function () {
+                    var textareaId = 'eventCommsMessage{{ $event->getKey() }}';
+                    if (typeof CKEDITOR !== 'undefined' && !CKEDITOR.instances[textareaId]) {
+                        CKEDITOR.replace(textareaId, {
+                            language: 'it',
+                            height: 280,
+                            removePlugins: 'elementspath',
+                            resize_dir: 'vertical',
+                            versionCheck: false,
+                            allowedContent: true,
+                            pasteFilter: null,
+                            pasteFromWordRemoveFontStyles: false,
+                            pasteFromWordRemoveStyles: false,
+                            filebrowserImageUploadUrl: @json(route('ckeditor.upload', ['_token' => csrf_token()])),
+                            filebrowserUploadUrl: @json(route('ckeditor.upload', ['_token' => csrf_token()])),
+                            filebrowserUploadMethod: 'form'
+                        });
+                    }
+                });
+
+                // Sincronizza CKEditor nella textarea prima dell'invio
+                var commsForm = commsModalEl.querySelector('form');
+                if (commsForm) {
+                    commsForm.addEventListener('submit', function () {
+                        var textareaId = 'eventCommsMessage{{ $event->getKey() }}';
+                        if (typeof CKEDITOR !== 'undefined' && CKEDITOR.instances[textareaId]) {
+                            CKEDITOR.instances[textareaId].updateElement();
+                        }
+                    });
+                }
             }
             @endif
 

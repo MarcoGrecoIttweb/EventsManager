@@ -19,10 +19,13 @@
                             <span class="fw-semibold">Ad oggi siamo</span>
                             <span class="home-stats-value">{{ number_format((int)($activeUsersCount ?? 0), 0, ',', '.') }}</span>
                         </div>
-                        <div class="mb-1">
-                            <span class="fw-semibold">Visite odierne</span>
+                        <a href="{{ route('admin.users.logins', ['days' => 1]) }}"
+                           class="d-block mb-1 text-decoration-none home-stats-visits-link"
+                           title="Apri elenco ingressi giornalieri">
+                            <span class="fw-semibold text-body">Visite odierne</span>
                             <span class="home-stats-value">{{ number_format((int)($todayVisitsCount ?? 0), 0, ',', '.') }}</span>
-                        </div>
+                            <i class="fas fa-external-link-alt ms-1 small text-muted" aria-hidden="true"></i>
+                        </a>
                         <div>
                             <span class="fw-semibold">Rapporto visite/iscritti</span>
                             <span class="home-stats-value">{{ number_format((float)($visitVsActivePct ?? 0), 2, ',', '.') }}%</span>
@@ -468,6 +471,18 @@
         .home-stats-value {
             font-weight: 800;
             color: #0d6efd;
+        }
+        .home-stats-visits-link {
+            border-radius: 4px;
+            padding: 0.15rem 0.25rem;
+            margin-left: -0.25rem;
+            margin-right: -0.25rem;
+        }
+        .home-stats-visits-link:hover {
+            background: rgba(13, 110, 253, 0.1);
+        }
+        .home-stats-visits-link:hover .home-stats-value {
+            text-decoration: underline;
         }
         /* Immagine hero.jpg nascosta (il blocco resta nel DOM per eventuali riattivazioni) */
         .hero-section {

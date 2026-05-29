@@ -52,7 +52,7 @@
     <h2>Ciao {{ $user->name }}!</h2>
 
     <div>
-        {!! nl2br(e($content)) !!}
+        {!! $content !!}
     </div>
 
     <hr>

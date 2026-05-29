@@ -222,10 +222,10 @@
                             <div class="mb-3">
                                 <textarea class="form-control" id="message" name="message"
                                           rows="10" placeholder="Scrivi il contenuto della newsletter..."
-                                          required></textarea>
+                                          required>{{ old('message') }}</textarea>
                                 <div class="d-flex justify-content-between align-items-end gap-2 mt-2 flex-wrap">
                                     <small class="form-text text-muted mb-0">
-                                        Puoi usare HTML base per formattare il testo.
+                                        Puoi usare l'editor per formattare il testo, inserire link e immagini.
                                     </small>
                                     <button type="submit" class="btn btn-primary btn-sm"
                                             onclick="return confirm('Sei sicuro di voler inviare la newsletter?')">
@@ -233,6 +233,13 @@
                                     </button>
                                 </div>
                             </div>
+
+                            @include('partials.ckeditor4-description', [
+                                'field'                => 'message',
+                                'height'               => 380,
+                                'editable_line_height' => 1.5,
+                                'editable_p_margin'    => '0.3em',
+                            ])
 
                             <div class="alert py-1 px-2 mt-2 mb-3 small" id="newsletterWarningBox" role="status">
                                 <i class="fas fa-exclamation-triangle"></i>
@@ -1100,6 +1107,10 @@
         if (newsletterFormEl) {
             newsletterFormEl.addEventListener('submit', function () {
                 syncNewsletterExcludeHiddenInputs();
+                // Sincronizza CKEditor nella textarea prima dell'invio
+                if (typeof CKEDITOR !== 'undefined' && CKEDITOR.instances['message']) {
+                    CKEDITOR.instances['message'].updateElement();
+                }
             });
         }
 
