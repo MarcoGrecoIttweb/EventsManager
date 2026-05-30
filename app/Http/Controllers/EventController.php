@@ -405,17 +405,16 @@ class EventController extends Controller
             $eventUrl = route('events.show', $event);
             $when = optional($event->date)->timezone(config('app.timezone'))->format('d/m/Y H:i');
 
-            $mailText =
-                "Comunicazione evento Excursio\n\n" .
-                "Evento: {$event->title}\n" .
-                "Quando: {$when}\n" .
-                "Link evento: {$eventUrl}\n\n" .
-                "Ciao {$recipientName},\n\n" .
-                $body . "\n\n" .
-                "— Excursio\n";
+            $htmlBody = view('emails.event-communication', [
+                'subject'    => $subject,
+                'eventTitle' => $event->title,
+                'eventWhen'  => $when,
+                'eventUrl'   => $eventUrl,
+                'body'       => $body,
+            ])->render();
 
             try {
-                Mail::raw($mailText, function ($message) use ($to, $subject) {
+                Mail::html($htmlBody, function ($message) use ($to, $subject) {
                     $message->to($to)->subject($subject);
                 });
                 $sent++;
