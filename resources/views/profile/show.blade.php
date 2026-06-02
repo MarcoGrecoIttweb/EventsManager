@@ -164,17 +164,27 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="profile-field">
-                                        <span class="profile-label">Sesso:</span>
-                                        <span class="profile-value">
-                                            @if($user->sesso === 'f') Donna
-                                            @elseif($user->sesso === 'm') Uomo
-                                            @else —
-                                            @endif
-                                        </span>
+                                    <div class="row g-2 profile-dob-row">
+                                        <div class="col-6">
+                                            <div class="profile-field">
+                                                <span class="profile-label">Sesso:</span>
+                                                <span class="profile-value">
+                                                    @if($user->sesso === 'f') Donna
+                                                    @elseif($user->sesso === 'm') Uomo
+                                                    @else —
+                                                    @endif
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="profile-field">
+                                                <span class="profile-label">Iscritto dal:</span>
+                                                <span class="profile-value">{{ $user->created_at ? $user->created_at->format('d/m/Y') : '—' }}</span>
+                                            </div>
+                                        </div>
                                     </div>
                                     <div class="profile-field">
-                                        <span class="profile-label">E-mail:</span>
+                                        <span class="profile-label profile-label--email">E-mail:</span>
                                         <span class="profile-value">{{ $canSeePrivateContacts ? ($user->email ?: '—') : '—' }}</span>
                                     </div>
                                     <div class="profile-field">
@@ -472,6 +482,7 @@
             border: 1px solid #adb5bd;
             background: #f2f4f6;
             border-radius: 8px;
+            min-height: 36px;
         }
         /* Nato/Nata + Età: stessa altezza e più compatti */
         .profile-dob-row > [class*="col-"] {
@@ -479,8 +490,8 @@
         }
         .profile-dob-row .profile-field {
             flex: 1;
-            min-height: 32px;
-            padding: 0.2rem 0.45rem;
+            min-height: 36px;
+            padding: 0.25rem 0.55rem;
         }
         .profile-dob-row .profile-label {
             min-width: 0;
@@ -488,8 +499,8 @@
         .profile-fields-compact .profile-field {
             border: 1px solid #adb5bd;
             border-radius: 8px;
-            padding: 0.22rem 0.55rem;
-            margin-bottom: 0.32rem;
+            padding: 0.25rem 0.55rem;
+            min-height: 36px;
             background: #f2f4f6;
         }
         .profile-fields-compact .profile-field:last-child {
@@ -512,11 +523,18 @@
             white-space: nowrap;
             min-width: 98px;
         }
+        .profile-label--email {
+            min-width: 52px;
+        }
         .profile-value {
             font-size: 0.9rem;
             font-weight: 600;
             color: #212529;
             word-break: break-word;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            min-width: 0;
         }
         .profile-value--descr {
             border: 0;

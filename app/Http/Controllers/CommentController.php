@@ -358,6 +358,7 @@ class CommentController extends Controller
                 $subject = 'Notifica commento evento';
                 $body =
                     "Ciao {$adminGreeting}\n\n" .
+                    // Inviato solo all'amministratore
                     "{$userUsername} - {$userName}\n" .
                     "{$actionText} {$event->title} {$when}\n" .
                     "{$testoCommento}\n" .

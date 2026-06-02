@@ -237,7 +237,7 @@
                 <table class="table table-bordered table-sm print-table">
                     <thead>
                     <tr>
-                        <th scope="col" style="width:1.8rem; text-align:center;">#</th>
+                        <th scope="col" style="width:1.8rem;">Nro</th>
                         <th scope="col" style="width:10rem;">Partecipante</th>
                         <th scope="col" class="col-phone" style="width:6.2rem;">Telefono</th>
                         <th scope="col" style="width:2.8rem; text-align:center;">Ospiti</th>
@@ -247,14 +247,16 @@
                     </tr>
                     </thead>
                     <tbody>
+                    @php $rowNum = 0; @endphp
                     @foreach($participants as $i => $p)
                         @php
                             $full = trim(implode(' ', array_filter([$p->nome, $p->cognome])));
                             $guestsCount = (int) ($p->pivot->amici ?? 0);
                             $ospitiEntries = \App\Support\OspitiGuestStore::decode($p->pivot->ospiti_inseriti_il ?? null);
+                            $rowNum++;
                         @endphp
                         <tr>
-                            <td>{{ $i + 1 }}</td>
+                            <td>{{ $rowNum }}</td>
                             <td>
                                 @if($full !== '')
                                     {{ $full }}
@@ -286,7 +288,7 @@
                                 $gAt = $gEnt['at'] ?? '';
                             @endphp
                             <tr class="guest-row-print">
-                                <td class="text-muted text-center">↳</td>
+                                <td>{{ ++$rowNum }}</td>
                                 <td class="ps-4">
                                     @if($gNome !== '')
                                         <span class="fw-semibold">{{ $gNome }}</span>

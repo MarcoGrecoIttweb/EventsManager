@@ -5,7 +5,7 @@
         <div class="row justify-content-center">
             <div class="col-md-8">
                 <div class="card manage-event-edit-shell">
-                    <div class="card-header bg-warning text-white">
+                    <div class="card-header bg-success text-white">
                         <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
                             <h4 class="mb-0">
                                 <i class="fas fa-edit"></i> Modifica Evento: {{ $event->title }}

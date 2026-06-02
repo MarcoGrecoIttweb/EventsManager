@@ -719,8 +719,16 @@
                                     <div class="mb-2" id="participant-mobile-{{ $participant->getKey() }}">
                                         <div class="d-flex align-items-center flex-wrap gap-2">
                                             <div>
-                                                <a href="{{ route('profile.show', $participant) }}?{{ $eventProfileBackQuery }}" class="text-decoration-none">
-                                                    <i class="fas fa-user"></i> {{ $participant->nickname }}
+                                                <a href="{{ route('profile.show', $participant) }}?{{ $eventProfileBackQuery }}" class="text-decoration-none d-inline-flex align-items-center gap-1">
+                                                    @if($participant->photo_url)
+                                                        <img src="{{ $participant->photo_url }}"
+                                                             alt="{{ $participant->nickname }}"
+                                                             class="rounded-circle"
+                                                             style="width:32px;height:32px;object-fit:cover;flex-shrink:0;">
+                                                    @else
+                                                        <i class="fas fa-user"></i>
+                                                    @endif
+                                                    <span style="font-size:1.05rem;font-weight:600;">{{ $participant->nickname }}</span>
                                                 </a>
                                                 @if($currentUserIsParticipant)
                                                     <span class="badge bg-primary ms-1">Tu</span>
@@ -1139,8 +1147,16 @@
                                     <div class="mb-2" id="participant-{{ $participant->getKey() }}">
                                         <div class="d-flex align-items-center flex-wrap gap-2">
                                             <div>
-                                                <a href="{{ route('profile.show', $participant) }}?{{ $eventProfileBackQuery }}" class="text-decoration-none">
-                                                    <i class="fas fa-user"></i> {{ $participant->nickname }}
+                                                <a href="{{ route('profile.show', $participant) }}?{{ $eventProfileBackQuery }}" class="text-decoration-none d-inline-flex align-items-center gap-1">
+                                                    @if($participant->photo_url)
+                                                        <img src="{{ $participant->photo_url }}"
+                                                             alt="{{ $participant->nickname }}"
+                                                             class="rounded-circle"
+                                                             style="width:32px;height:32px;object-fit:cover;flex-shrink:0;">
+                                                    @else
+                                                        <i class="fas fa-user"></i>
+                                                    @endif
+                                                    <span style="font-size:1.05rem;font-weight:600;">{{ $participant->nickname }}</span>
                                                 </a>
                                                 {{-- rimosso il badge verde "+1" ospiti su richiesta --}}
                                                 @if($currentUserIsParticipant)

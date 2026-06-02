@@ -441,6 +441,11 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link" href="{{ route('admin.common-event.form') }}">
+                            <i class="fas fa-random"></i> Eventi in comune
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" href="{{ route('friends.index') }}">
                             <i class="fas fa-user-friends"></i> Amici
                         </a>

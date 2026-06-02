@@ -7,22 +7,39 @@
         <div class="row justify-content-center">
             <div class="col-md-8">
                 <div class="card admin-event-edit-shell">
-                    <div class="card-header bg-warning text-white">
+                    <div class="card-header bg-success text-white">
                         <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
                             <h4 class="mb-0">
                                 <i class="fas fa-edit"></i> Modifica Evento: {{ $editTitle ?? $event->title }}
                             </h4>
-                            <div class="d-flex flex-wrap align-items-center gap-2">
+                            <div class="d-flex flex-nowrap align-items-center gap-2">
+                                <button type="submit" form="admin-event-edit-form" class="btn btn-warning btn-sm" style="width:100px;border:2px solid #5d4037;">
+                                    <i class="fas fa-save"></i> Aggiorna
+                                </button>
                                 <form action="{{ route('admin.events.duplicate', $event) }}" method="POST"
-                                      class="d-inline"
+                                      class="d-inline m-0"
                                       onsubmit="return confirm('Creare una copia di questo evento? Il titolo avrà suffisso (copia), stessi testi e immagini; le iscrizioni non verranno copiate.');">
                                     @csrf
-                                    <button type="submit" class="btn btn-dark btn-sm">
+                                    <button type="submit" class="btn btn-sm" style="width:100px;background-color:#7e57c2;color:white;border:2px solid #5d4037;">
                                         <i class="fas fa-copy"></i> Duplica
                                     </button>
                                 </form>
-                                <a href="{{ route('home') }}" class="btn btn-light btn-sm">
-                                    <i class="fas fa-arrow-left"></i> Torna alla Lista
+                                @if(!empty($isDuplicateDraft))
+                                    <form action="{{ route('admin.events.cancel-duplicate', $event) }}" method="POST" class="d-inline m-0"
+                                          onsubmit="return confirm('Eliminare la copia duplicata? L\'evento originale non verrà toccato.');">
+                                        @csrf
+                                        <input type="hidden" name="duplicate_draft" value="{{ $event->getKey() }}">
+                                        <button type="submit" class="btn btn-secondary btn-sm" style="width:100px;border:2px solid #5d4037;">
+                                            <i class="fas fa-times"></i> Annulla
+                                        </button>
+                                    </form>
+                                @else
+                                    <a href="{{ route('home') }}" class="btn btn-secondary btn-sm" style="width:100px;border:2px solid #5d4037;">
+                                        <i class="fas fa-times"></i> Annulla
+                                    </a>
+                                @endif
+                                <a href="{{ route('home') }}" class="btn btn-light btn-sm" style="width:100px;white-space:nowrap;border:2px solid #5d4037;">
+                                    <i class="fas fa-home"></i> Home
                                 </a>
                             </div>
                         </div>
@@ -322,25 +339,6 @@
 
                         </form>
 
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-3">
-                            @if(!empty($isDuplicateDraft))
-                                <form action="{{ route('admin.events.cancel-duplicate', $event) }}" method="POST" class="me-md-2"
-                                      onsubmit="return confirm('Eliminare la copia duplicata? L\'evento originale non verrà toccato.');">
-                                    @csrf
-                                    <input type="hidden" name="duplicate_draft" value="{{ $event->getKey() }}">
-                                    <button type="submit" class="btn btn-secondary">
-                                        <i class="fas fa-times"></i> Annulla
-                                    </button>
-                                </form>
-                            @else
-                                <a href="{{ route('home') }}" class="btn btn-secondary me-md-2">
-                                    <i class="fas fa-times"></i> Annulla
-                                </a>
-                            @endif
-                            <button type="submit" form="admin-event-edit-form" class="btn btn-warning">
-                                <i class="fas fa-save"></i> Aggiorna Evento
-                            </button>
-                        </div>
                     </div>
                 </div>
             </div>

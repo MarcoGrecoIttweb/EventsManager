@@ -22,9 +22,16 @@
             <h1 class="h3 mb-0">
                 <i class="fas fa-random text-primary"></i> Trova evento in comune
             </h1>
-            <a href="{{ route('admin.dashboard') }}" class="btn btn-outline-secondary btn-sm">
-                <i class="fas fa-arrow-left"></i> Dashboard
+            <a href="{{ route('home') }}" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-arrow-left"></i> Home
             </a>
+        </div>
+
+        <div class="alert alert-info mb-3">
+            <i class="fas fa-info-circle me-1"></i>
+            <strong>A cosa serve?</strong>
+            Questo strumento ti permette di scoprire quali eventi hanno frequentato insieme due utenti.
+            Inserisci i nickname dei due utenti e vedrai l'elenco degli eventi a cui entrambi hanno partecipato.
         </div>
 
         <div class="card shadow-sm" style="border: 2px solid #198754;">

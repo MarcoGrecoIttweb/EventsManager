@@ -906,10 +906,6 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/site-settings/feature/{featureKey}/toggle', [\App\Http\Controllers\Admin\SiteSettingsController::class, 'toggleFeature'])
         ->name('site-settings.feature.toggle');
 
-    Route::get('/common-event', [\App\Http\Controllers\Admin\CommonEventController::class, 'showForm'])
-        ->name('common-event.form');
-    Route::post('/common-event', [\App\Http\Controllers\Admin\CommonEventController::class, 'search'])
-        ->name('common-event.search');
     Route::get('/common-event/users-search', [\App\Http\Controllers\Admin\CommonEventController::class, 'usersSearch'])
         ->name('common-event.users-search');
 
@@ -953,4 +949,14 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/newsletter/preview-recipients', [\App\Http\Controllers\Admin\NewsletterController::class, 'previewRecipients'])->name('newsletter.preview-recipients');
     Route::get('/newsletter/stat-recipients', [\App\Http\Controllers\Admin\NewsletterController::class, 'statRecipients'])->name('newsletter.stat-recipients');
 
+});
+
+// Eventi in comune: accessibile a tutti gli utenti registrati e approvati (non solo admin)
+Route::middleware(['auth', 'approved'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/common-event', [\App\Http\Controllers\Admin\CommonEventController::class, 'showForm'])
+        ->name('common-event.form');
+    Route::post('/common-event', [\App\Http\Controllers\Admin\CommonEventController::class, 'search'])
+        ->name('common-event.search');
+    Route::get('/common-event/users-search', [\App\Http\Controllers\Admin\CommonEventController::class, 'usersSearch'])
+        ->name('common-event.users-search');
 });
