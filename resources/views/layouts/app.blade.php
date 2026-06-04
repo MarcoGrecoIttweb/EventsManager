@@ -272,16 +272,6 @@
             @endphp
             <ul class="navbar-nav excursio-navbar__main-nav me-auto mb-2 mb-lg-0">
                 @guest
-                    @if($showAlbumsFotoLink)
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ route('photo-albums.index') }}">
-                                <i class="fas fa-images"></i> Album foto Eventi
-                                @if(!($featureAlbumsFotoEnabled ?? true))
-                                    <span class="ms-1 badge bg-warning text-dark">IN ARRIVO</span>
-                                @endif
-                            </a>
-                        </li>
-                    @endif
                     <li class="nav-item">
                         <a class="nav-link" href="{{ route('login') }}">
                             <i class="fas fa-sign-in-alt"></i> Accedi
@@ -297,6 +287,16 @@
                             <i class="fas fa-info-circle"></i> Chi siamo e cosa facciamo
                         </a>
                     </li>
+                    @if($showAlbumsFotoLink)
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ route('photo-albums.index') }}">
+                                <i class="fas fa-images"></i> Album foto Eventi
+                                @if(!($featureAlbumsFotoEnabled ?? true))
+                                    <span class="ms-1 badge bg-warning text-dark">IN ARRIVO</span>
+                                @endif
+                            </a>
+                        </li>
+                    @endif
                     <li class="nav-item">
                         <a class="nav-link nav-link--storico" href="https://excursio.org" target="_blank">
                             <i class="fas fa-landmark"></i> Torna al vecchio sito
