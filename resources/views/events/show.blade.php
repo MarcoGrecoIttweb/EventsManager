@@ -522,8 +522,8 @@
                                             <i class="fas fa-clock"></i>
                                             <span class="event-meta-iscr-line {{ $iscrOpen ? ($iscrSoon ? 'event-iscr-status--soon' : 'event-iscr-status--open') : 'event-iscr-status--closed' }}">
                                                 <span class="fw-semibold">Iscrizioni</span>
-                                                {{ $iscrOpen ? ' entro il ' : ' chiuse il ' }}
-                                                {{ $event->deadline->format('d/m/Y H:i') }}
+                                                {{ $iscrOpen ? ' entro ' : ' chiuse ' }}
+                                                {{ $event->deadline->locale('it')->translatedFormat('l, j F') . ', H. ' . $event->deadline->format('H:i') }}
                                             </span>
                                         </div>
                                     @else

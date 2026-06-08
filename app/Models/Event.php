@@ -82,7 +82,7 @@ class Event extends Model
 
     /**
      * Data e ora in italiano: "lunedì 24 marzo 2026, h:14:30"
-     * (giorno della settimana, giorno, mese, anno, ora come h:HH:MM).
+     * (giorno della settimana, giorno, mese, h. ore).
      */
     public function getItalianEventDateAttribute(): ?string
     {
@@ -93,12 +93,12 @@ class Event extends Model
         try {
             $d = $this->date->copy()->locale('it');
 
-            return $d->translatedFormat('l j F Y') . ', h:' . $d->format('H:i');
+            return $d->translatedFormat('l, j F') . ', H. ' . $d->format('H:i');
         } catch (\Throwable $e) {
             try {
                 $d = \Carbon\Carbon::parse($this->dataevento)->locale('it');
 
-                return $d->translatedFormat('l j F Y') . ', h:' . $d->format('H:i');
+                return $d->translatedFormat('l, j F') . ', H. ' . $d->format('H:i');
             } catch (\Throwable $e2) {
                 return null;
             }

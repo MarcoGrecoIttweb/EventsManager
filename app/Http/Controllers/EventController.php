@@ -403,14 +403,17 @@ class EventController extends Controller
             }
 
             $eventUrl = route('events.show', $event);
-            $when = optional($event->date)->timezone(config('app.timezone'))->format('d/m/Y H:i');
+            $eventWhenFormatted = $event->date
+                ? $event->date->locale('it')->translatedFormat('l j F') . ' ore ' . $event->date->format('H:i')
+                : '';
 
             $htmlBody = view('emails.event-communication', [
-                'subject'    => $subject,
-                'eventTitle' => $event->title,
-                'eventWhen'  => $when,
-                'eventUrl'   => $eventUrl,
-                'body'       => $body,
+                'subject'       => $subject,
+                'eventTitle'    => $event->title,
+                'eventWhen'     => $eventWhenFormatted,
+                'eventUrl'      => $eventUrl,
+                'body'          => $body,
+                'recipientName' => $recipientName,
             ])->render();
 
             try {

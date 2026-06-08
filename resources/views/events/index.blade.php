@@ -271,7 +271,7 @@
                                                 <span class="badge event-meta-badges__badge event-card-iscr-badge {{ $iscrClass }}">
                                                     <i class="fas fa-clock"></i>
                                                     Iscrizioni {{ $iscrOpen ? 'entro' : 'chiuse' }}:
-                                                    {{ $event->deadline->format('d/m/Y H:i') }}
+                                                    {{ $event->deadline->locale('it')->translatedFormat('l, j F') . ', H. ' . $event->deadline->format('H:i') }}
                                                 </span>
                                             @endif
                                         </div>

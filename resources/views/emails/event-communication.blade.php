@@ -22,7 +22,8 @@
         }
         .header h1 {
             margin: 0;
-            font-size: 1.4rem;
+            font-size: 1.2rem;
+            font-weight: 700;
         }
         .meta-box {
             background: #e9f5ee;
@@ -43,6 +44,11 @@
         .content p {
             margin-top: 0;
             margin-bottom: 0.8em;
+        }
+        .greeting {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 1em;
         }
         .footer {
             text-align: center;
@@ -65,7 +71,7 @@
 <body>
 
 <div class="header">
-    <h1><i>Excursio</i> — Comunicazione evento</h1>
+    <h1>Comunicazione relativa all'evento: {{ $eventTitle }}</h1>
 </div>
 
 <div class="meta-box">
@@ -75,6 +81,8 @@
 </div>
 
 <div class="content">
+    <p class="greeting">Ciao {{ $recipientName }},</p>
+
     <div>
         {!! $body !!}
     </div>
