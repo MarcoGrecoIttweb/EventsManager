@@ -20,8 +20,7 @@ class ChatController extends Controller
         $messages = ChatMessage::with('user')
             ->orderByDesc('created_at')
             ->limit(100)
-            ->get()
-            ->reverse();
+            ->get();
 
         // Moderazione soft: se per qualche motivo esistono già messaggi con contatti,
         // rimuovi il contenuto e sostituiscilo con un avviso (così non viene mai mostrato).
