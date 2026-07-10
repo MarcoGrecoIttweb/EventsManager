@@ -361,6 +361,16 @@ class UserController extends Controller
     }
 
     /**
+     * Mostra una tabella semplice con tutti gli utenti (username, nome, cognome, email, stato attivo).
+     */
+    public function simpleList()
+    {
+        $users = User::orderBy('username')->get();
+
+        return view('admin.users.simple-list', compact('users'));
+    }
+
+    /**
      * Toggle newsletter subscription (utente.invia) for a user.
      */
     public function updateNewsletter(Request $request, User $user)

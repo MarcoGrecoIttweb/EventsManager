@@ -438,13 +438,16 @@
                 </div>
             @endif
         @else
-            <div class="intro-box-below-events intro-box-below-events--empty py-5">
-                <i class="fas fa-calendar-times fa-3x text-muted mb-3 d-block"></i>
+            <div class="intro-box-below-events intro-box-below-events--empty py-5 text-center">
+                <img src="{{ asset('images/nessun-evento-programmato.webp') }}"
+                     alt="Nessun evento in programma"
+                     class="img-fluid rounded shadow-sm mb-3"
+                     style="max-width: 400px; width: 100%;">
                 <h3 class="h4">Nessun evento in programma</h3>
                 <p class="text-muted mb-0">Non ci sono eventi in programma al momento.</p>
                 @auth
                     @if(auth()->user()->isAdmin())
-                        <div class="intro-actions">
+                        <div class="intro-actions mt-3">
                             <a href="{{ route('admin.events.create') }}" class="btn btn-primary">
                                 <i class="fas fa-plus"></i> Crea il primo evento
                             </a>

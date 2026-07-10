@@ -358,6 +358,8 @@
                                     <div class="d-flex align-items-start gap-1 ms-2">
                                         <button type="button"
                                                 class="btn btn-sm btn-outline-secondary chat-reply-btn"
+                                                data-bs-toggle="tooltip"
+                                                data-bs-placement="top"
                                                 title="Rispondi a questo messaggio">
                                             <i class="fas fa-reply"></i>
                                         </button>
@@ -665,6 +667,11 @@
     @parent
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            // Inizializza tooltip Bootstrap
+            document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
+                new bootstrap.Tooltip(el);
+            });
+
             const textarea = document.getElementById('content');
             const adminTextarea = document.getElementById('chat_admin_content');
             const chatUsersAutocompleteUrl = @json(route('users.autocomplete'));

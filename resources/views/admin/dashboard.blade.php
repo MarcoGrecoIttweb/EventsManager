@@ -462,6 +462,9 @@
                             <a href="{{ route('admin.groups.index') }}" class="btn btn-warning admin-tools-btn text-dark">
                                 <i class="fas fa-users-cog me-2"></i>Gruppi
                             </a>
+                            <a href="{{ route('admin.users.simple-list') }}" class="btn btn-info admin-tools-btn text-dark">
+                                <i class="fas fa-list me-2"></i>Elenco completo utenti
+                            </a>
                         </div>
                     </div>
                 </div>

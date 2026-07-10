@@ -576,9 +576,10 @@
                     '<label class="form-check-label small mb-0" for="' + id + '">Gruppo <strong>' + i + '</strong> ' +
                     '<span class="text-muted">(pos. ' + from + '–' + to + ', ' + cnt + ' ut.)</span></label>' +
                     '</div>' +
-                    '<button type="button" class="btn btn-outline-secondary btn-sm news-group-preview-btn" data-group="' + i + '" ' +
+                    '<button type="button" class="btn btn-outline-secondary btn-sm news-group-preview-btn" data-group="' + i + '" data-total="' + cnt + '" ' +
                     'title="Elenco nomi ed email che riceveranno il messaggio in questo gruppo">' +
-                    '<i class="fas fa-users me-1"></i>Destinatari</button>';
+                    '<i class="fas fa-users me-1"></i>Destinatari</button>' +
+                    '<span class="badge bg-primary news-group-dest-count d-none" data-group="' + i + '" title="Destinatari effettivi dopo esclusioni manuali"></span>';
                 area.appendChild(wrap);
                 var cb = wrap.querySelector('input');
                 if (prev[String(i)]) {
@@ -1068,6 +1069,7 @@
         }
 
         var newsGroupsCheckboxArea = document.getElementById('newsGroupsCheckboxArea');
+        var currentOpenGroupIndex = null;
         if (newsGroupsCheckboxArea) {
             newsGroupsCheckboxArea.addEventListener('click', function (e) {
                 var btn = e.target.closest('.news-group-preview-btn');
@@ -1077,6 +1079,7 @@
                 e.preventDefault();
                 var g = parseInt(btn.getAttribute('data-group'), 10);
                 if (!isNaN(g)) {
+                    currentOpenGroupIndex = g;
                     openNewsGroupRecipientsModal(g);
                 }
             });
@@ -1100,6 +1103,22 @@
                 }
                 syncNewsletterExcludeHiddenInputs();
                 updateSelectionPreview();
+
+                // Aggiorna badge contatore destinatari del gruppo aperto
+                if (currentOpenGroupIndex && newsGroupsCheckboxArea) {
+                    var previewBtn = newsGroupsCheckboxArea.querySelector('.news-group-preview-btn[data-group="' + currentOpenGroupIndex + '"]');
+                    var badge = newsGroupsCheckboxArea.querySelector('.news-group-dest-count[data-group="' + currentOpenGroupIndex + '"]');
+                    if (previewBtn && badge) {
+                        var total = parseInt(previewBtn.getAttribute('data-total'), 10) || 0;
+                        var excluded = 0;
+                        document.querySelectorAll('.news-recipient-include').forEach(function (cb) {
+                            if (!cb.checked) excluded++;
+                        });
+                        var effective = Math.max(0, total - excluded);
+                        badge.textContent = effective + ' destinatari';
+                        badge.classList.remove('d-none');
+                    }
+                }
             });
         }
 

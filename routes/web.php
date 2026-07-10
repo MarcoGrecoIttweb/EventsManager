@@ -931,6 +931,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/users/{user}/newsletter', [\App\Http\Controllers\Admin\UserController::class, 'updateNewsletter'])->name('users.update-newsletter');
     Route::delete('/users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'destroy'])->name('users.destroy');
     Route::get('/users/gallery', [\App\Http\Controllers\Admin\UserController::class, 'gallery'])->name('users.gallery');
+    Route::get('/users/simple-list', [\App\Http\Controllers\Admin\UserController::class, 'simpleList'])->name('users.simple-list');
 
     // Gruppi
     Route::resource('groups', \App\Http\Controllers\Admin\GroupController::class);
