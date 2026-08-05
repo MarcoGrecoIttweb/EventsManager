@@ -413,5 +413,10 @@
     "keywords": ["ciao", "buongiorno", "salve", "hey", "ehi", "buonasera"],
     "question": "Ciao!",
     "answer": "Ciao! Benvenuto nell'assistente di Excursio. Come posso aiutarti? Puoi chiedermi qualsiasi cosa riguardo al sito: come registrarti, come partecipare agli eventi, come usare il mercatino, e tanto altro!"
+  },
+  {
+    "keywords": ["amministratore scintilla", "numero telefono", "contatto admin", "telefono amministratore", "email amministratore", "scintilla", "3387717376", "excursio@libero.it", "amministratore", "telefono admin", "email admin", "contattare amministratore"],
+    "question": "Qual è il numero di telefono dell'Amministratore Scintilla?",
+    "answer": "Il numero di telefono dell'Amministratore Scintilla è **3387717376**. Puoi contattarlo anche via email all'indirizzo **excursio@libero.it**."
   }
 ]

@@ -246,6 +246,15 @@
                                                 </span>
                                             </button>
                                         </th>
+                                        <th class="col-giorni">
+                                            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-dark admin-sort" data-sort-key="giorni" aria-label="Ordina per giorni">
+                                                Giorni
+                                                <span class="admin-sort-icons" aria-hidden="true">
+                                                    <i class="fas fa-sort-up"></i>
+                                                    <i class="fas fa-sort-down"></i>
+                                                </span>
+                                            </button>
+                                        </th>
                                         <th>
                                             <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-dark admin-sort" data-sort-key="news" aria-label="Ordina per newsletter">
                                                 News
@@ -342,6 +351,13 @@
                                             </td>
                                             <td data-sort-ultimo-accesso="{{ $user->ultimo_accesso ? $user->ultimo_accesso->timestamp : 0 }}">
                                                 <span class="admin-date-small">{{ $user->ultimo_accesso ? $user->ultimo_accesso->format('d/m/Y') : '—' }}</span>
+                                            </td>
+                                            <td data-sort-giorni="{{ $user->ultimo_accesso ? (int) \Carbon\Carbon::now()->diffInDays($user->ultimo_accesso) : 0 }}">
+                                                @if($user->ultimo_accesso)
+                                                    <span class="badge bg-secondary">{{ (int) \Carbon\Carbon::now()->diffInDays($user->ultimo_accesso) }} gg</span>
+                                                @else
+                                                    <span class="text-muted">—</span>
+                                                @endif
                                             </td>
                                             <td>
                                                 @php
@@ -585,10 +601,10 @@
             cursor: default;
         }
 
-        /* Spazi più evidenti tra i record */
+        /* Tabella compatta: spazi minimi tra i record */
         .admin-users-table {
             border-collapse: separate !important;
-            border-spacing: 0 0.5rem;
+            border-spacing: 0;
         }
         .admin-users-table tbody tr > td {
             /* crea stacco tra una riga e l'altra */
@@ -761,10 +777,11 @@
         .admin-users-table th, .admin-users-table td {
             white-space: nowrap;
             vertical-align: middle;
+            padding: 0.15rem 0.3rem;
         }
         .admin-users-table th.col-residenza,
         .admin-users-table td.col-residenza {
-            max-width: 140px;
+            max-width: 90px;
             overflow: hidden;
             text-overflow: ellipsis;
         }
@@ -784,6 +801,9 @@
         }
         .admin-users-table th.col-ultacc {
             min-width: 92px;
+        }
+        .admin-users-table th.col-giorni {
+            min-width: 70px;
         }
         .admin-sort-icons {
             display: inline-flex;
@@ -811,7 +831,7 @@
             }
             .admin-users-table th,
             .admin-users-table td {
-                padding: 0.25rem 0.35rem;
+                padding: 0.1rem 0.2rem;
             }
         }
         .admin-users-table thead th {
@@ -1316,7 +1336,7 @@
             }
 
             function defaultSortDirForKey(sortKey) {
-                return (sortKey === 'ultimo_accesso' || sortKey === 'iscr' || sortKey === 'datanascita' || sortKey === 'eventi')
+                return (sortKey === 'ultimo_accesso' || sortKey === 'giorni' || sortKey === 'iscr' || sortKey === 'datanascita' || sortKey === 'eventi')
                     ? 'desc'
                     : 'asc';
             }
@@ -1343,6 +1363,11 @@
                         var av = getNumFromCell(a, '[data-sort-ultimo-accesso]', 'data-sort-ultimo-accesso');
                         var bv = getNumFromCell(b, '[data-sort-ultimo-accesso]', 'data-sort-ultimo-accesso');
                         return av - bv;
+                    }
+                    if (key === 'giorni') {
+                        var ag = getNumFromCell(a, '[data-sort-giorni]', 'data-sort-giorni');
+                        var bg = getNumFromCell(b, '[data-sort-giorni]', 'data-sort-giorni');
+                        return ag - bg;
                     }
                     if (key === 'iscr') {
                         var ai = getNumFromCell(a, '[data-sort-iscr]', 'data-sort-iscr');

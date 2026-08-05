@@ -40,7 +40,7 @@
 @section('sidebar_after_my_events')
     @auth
         @php $me = auth()->user(); @endphp
-        <div class="card border-0 shadow-sm mb-3">
+        <div class="card border-2 border-success shadow-sm mb-3">
             <div class="card-body p-2">
                 <div class="small fw-bold mb-2">
                     <i class="fas fa-calendar-plus text-success me-1"></i> Vuoi organizzare eventi?
@@ -61,6 +61,22 @@
                             Richiedi abilitazione
                         </a>
                     @endif
+                </div>
+            </div>
+        </div>
+        <div class="card border-2 border-success shadow-sm mb-3">
+            <div class="card-body p-2">
+                <div class="small fw-bold mb-2" role="button" data-bs-toggle="collapse" data-bs-target="#suggestionsBox" aria-expanded="false" aria-controls="suggestionsBox" style="cursor:pointer;">
+                    <i class="fas fa-lightbulb text-warning me-1"></i> Consigli e suggerimenti
+                </div>
+                <div class="collapse" id="suggestionsBox">
+                    <div class="small mb-2">
+                        <i class="fas fa-store me-1"></i> <i class="fas fa-lightbulb me-1"></i> Hai un locale da consigliarci o un'idea per migliorare il sito? <i class="fas fa-star text-success me-1"></i><span class="fw-semibold text-success">La tua opinione conta!</span>
+                    </div>
+                    <a href="mailto:excursio@libero.it?subject=Consigli%20e%20suggerimenti&body=Ciao%20team%20di%20Excursio,%0A%0AVorrei%20lasciarvi%20un%20feedback!%0A%0A%F0%9F%92%A1%20SUGGERIMENTI%20PER%20IL%20SITO:%0A%E2%9E%A1%EF%B8%8F%20%0A%0A%F0%9F%8D%B7%20NUOVO%20LOCALE%20DA%20CONSIGLIARE:%0A%E2%9E%A1%EF%B8%8F%20%0A%0A%E2%AD%90%20RECENSIONE%20/%20CRITICA%20LOCALE%20PROVATO:%0A%E2%9E%A1%EF%B8%8F%20%0A%0AGrazie!"
+                       class="btn btn-warning btn-sm w-100">
+                        <i class="fas fa-envelope me-1"></i> Invia consiglio
+                    </a>
                 </div>
             </div>
         </div>

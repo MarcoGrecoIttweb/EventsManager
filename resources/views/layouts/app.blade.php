@@ -393,6 +393,11 @@
                             <i class="fas fa-user-friends"></i> Amici
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('users.index') }}">
+                            <i class="fas fa-users"></i> Profili
+                        </a>
+                    </li>
                     @if($showChatLink)
                         <li class="nav-item">
                             <a class="nav-link" href="{{ route('chat.index') }}">
@@ -448,6 +453,11 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{{ route('friends.index') }}">
                             <i class="fas fa-user-friends"></i> Amici
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('users.index') }}">
+                            <i class="fas fa-users"></i> Profili
                         </a>
                     </li>
                     <li class="nav-item">
@@ -615,6 +625,28 @@
 
             {{-- Contenuti opzionali sotto "Utenti online" (es. homepage stats) --}}
             @yield('sidebar_after_online')
+
+            @guest
+                {{-- Box per utenti non registrati: invito a partecipare scrivendo una email --}}
+                <div class="card card-sidebar mb-3">
+                    <div class="card-header py-2" role="button" data-bs-toggle="collapse" data-bs-target="#guestParticipateBox" aria-expanded="false" aria-controls="guestParticipateBox" style="cursor:pointer;">
+                        <small class="fw-bold">
+                            <i class="fas fa-envelope text-danger me-1"></i> Non sei registrato e vuoi partecipare?
+                        </small>
+                    </div>
+                    <div class="collapse" id="guestParticipateBox">
+                        <div class="card-body p-2">
+                            <div class="small mb-2">
+                                Se sei interessato a partecipare a un evento in programma per provare, scrivici una email e ti daremo tutte le informazioni.
+                            </div>
+                            <a href="mailto:excursio@libero.it?subject=Richiesta%20partecipazione%20evento&body=Ciao,%20vorrei%20partecipare%20all%27evento%3A%20%5BTITOLO%20EVENTO%5D%0AMio%20nome%3A%20%5BNOME%5D%0AMio%20numero%20di%20telefono%3A%20%5BTELEFONO%5D%0A%0AGrazie."
+                               class="btn btn-danger btn-sm w-100">
+                                <i class="fas fa-paper-plane me-1"></i> Scrivici per partecipare
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            @endguest
 
             @auth
                 @php

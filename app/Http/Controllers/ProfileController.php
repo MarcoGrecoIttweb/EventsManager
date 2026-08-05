@@ -4,8 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Event;
+use App\Mail\AccountDeletionRequestMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\URL;
 
 class ProfileController extends Controller
 {
@@ -212,6 +215,51 @@ class ProfileController extends Controller
 
         return redirect()->route('profile.edit', $user)
             ->with('success', 'Password aggiornata.');
+    }
+
+    /**
+     * Richiesta di cancellazione account da parte dell'utente stesso.
+     * Invia una notifica email a tutti gli amministratori.
+     */
+    public function requestAccountDeletion(Request $request, User $user)
+    {
+        // Solo il proprietario dell'account può richiedere la propria cancellazione.
+        if ((int) $request->user()->getKey() !== (int) $user->getKey()) {
+            abort(403);
+        }
+
+        $this->authorize('update', $user);
+
+        if ($user->isAdmin()) {
+            return back()->with('error', 'Gli amministratori non possono richiedere la cancellazione del proprio account.');
+        }
+
+        $usersAdminUrl = URL::route('admin.users.index', [], true);
+        $admins = User::query()
+            ->where('ruolo', 0)
+            ->whereNotNull('email')
+            ->where('email', '!=', '')
+            ->get();
+
+        $sentCount = 0;
+        foreach ($admins as $admin) {
+            try {
+                Mail::to($admin->email)->send(new AccountDeletionRequestMail($user, $usersAdminUrl));
+                $sentCount++;
+            } catch (\Throwable $e) {
+                \Log::error('Email richiesta cancellazione account (admin) non inviata: ' . $e->getMessage(), [
+                    'user_id' => $user->getKey(),
+                    'admin_id' => $admin->getKey(),
+                    'exception' => $e,
+                ]);
+            }
+        }
+
+        if ($sentCount === 0) {
+            return back()->with('error', 'Non è stato possibile inviare la richiesta di cancellazione. Riprova più tardi.');
+        }
+
+        return back()->with('success', 'Richiesta di cancellazione account inviata. Un amministratore provvederà al più presto.');
     }
 
     /**

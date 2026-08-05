@@ -848,6 +848,8 @@ Route::middleware(['auth', 'approved'])->group(function () {
     Route::post('/profile/{user}/admin-note', [ProfileController::class, 'updateAdminNote'])
         ->name('profile.admin-note.update')
         ->middleware('admin');
+    Route::post('/profile/{user}/delete-request', [ProfileController::class, 'requestAccountDeletion'])
+        ->name('profile.delete-request');
 
     // Amicizie
     Route::get('/friends', [FriendController::class, 'index'])->name('friends.index');
@@ -857,6 +859,10 @@ Route::middleware(['auth', 'approved'])->group(function () {
     // Ricerca utenti (solo per username; link nella barra per tutti gli utenti approvati)
     Route::get('/users/search', [SearchController::class, 'users'])->name('users.search');
     Route::get('/users/autocomplete', [SearchController::class, 'usersAutocomplete'])->name('users.autocomplete');
+    Route::get('/users/all', [SearchController::class, 'usersAll'])->name('users.all');
+
+    // Elenco profili: tabella con tutti gli utenti abilitati (username, nome, foto)
+    Route::get('/profili', [SearchController::class, 'index'])->name('users.index');
 
     // Commenti
     Route::post('/events/{event}/comments', [CommentController::class, 'store'])->name('comments.store');

@@ -166,6 +166,11 @@
             border-color: #adb5bd !important;
             color: #212529 !important;
         }
+        .admin-quick-actions .btn.btn-outline-success {
+            background-color: #198754 !important;
+            border-color: #198754 !important;
+            color: #fff !important;
+        }
         .admin-dashboard-stat-card {
             border: 2px solid #8B4513 !important; /* stesso bordo "lista di attesa" */
             background-color: #fff3cd !important; /* stesso giallo "lista di attesa" */
@@ -302,6 +307,11 @@
                                 </a>
                                 <a href="{{ route('admin.events.create') }}" class="btn btn-primary">
                                     <i class="fas fa-plus me-2"></i>Crea nuovo evento
+                                </a>
+                            </div>
+                            <div class="admin-quick-actions-row mt-2">
+                                <a href="{{ route('admin.users.gallery') }}" class="btn btn-outline-success">
+                                    <i class="fas fa-images me-2"></i>Foto utenti
                                 </a>
                             </div>
                             <div class="admin-quick-actions-row mt-2">

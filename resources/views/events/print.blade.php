@@ -53,17 +53,20 @@
 
         .col-email,
         .col-phone,
-        .col-registered {
+        .col-registered,
+        .col-birthdate {
             display: none;
         }
 
-        .col-registered {
+        .col-registered,
+        .col-birthdate {
             white-space: nowrap;
         }
 
         body.show-email .col-email,
         body.show-phone .col-phone,
-        body.show-registered .col-registered {
+        body.show-registered .col-registered,
+        body.show-birthdate .col-birthdate {
             display: table-cell;
         }
 
@@ -74,13 +77,15 @@
 
             .col-email,
             .col-phone,
-            .col-registered {
+            .col-registered,
+            .col-birthdate {
                 display: table-cell !important;
             }
 
             body:not(.print-with-email) .col-email,
             body:not(.print-with-phone) .col-phone,
-            body:not(.print-with-registered) .col-registered {
+            body:not(.print-with-registered) .col-registered,
+            body:not(.print-with-birthdate) .col-birthdate {
                 display: none !important;
             }
 
@@ -125,6 +130,24 @@
             .print-description__body * {
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
+            }
+        }
+
+        .print-description {
+            display: none;
+        }
+
+        body.show-description .print-description {
+            display: block;
+        }
+
+        @media print {
+            .print-description {
+                display: block !important;
+            }
+
+            body:not(.print-with-description) .print-description {
+                display: none !important;
             }
         }
 
@@ -187,7 +210,7 @@
             <span class="small fw-semibold d-block mb-2">Colonne da includere in stampa:</span>
             <div class="d-flex flex-wrap gap-3">
                 <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="opt-email" data-col="email">
+                    <input class="form-check-input" type="checkbox" id="opt-email" data-col="email" checked>
                     <label class="form-check-label" for="opt-email">Email</label>
                 </div>
                 <div class="form-check">
@@ -197,6 +220,14 @@
                 <div class="form-check">
                     <input class="form-check-input" type="checkbox" id="opt-registered" data-col="registered" checked>
                     <label class="form-check-label" for="opt-registered">Iscritto / data ospite</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="opt-birthdate" data-col="birthdate" checked>
+                    <label class="form-check-label" for="opt-birthdate">Data nascita</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="opt-description" data-col="description" checked>
+                    <label class="form-check-label" for="opt-description">Descrizione evento</label>
                 </div>
             </div>
         </div>
@@ -243,6 +274,7 @@
                         <th scope="col" style="width:2.8rem; text-align:center;">Ospiti</th>
                         <th scope="col" class="col-email" style="width:10rem;">Email</th>
                         <th scope="col" class="col-registered" style="width:7rem;">Data iscrizione</th>
+                        <th scope="col" class="col-birthdate" style="width:6rem;">Data nascita</th>
                         <th scope="col" style="width:14rem;">Note</th>
                     </tr>
                     </thead>
@@ -279,6 +311,13 @@
                                     —
                                 @endif
                             </td>
+                            <td class="col-birthdate">
+                                @if(!empty($p->datanascita))
+                                    {{ \Illuminate\Support\Carbon::parse($p->datanascita)->format('d/m/Y') }}
+                                @else
+                                    —
+                                @endif
+                            </td>
                             <td></td>
                         </tr>
                         @for($g = 1; $g <= $guestsCount; $g++)
@@ -307,6 +346,7 @@
                                         —
                                     @endif
                                 </td>
+                                <td class="col-birthdate text-muted">—</td>
                                 <td></td>
                             </tr>
                         @endfor
@@ -336,15 +376,19 @@
                 document.body.classList.toggle('show-email', document.getElementById('opt-email').checked);
                 document.body.classList.toggle('show-phone', document.getElementById('opt-phone').checked);
                 document.body.classList.toggle('show-registered', document.getElementById('opt-registered').checked);
+                document.body.classList.toggle('show-birthdate', document.getElementById('opt-birthdate').checked);
+                document.body.classList.toggle('show-description', document.getElementById('opt-description').checked);
             }
 
             function syncPrintClasses() {
                 document.body.classList.toggle('print-with-email', document.getElementById('opt-email').checked);
                 document.body.classList.toggle('print-with-phone', document.getElementById('opt-phone').checked);
                 document.body.classList.toggle('print-with-registered', document.getElementById('opt-registered').checked);
+                document.body.classList.toggle('print-with-birthdate', document.getElementById('opt-birthdate').checked);
+                document.body.classList.toggle('print-with-description', document.getElementById('opt-description').checked);
             }
 
-            ['opt-email', 'opt-phone', 'opt-registered'].forEach(function (id) {
+            ['opt-email', 'opt-phone', 'opt-registered', 'opt-birthdate', 'opt-description'].forEach(function (id) {
                 document.getElementById(id).addEventListener('change', syncPreview);
             });
 

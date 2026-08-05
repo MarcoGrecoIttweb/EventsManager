@@ -50,15 +50,15 @@
     <style>
         .users-gallery-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
-            gap: 0.75rem;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 1rem;
         }
         .users-gallery-photo {
-            width: 72px;
-            height: 72px;
+            width: 110px;
+            height: 110px;
             object-fit: cover;
             border-radius: 50%;
-            border: 1px solid #d0d7de;
+            border: 2px solid #d0d7de;
             background: #f8f9fa;
         }
     </style>

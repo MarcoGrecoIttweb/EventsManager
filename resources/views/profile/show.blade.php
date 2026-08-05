@@ -185,7 +185,15 @@
                                     </div>
                                     <div class="profile-field">
                                         <span class="profile-label profile-label--email">E-mail:</span>
-                                        <span class="profile-value">{{ $canSeePrivateContacts ? ($user->email ?: '—') : '—' }}</span>
+                                        <span class="profile-value">
+                                            @if($canSeePrivateContacts && $user->email)
+                                                <a href="mailto:{{ $user->email }}" class="text-decoration-none fw-semibold">
+                                                    <i class="fas fa-envelope me-1"></i>{{ $user->email }}
+                                                </a>
+                                            @else
+                                                {{ $canSeePrivateContacts ? '—' : '—' }}
+                                            @endif
+                                        </span>
                                     </div>
                                     <div class="profile-field">
                                         <span class="profile-label">Cellulare:</span>
@@ -305,11 +313,18 @@
                                                     <a href="{{ route('profile.edit', $user) }}" class="btn btn-primary btn-sm profile-main-action-btn">
                                                         <i class="fas fa-edit"></i> Modifica Profilo
                                                     </a>
-                                                    @if(auth()->id() === $user->id)
-                                                        <a href="{{ route('profile.edit', $user) }}?openPassword=1" class="btn btn-outline-secondary btn-sm profile-main-action-btn">
-                                                            <i class="fas fa-key me-1"></i> Modifica passw
-                                                        </a>
-                                                    @elseif($isAdminViewer && !$adminViewingOtherUser)
+                                                     @if(auth()->id() === $user->id)
+                                                         <a href="{{ route('profile.edit', $user) }}?openPassword=1" class="btn btn-outline-secondary btn-sm profile-main-action-btn">
+                                                             <i class="fas fa-key me-1"></i> Modifica passw
+                                                         </a>
+                                                         <form action="{{ route('profile.delete-request', $user) }}" method="POST" class="d-inline-flex m-0"
+                                                               onsubmit="return confirm('Sei sicuro di voler richiedere la cancellazione del tuo account? L\'account verrà eliminato da un amministratore dopo aver ricevuto la richiesta.');">
+                                                             @csrf
+                                                             <button type="submit" class="btn btn-outline-danger btn-sm profile-main-action-btn">
+                                                                 <i class="fas fa-user-slash me-1"></i> Cancella account
+                                                             </button>
+                                                         </form>
+                                                     @elseif($isAdminViewer && !$adminViewingOtherUser)
                                                         <button type="button"
                                                                 class="btn btn-outline-secondary btn-sm profile-main-action-btn"
                                                                 data-bs-toggle="collapse"
