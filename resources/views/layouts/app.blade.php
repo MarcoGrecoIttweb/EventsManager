@@ -196,20 +196,6 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
-        /* Link "Storico Excursio": verde lampeggiante */
-        .nav-link--storico {
-            color: #ffd700 !important;
-            font-weight: 600;
-            animation: storico-blink 1.5s ease-in-out infinite;
-        }
-        .nav-link--storico:hover {
-            color: #fff !important;
-        }
-        @keyframes storico-blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
-        }
-
         /* Niente striscia/bordo chiaro sotto i link della barra nera */
         .excursio-navbar,
         .excursio-navbar .nav-link,
@@ -297,11 +283,6 @@
                             </a>
                         </li>
                     @endif
-                    <li class="nav-item">
-                        <a class="nav-link nav-link--storico" href="https://excursio.org" target="_blank">
-                            <i class="fas fa-landmark"></i> Torna al vecchio sito
-                        </a>
-                    </li>
                 @else
                 <li class="nav-item d-flex align-items-center me-1 me-md-2">
                     <span class="navbar-text text-white-50 small">
@@ -376,11 +357,6 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{{ route('events.past') }}">
                             <i class="fas fa-history"></i> Eventi passati
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link nav-link--storico" href="https://excursio.org" target="_blank">
-                            <i class="fas fa-landmark"></i> Torna al vecchio sito
                         </a>
                     </li>
                     <li class="nav-item">
@@ -463,11 +439,6 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{{ route('events.past') }}">
                             <i class="fas fa-history"></i> Eventi passati
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link nav-link--storico" href="https://excursio.org" target="_blank">
-                            <i class="fas fa-landmark"></i> Torna al vecchio sito
                         </a>
                     </li>
                     @if($showAlbumsFotoLink)

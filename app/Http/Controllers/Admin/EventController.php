@@ -245,26 +245,34 @@ class EventController extends Controller
         $isActive = $request->has('is_active') ? 1 : 0;
 
         // Create event with legacy column names
-        $event = Event::create(EventoTableSchema::filter([
-            'nome' => $validated['title'],
-            'incipit' => $validated['incipit'] ?? null,
-            'descrizione' => $validated['description'],
-            'dataevento' => $validated['date'],
-            'citta' => $validated['city'],
-            'dove' => $validated['venue'] ?? '',
-            'via' => $validated['address'],
-            'civico' => (string) ($validated['civico'] ?? ''),
-            'costo' => $validated['cost'] ?? null,
-            'numeromax' => $validated['max_participants'] ?? null,
-            'id_organizzatore' => Auth::id(),
-            'pubblicato' => $isActive,
-            'elenco_visibile' => 0,
-            'sondaggio' => '',
-            'url_galleria' => (string) ($validated['google_album_url'] ?? ''),
-            'datascadenza' => $validated['deadline'] ?? $validated['date'],
-            'allow_guests' => $allowGuests,
-            'max_guests_per_user' => $allowGuests ? ($validated['max_guests_per_user'] ?? 3) : 0,
-        ] + EventGreetingSettings::payloadFromRequest($request)));
+        try {
+            $event = Event::create(EventoTableSchema::filter([
+                'nome' => $validated['title'],
+                'incipit' => $validated['incipit'] ?? null,
+                'descrizione' => $validated['description'],
+                'dataevento' => $validated['date'],
+                'citta' => $validated['city'],
+                'dove' => $validated['venue'] ?? '',
+                'via' => $validated['address'],
+                'civico' => (string) ($validated['civico'] ?? ''),
+                'costo' => $validated['cost'] ?? null,
+                'numeromax' => $validated['max_participants'] ?? null,
+                'id_organizzatore' => Auth::id(),
+                'pubblicato' => $isActive,
+                'elenco_visibile' => 0,
+                'sondaggio' => '',
+                'url_galleria' => (string) ($validated['google_album_url'] ?? ''),
+                'datascadenza' => $validated['deadline'] ?? $validated['date'],
+                'allow_guests' => $allowGuests,
+                'max_guests_per_user' => $allowGuests ? ($validated['max_guests_per_user'] ?? 3) : 0,
+            ] + EventGreetingSettings::payloadFromRequest($request)));
+        } catch (\Throwable $e) {
+            report($e);
+
+            return back()
+                ->with('error', EventoTableSchema::saveErrorMessage($e))
+                ->withInput();
+        }
 
         $event->enrollOrganizerAsParticipant();
 
@@ -571,7 +579,7 @@ class EventController extends Controller
             report($e);
 
             return back()
-                ->with('error', 'Salvataggio non riuscito. Se il problema persiste, sul server esegui: php artisan excursio:sync-database')
+                ->with('error', EventoTableSchema::saveErrorMessage($e))
                 ->withInput();
         }
         $event->refresh();

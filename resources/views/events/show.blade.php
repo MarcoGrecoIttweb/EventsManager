@@ -783,7 +783,7 @@
                                                                         @csrf
                                                                         <input type="hidden" name="guest_index" value="{{ $gi }}">
                                                                         <input type="text" name="nome"
-                                                                               class="form-control form-control-sm flex-grow-1 @error('nome') is-invalid @enderror"
+                                                                               class="form-control form-control-sm flex-grow-1 event-guest-name-input @error('nome') is-invalid @enderror"
                                                                                style="min-width: 10rem; max-width: 18rem;"
                                                                                placeholder="Nominativo"
                                                                                value="{{ $nomeFormError ? old('nome', '') : '' }}"
@@ -793,6 +793,9 @@
                                                                             Salva
                                                                         </button>
                                                                     </form>
+                                                                    <div class="event-guest-name-warning-msg">
+                                                                        <i class="fas fa-exclamation-triangle me-1"></i> Inserisci il nome dell'amico che porti
+                                                                    </div>
                                                                     @error('nome')
                                                                         @if($nomeFormError)
                                                                             <div class="invalid-feedback d-block">{{ $message }}</div>
@@ -1212,7 +1215,7 @@
                                                                         @csrf
                                                                         <input type="hidden" name="guest_index" value="{{ $gi }}">
                                                                         <input type="text" name="nome"
-                                                                               class="form-control form-control-sm flex-grow-1 @error('nome') is-invalid @enderror"
+                                                                               class="form-control form-control-sm flex-grow-1 event-guest-name-input @error('nome') is-invalid @enderror"
                                                                                style="min-width: 10rem; max-width: 18rem;"
                                                                                placeholder="Nominativo"
                                                                                value="{{ $nomeFormError ? old('nome', '') : '' }}"
@@ -1222,6 +1225,9 @@
                                                                             Salva
                                                                         </button>
                                                                     </form>
+                                                                    <div class="event-guest-name-warning-msg">
+                                                                        <i class="fas fa-exclamation-triangle me-1"></i> Inserisci il nome dell'amico che porti
+                                                                    </div>
                                                                     @error('nome')
                                                                         @if($nomeFormError)
                                                                             <div class="invalid-feedback d-block">{{ $message }}</div>
@@ -1414,6 +1420,84 @@
                     cleanupIfEmpty();
                 }
             }, 1200);
+        });
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Gestione campo nominativo ospite: focus, bordo verde e avviso se vuoto
+            var guestNameInputs = document.querySelectorAll('.event-guest-name-input');
+
+            function showWarning(input) {
+                var container = input.closest('div[style*="min-width: 12rem"]');
+                if (!container) return;
+                var warningMsg = container.querySelector('.event-guest-name-warning-msg');
+                if (warningMsg) {
+                    warningMsg.style.display = 'block';
+                }
+                input.classList.remove('event-guest-name-focused');
+                input.classList.add('event-guest-name-warning');
+            }
+
+            function clearWarning(input) {
+                var container = input.closest('div[style*="min-width: 12rem"]');
+                if (!container) return;
+                var warningMsg = container.querySelector('.event-guest-name-warning-msg');
+                if (warningMsg) {
+                    warningMsg.style.display = 'none';
+                }
+                input.classList.remove('event-guest-name-warning');
+                input.classList.add('event-guest-name-focused');
+            }
+
+            guestNameInputs.forEach(function (input) {
+                // Focus: bordo verde
+                input.addEventListener('focus', function () {
+                    clearWarning(input);
+                });
+
+                // Blur: se vuoto, mostra avviso
+                input.addEventListener('blur', function () {
+                    if (input.value.trim() === '') {
+                        showWarning(input);
+                    }
+                });
+
+                // Input: se l'utente scrive, rimuovi avviso
+                input.addEventListener('input', function () {
+                    if (input.value.trim() !== '') {
+                        clearWarning(input);
+                    }
+                });
+
+                // Submit del form: se vuoto, blocca e mostra avviso
+                var form = input.closest('form');
+                if (form) {
+                    form.addEventListener('submit', function (e) {
+                        if (input.value.trim() === '') {
+                            e.preventDefault();
+                            showWarning(input);
+                            input.focus();
+                        }
+                    });
+                }
+            });
+
+            // Se c'è un campo nominativo vuoto (appena aggiunto con "Porta un amico"),
+            // posiziona il cursore e applica il bordo verde
+            var emptyGuestInput = null;
+            guestNameInputs.forEach(function (input) {
+                if (input.value.trim() === '') {
+                    emptyGuestInput = input;
+                }
+            });
+
+            if (emptyGuestInput) {
+                setTimeout(function () {
+                    emptyGuestInput.classList.add('event-guest-name-focused');
+                    emptyGuestInput.focus();
+                    emptyGuestInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 600);
+            }
         });
     </script>
 
@@ -1705,6 +1789,45 @@
             color: #fff !important;
             border-color: #b02a37 !important;
             opacity: 1;
+        }
+
+        /* Smartphone: pulsante "Iscrivimi all'evento" più grande ed evidenziato (titolo evento invariato) */
+        @media (max-width: 767.98px) {
+            .btn.event-btn-iscrivimi-all-evento {
+                font-size: 1.05rem !important;
+                padding: 0.65rem 0.9rem !important;
+                font-weight: 700 !important;
+                letter-spacing: 0.02em;
+                border-width: 2px !important;
+            }
+            .btn.event-btn-iscrivimi-all-evento.btn-iscrivimi-state-on {
+                background-color: #198754 !important;
+                box-shadow: 0 4px 14px rgba(25, 135, 84, 0.5) !important;
+                animation: eventIscriviBtnPulse 2s ease-in-out infinite;
+            }
+            .btn.event-btn-iscrivimi-all-evento.btn-iscrivimi-state-off:disabled {
+                background-color: #adb5bd !important;
+                box-shadow: 0 3px 10px rgba(108, 117, 125, 0.45) !important;
+            }
+            .btn.event-btn-iscrivimi-all-evento.btn-iscrivimi-full:disabled {
+                background-color: #dc3545 !important;
+                box-shadow: 0 4px 14px rgba(220, 53, 69, 0.5) !important;
+            }
+            @keyframes eventIscriviBtnPulse {
+                0%, 100% {
+                    box-shadow: 0 4px 14px rgba(25, 135, 84, 0.45);
+                    transform: scale(1);
+                }
+                50% {
+                    box-shadow: 0 4px 20px rgba(25, 135, 84, 0.7);
+                    transform: scale(1.01);
+                }
+            }
+            @media (prefers-reduced-motion: reduce) {
+                .btn.event-btn-iscrivimi-all-evento.btn-iscrivimi-state-on {
+                    animation: none;
+                }
+            }
         }
 
         .event-meta-organizer-line {
@@ -2297,6 +2420,23 @@
         /* Bordo marrone (sfondo invariato) */
         .btn.btn-border-brown {
             border: 2px solid #8B4513 !important;
+        }
+
+        /* Campo nominativo ospite: bordo verde quando attivo/focus */
+        .event-guest-name-input.event-guest-name-focused {
+            border: 2px solid #198754 !important;
+            box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25);
+        }
+        .event-guest-name-input.event-guest-name-warning {
+            border: 2px solid #dc3545 !important;
+            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+        }
+        .event-guest-name-warning-msg {
+            color: #dc3545;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-top: 0.25rem;
+            display: none;
         }
     </style>
 @endsection

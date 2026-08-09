@@ -88,27 +88,35 @@ class EventManageController extends Controller
         // Forza il titolo evento in MAIUSCOLO
         $validated['title'] = Str::upper((string) $validated['title']);
 
-        $event = Event::create(EventoTableSchema::filter([
-            'nome' => $validated['title'],
-            'incipit' => $validated['incipit'] ?? null,
-            'descrizione' => $validated['description'],
-            'dataevento' => $validated['date'],
-            'citta' => $validated['city'],
-            'dove' => $validated['venue'] ?? '',
-            'via' => $validated['address'],
-            'civico' => (string) ($validated['civico'] ?? ''),
-            'costo' => $validated['cost'] ?? null,
-            'numeromax' => $validated['max_participants'] ?? null,
-            'id_organizzatore' => Auth::id(),
-            'pubblicato' => $isActive,
-            // Valore fisso per DB condiviso con sito legacy (non c’è toggle in form Laravel)
-            'elenco_visibile' => 0,
-            'sondaggio' => '',
-            'url_galleria' => (string) ($validated['google_album_url'] ?? ''),
-            'datascadenza' => $validated['deadline'] ?? $validated['date'],
-            'allow_guests' => $allowGuests,
-            'max_guests_per_user' => $allowGuests ? ($validated['max_guests_per_user'] ?? 3) : 0,
-        ] + ($user->isAdmin() ? EventGreetingSettings::payloadFromRequest($request) : [])));
+        try {
+            $event = Event::create(EventoTableSchema::filter([
+                'nome' => $validated['title'],
+                'incipit' => $validated['incipit'] ?? null,
+                'descrizione' => $validated['description'],
+                'dataevento' => $validated['date'],
+                'citta' => $validated['city'],
+                'dove' => $validated['venue'] ?? '',
+                'via' => $validated['address'],
+                'civico' => (string) ($validated['civico'] ?? ''),
+                'costo' => $validated['cost'] ?? null,
+                'numeromax' => $validated['max_participants'] ?? null,
+                'id_organizzatore' => Auth::id(),
+                'pubblicato' => $isActive,
+                // Valore fisso per DB condiviso con sito legacy (non c’è toggle in form Laravel)
+                'elenco_visibile' => 0,
+                'sondaggio' => '',
+                'url_galleria' => (string) ($validated['google_album_url'] ?? ''),
+                'datascadenza' => $validated['deadline'] ?? $validated['date'],
+                'allow_guests' => $allowGuests,
+                'max_guests_per_user' => $allowGuests ? ($validated['max_guests_per_user'] ?? 3) : 0,
+            ] + ($user->isAdmin() ? EventGreetingSettings::payloadFromRequest($request) : [])));
+        } catch (\Throwable $e) {
+            report($e);
+
+            return back()
+                ->with('error', EventoTableSchema::saveErrorMessage($e))
+                ->withInput();
+        }
 
         if ($request->hasFile('cover_image')) {
             $coverResult = $this->imageService->uploadCoverImage(
@@ -253,7 +261,7 @@ class EventManageController extends Controller
             report($e);
 
             return back()
-                ->with('error', 'Salvataggio non riuscito. Se il problema persiste, sul server esegui: php artisan excursio:sync-database')
+                ->with('error', EventoTableSchema::saveErrorMessage($e))
                 ->withInput();
         }
 

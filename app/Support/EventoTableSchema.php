@@ -76,4 +76,31 @@ class EventoTableSchema
     {
         self::$columns = null;
     }
+
+    /**
+     * Messaggio utente per un fallimento di salvataggio dell'evento, distinguendo
+     * la causa reale (es. testo troppo lungo per la colonna) da una colonna
+     * mancante (unico caso in cui "excursio:sync-database" è la soluzione).
+     */
+    public static function saveErrorMessage(\Throwable $e): string
+    {
+        $message = $e->getMessage();
+
+        if (preg_match("/Data too long for column '([^']+)'/i", $message, $matches)) {
+            $labels = [
+                'descrizione' => 'Descrizione',
+                'incipit' => 'Anteprima (incipit)',
+                'greeting_box_message' => 'Messaggio box di benvenuto',
+            ];
+            $field = $labels[$matches[1]] ?? $matches[1];
+
+            return "Salvataggio non riuscito: il testo nel campo \"{$field}\" è troppo lungo. Accorcialo e riprova.";
+        }
+
+        if (stripos($message, 'Unknown column') !== false || stripos($message, "doesn't exist") !== false) {
+            return 'Salvataggio non riuscito. Se il problema persiste, sul server esegui: php artisan excursio:sync-database';
+        }
+
+        return 'Salvataggio non riuscito. Riprova o contatta l\'assistenza tecnica.';
+    }
 }
