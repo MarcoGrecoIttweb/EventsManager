@@ -234,6 +234,7 @@
                                                     <form action="{{ route('events.participate', $event) }}" method="POST" class="mb-0 flex-grow-1 w-100">
                                                         @csrf
                                                         <button type="submit" class="btn btn-sm w-100 event-btn-participate-map-height event-btn-iscrivimi-all-evento btn-iscrivimi-state-{{ $cannotJoin ? 'off' : 'on' }} {{ $event->isFull() ? 'btn-iscrivimi-full' : '' }}"
+                                                            data-hint="Clicca per iscriverti a questo evento"
                                                             {{ $cannotJoin ? 'disabled' : '' }}>
                                                             <i class="fas fa-{{ $joinIcon }}"></i>
                                                             {{ $joinLabel }}
@@ -502,7 +503,7 @@
                                                     aria-expanded="false"
                                                     aria-controls="eventMapCollapse"
                                                     id="btnEventMapToggle">
-                                                <i class="fas fa-map"></i> Mappa
+                                                <i class="fas fa-map"></i> Mostra Mappa / Come arrivare
                                             </button>
                                         @else
                                             <div class="event-meta-map-unavailable">
@@ -606,7 +607,7 @@
                                             if (!btn) return;
                                             btn.innerHTML = open
                                                 ? '<i class="fas fa-compress-alt"></i> Riduci mappa'
-                                                : '<i class="fas fa-map"></i> Mappa';
+                                                : '<i class="fas fa-map"></i> Mostra Mappa / Come arrivare';
                                             btn.setAttribute('aria-expanded', open ? 'true' : 'false');
                                         }
 
@@ -891,6 +892,7 @@
                             @if(auth()->user()->isApproved())
                                 <button class="btn btn-success btn-sm flex-shrink-0 text-nowrap" type="button"
                                         data-bs-toggle="collapse" data-bs-target="#eventCommentCollapse"
+                                        data-hint="Inserisci commento o messaggio relativo a questo evento"
                                         aria-expanded="false" aria-controls="eventCommentCollapse">
                                     <i class="fas fa-comment-dots me-1"></i> Inserisci Commento
                                 </button>
@@ -1768,15 +1770,33 @@
         .btn.event-btn-iscrivimi-all-evento {
             border: 2px solid #0d6efd !important;
             font-weight: 600;
+            font-size: 1.05rem !important;
         }
         .btn.event-btn-iscrivimi-all-evento.btn-iscrivimi-state-on {
             background-color: #198754 !important;
             color: #fff !important;
+            box-shadow: 0 4px 14px rgba(25, 135, 84, 0.5) !important;
+            animation: eventIscriviBtnPulse 2s ease-in-out infinite;
         }
         .btn.event-btn-iscrivimi-all-evento.btn-iscrivimi-state-on:hover {
             background-color: #157347 !important;
             color: #fff !important;
             border-color: #0d6efd !important;
+        }
+        @keyframes eventIscriviBtnPulse {
+            0%, 100% {
+                box-shadow: 0 4px 14px rgba(25, 135, 84, 0.45);
+                transform: scale(1);
+            }
+            50% {
+                box-shadow: 0 4px 20px rgba(25, 135, 84, 0.7);
+                transform: scale(1.01);
+            }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .btn.event-btn-iscrivimi-all-evento.btn-iscrivimi-state-on {
+                animation: none;
+            }
         }
         .btn.event-btn-iscrivimi-all-evento.btn-iscrivimi-state-off:disabled {
             background-color: #adb5bd !important;
@@ -1800,11 +1820,6 @@
                 letter-spacing: 0.02em;
                 border-width: 2px !important;
             }
-            .btn.event-btn-iscrivimi-all-evento.btn-iscrivimi-state-on {
-                background-color: #198754 !important;
-                box-shadow: 0 4px 14px rgba(25, 135, 84, 0.5) !important;
-                animation: eventIscriviBtnPulse 2s ease-in-out infinite;
-            }
             .btn.event-btn-iscrivimi-all-evento.btn-iscrivimi-state-off:disabled {
                 background-color: #adb5bd !important;
                 box-shadow: 0 3px 10px rgba(108, 117, 125, 0.45) !important;
@@ -1812,21 +1827,6 @@
             .btn.event-btn-iscrivimi-all-evento.btn-iscrivimi-full:disabled {
                 background-color: #dc3545 !important;
                 box-shadow: 0 4px 14px rgba(220, 53, 69, 0.5) !important;
-            }
-            @keyframes eventIscriviBtnPulse {
-                0%, 100% {
-                    box-shadow: 0 4px 14px rgba(25, 135, 84, 0.45);
-                    transform: scale(1);
-                }
-                50% {
-                    box-shadow: 0 4px 20px rgba(25, 135, 84, 0.7);
-                    transform: scale(1.01);
-                }
-            }
-            @media (prefers-reduced-motion: reduce) {
-                .btn.event-btn-iscrivimi-all-evento.btn-iscrivimi-state-on {
-                    animation: none;
-                }
             }
         }
 
