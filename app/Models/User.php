@@ -28,7 +28,7 @@ class User extends Authenticatable
         'username', 'password', 'password_laravel', 'nome', 'cognome', 'email',
         'mail_visibile', 'datanascita', 'ruolo', 'residenza',
         'sesso', 'descr', 'avatar', 'abilitato', 'note_utente',
-        'telefono', 'invia', 'ultimo_accesso',
+        'telefono', 'invia', 'ultimo_accesso', 'nascondi_eventi_partecipati',
     ];
 
     protected $hidden = [
@@ -48,6 +48,7 @@ class User extends Authenticatable
         'ultimo_accesso' => 'datetime',
         'mail_visibile' => 'boolean',
         'invia' => 'boolean',
+        'nascondi_eventi_partecipati' => 'boolean',
     ];
 
     // ─── Accessors (legacy → Laravel names used by views) ─────────

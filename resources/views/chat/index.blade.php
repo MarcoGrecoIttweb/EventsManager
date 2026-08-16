@@ -59,12 +59,36 @@
                 <div class="mb-3">
                     <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
                         <button type="button"
+                                class="btn btn-sm btn-primary chat-howto-toggle"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#chatComposeCollapse"
+                                aria-expanded="false"
+                                aria-controls="chatComposeCollapse"
+                                data-hint="Scrivi il tuo messaggio">
+                            <i class="fas fa-pen me-1" aria-hidden="true"></i> Scrivi chat
+                        </button>
+                        @auth
+                            @if(auth()->user()->isAdmin())
+                                <button type="button"
+                                        id="chatAddressedUserToggleBtn"
+                                        class="btn btn-sm btn-outline-primary chat-howto-toggle"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#chatAddressedUserCollapse"
+                                        aria-expanded="false"
+                                        aria-controls="chatAddressedUserCollapse"
+                                        data-hint="Invia il messaggio mail e chat a un utente">
+                                    <i class="fas fa-user-tag me-1" aria-hidden="true"></i> Invia a utente
+                                </button>
+                            @endif
+                        @endauth
+                        <button type="button"
                                 class="btn btn-sm btn-success chat-howto-toggle"
                                 data-bs-toggle="collapse"
                                 data-bs-target="#chatHouseRulesCollapse"
                                 aria-expanded="false"
-                                aria-controls="chatHouseRulesCollapse">
-                            <i class="fas fa-hand-sparkles me-1" aria-hidden="true"></i> Le regole della casa
+                                aria-controls="chatHouseRulesCollapse"
+                                data-hint="Le “regole della casa”">
+                            <i class="fas fa-hand-sparkles me-1" aria-hidden="true"></i> Leggi le regole
                         </button>
                         <button type="button"
                                 class="btn btn-sm btn-outline-success chat-howto-toggle"
@@ -159,6 +183,112 @@
 
                             <p class="mb-0"><span class="fst-italic">Buone conversazioni</span><br><span class="text-muted">Lorise</span></p>
                         </div>
+                    </div>
+
+                    <div class="collapse mt-2 @if($errors->has('content') || old('content') !== null) show @endif" id="chatComposeCollapse">
+                        @auth
+                            <form action="{{ route('chat.store') }}" method="POST">
+                                @csrf
+                                <input type="hidden" name="reply_to_nickname" id="reply_to_nickname" value="">
+                                <input type="hidden" name="reply_to_when" id="reply_to_when" value="">
+                                @if(auth()->user()->isAdmin())
+                                <div class="collapse mb-3" id="chatAddressedUserCollapse">
+                                    <div class="p-2 p-md-3 border border-success border-2 rounded bg-white small chat-addressed-user-box">
+                                        <label for="chatAddressedUserSearch" class="form-label fw-semibold mb-1 d-flex align-items-center gap-2">
+                                            <i class="fas fa-user-tag text-success" aria-hidden="true"></i>
+                                            Indirizza il messaggio a un utente (facoltativo, solo amministratore)
+                                        </label>
+                                        <div class="position-relative">
+                                            <input type="text"
+                                                   id="chatAddressedUserSearch"
+                                                   class="form-control form-control-sm"
+                                                   autocomplete="off"
+                                                   placeholder="Scrivi almeno 2 lettere del nickname (username)…"
+                                                   aria-describedby="chatAddressedUserHelp"
+                                                   maxlength="64">
+                                            <div id="chatAddressedUserSuggestions"
+                                                 class="list-group position-absolute w-100 shadow-sm d-none mt-1 rounded overflow-hidden border"
+                                                 style="z-index: 25; max-height: 11rem; overflow-y: auto;"
+                                                 role="listbox"
+                                                 aria-label="Utenti trovati"></div>
+                                        </div>
+                                        <div id="chatAddressedUserHelp" class="form-text mt-1">
+                                            Cerca tra gli utenti abilitati: dopo la scelta il nickname resta visibile nel campo. Il messaggio sarà intestato in chat; di default non parte l’email (puoi attivarla sotto). Per «Rispondi» a un messaggio vale sempre la notifica email come prima.
+                                        </div>
+                                        <div class="mt-2 pt-2 border-top border-success-subtle">
+                                            <div class="fw-semibold small mb-1">Notifica email al destinatario</div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="addressed_notify_email" id="chat_addr_email_0" value="0" checked>
+                                                <label class="form-check-label" for="chat_addr_email_0">No, solo messaggio in chat</label>
+                                            </div>
+                                            <div class="form-check mb-0">
+                                                <input class="form-check-input" type="radio" name="addressed_notify_email" id="chat_addr_email_1" value="1">
+                                                <label class="form-check-label" for="chat_addr_email_1">Sì, invia anche l’email</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                @endif
+                                <div class="mb-3">
+                                    <label for="content" class="form-label mb-2 d-block text-center w-100"
+                                           style="font-family: 'Curlz MT', 'Brush Script MT', cursive; font-style: italic; color: #0f5132; font-weight: 600; letter-spacing: 0.02em; font-size: 1.75rem; line-height: 1.3; text-shadow: 0 1px 3px rgba(15, 81, 50, 0.22);">
+                                        Inserisci Il tuo messaggio
+                                    </label>
+                                    <div class="chat-compose-box border border-2 border-success rounded">
+                                        <div id="replyBadge" class="d-none px-2 py-2 border-bottom border-2 border-success" style="background: rgba(25, 135, 84, 0.08);">
+                                            <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
+                                                <span class="chat-reply-prefix" id="replyBadgeText"></span>
+                                                <button type="button" class="btn btn-sm btn-outline-secondary" id="replyBadgeClear">
+                                                    <i class="fas fa-times"></i> Annulla risposta
+                                                </button>
+                                            </div>
+                                        </div>
+                                    @if(auth()->user()->isAdmin())
+                                        <textarea name="content" id="chat_admin_content" rows="6"
+                                                  class="form-control border-0 @error('content') is-invalid @enderror"
+                                                  placeholder="Admin: puoi inserire testo formattato e immagini.">{{ old('content') }}</textarea>
+                                        @include('partials.ckeditor4-description', [
+                                            'field' => 'chat_admin_content',
+                                            'height' => 260,
+                                            'editable_line_height' => 1.35,
+                                            'editable_p_margin' => '0.25em'
+                                        ])
+                                        <div class="small text-muted mt-1">
+                                            Solo amministratore: editor con immagini. Il contenuto viene ripulito automaticamente.
+                                        </div>
+                                    @else
+                                        <textarea name="content" id="content" rows="3"
+                                                  class="form-control border-0 @error('content') is-invalid @enderror"
+                                                  maxlength="1000"
+                                                  placeholder="Scrivi qui il tuo messaggio per gli altri utenti registrati...">{{ old('content') }}</textarea>
+                                    @endif
+                                    </div>
+                                    @error('content')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                @php
+                                    $emojis = ['😀','😂','😍','😘','🤗','😎','😢','🙏','👏','👍','❤️','🔥'];
+                                @endphp
+                                <div class="d-flex align-items-start gap-2 flex-wrap flex-sm-nowrap">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-paper-plane"></i> Invia
+                                    </button>
+                                    <div class="chat-emoji-box border rounded p-2 bg-light">
+                                        <div class="chat-emoji-grid" style="grid-template-columns: repeat({{ count($emojis) }}, minmax(0, 1fr));">
+                                            @foreach($emojis as $emoji)
+                                                <button type="button" class="btn btn-light btn-sm chat-emoji-btn" data-emoji="{{ $emoji }}">{{ $emoji }}</button>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        @else
+                            <p class="text-muted">
+                                Devi essere registrato per scrivere in chat.
+                                <a href="{{ route('login') }}">Accedi</a> o <a href="{{ route('register') }}">registrati</a>.
+                            </p>
+                        @endauth
                     </div>
                 </div>
 
@@ -265,7 +395,11 @@
                                         </div>
                                         <div class="min-w-0">
                                         <span class="d-inline-flex align-items-center gap-1 flex-wrap fw-semibold chat-nickname">
-                                            {{ $msgNick }}
+                                            @if($message->user)
+                                                <a href="{{ route('profile.show', ['user' => $message->user, 'return' => request()->fullUrl()]) }}" class="text-decoration-none">{{ $msgNick }}</a>
+                                            @else
+                                                {{ $msgNick }}
+                                            @endif
                                             @php
                                                 $rawSesso = optional($message->user)->sesso;
                                                 if (!is_string($rawSesso)) {
@@ -407,108 +541,6 @@
                         <p class="text-muted mb-0">Nessun messaggio in chat. Scrivi tu il primo!</p>
                     @endforelse
                 </div>
-
-                @auth
-                    <form action="{{ route('chat.store') }}" method="POST">
-                        @csrf
-                        <input type="hidden" name="reply_to_nickname" id="reply_to_nickname" value="">
-                        <input type="hidden" name="reply_to_when" id="reply_to_when" value="">
-                        @if(auth()->user()->isAdmin())
-                        <div class="mb-3 p-2 p-md-3 border border-success border-2 rounded bg-white small chat-addressed-user-box">
-                            <label for="chatAddressedUserSearch" class="form-label fw-semibold mb-1 d-flex align-items-center gap-2">
-                                <i class="fas fa-user-tag text-success" aria-hidden="true"></i>
-                                Indirizza il messaggio a un utente (facoltativo, solo amministratore)
-                            </label>
-                            <div class="position-relative">
-                                <input type="text"
-                                       id="chatAddressedUserSearch"
-                                       class="form-control form-control-sm"
-                                       autocomplete="off"
-                                       placeholder="Scrivi almeno 2 lettere del nickname (username)…"
-                                       aria-describedby="chatAddressedUserHelp"
-                                       maxlength="64">
-                                <div id="chatAddressedUserSuggestions"
-                                     class="list-group position-absolute w-100 shadow-sm d-none mt-1 rounded overflow-hidden border"
-                                     style="z-index: 25; max-height: 11rem; overflow-y: auto;"
-                                     role="listbox"
-                                     aria-label="Utenti trovati"></div>
-                            </div>
-                            <div id="chatAddressedUserHelp" class="form-text mt-1">
-                                Cerca tra gli utenti abilitati: dopo la scelta il nickname resta visibile nel campo. Il messaggio sarà intestato in chat; di default non parte l’email (puoi attivarla sotto). Per «Rispondi» a un messaggio vale sempre la notifica email come prima.
-                            </div>
-                            <div class="mt-2 pt-2 border-top border-success-subtle">
-                                <div class="fw-semibold small mb-1">Notifica email al destinatario</div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="addressed_notify_email" id="chat_addr_email_0" value="0" checked>
-                                    <label class="form-check-label" for="chat_addr_email_0">No, solo messaggio in chat</label>
-                                </div>
-                                <div class="form-check mb-0">
-                                    <input class="form-check-input" type="radio" name="addressed_notify_email" id="chat_addr_email_1" value="1">
-                                    <label class="form-check-label" for="chat_addr_email_1">Sì, invia anche l’email</label>
-                                </div>
-                            </div>
-                        </div>
-                        @endif
-                        <div class="mb-3">
-                            <label for="content" class="form-label mb-2 d-block text-center w-100"
-                                   style="font-family: 'Curlz MT', 'Brush Script MT', cursive; font-style: italic; color: #0f5132; font-weight: 600; letter-spacing: 0.02em; font-size: 1.75rem; line-height: 1.3; text-shadow: 0 1px 3px rgba(15, 81, 50, 0.22);">
-                                Inserisci Il tuo messaggio
-                            </label>
-                            <div class="chat-compose-box border border-2 border-success rounded">
-                                <div id="replyBadge" class="d-none px-2 py-2 border-bottom border-2 border-success" style="background: rgba(25, 135, 84, 0.08);">
-                                    <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
-                                        <span class="chat-reply-prefix" id="replyBadgeText"></span>
-                                        <button type="button" class="btn btn-sm btn-outline-secondary" id="replyBadgeClear">
-                                            <i class="fas fa-times"></i> Annulla risposta
-                                        </button>
-                                    </div>
-                                </div>
-                            @if(auth()->user()->isAdmin())
-                                <textarea name="content" id="chat_admin_content" rows="6"
-                                          class="form-control border-0 @error('content') is-invalid @enderror"
-                                          placeholder="Admin: puoi inserire testo formattato e immagini.">{{ old('content') }}</textarea>
-                                @include('partials.ckeditor4-description', [
-                                    'field' => 'chat_admin_content',
-                                    'height' => 260,
-                                    'editable_line_height' => 1.35,
-                                    'editable_p_margin' => '0.25em'
-                                ])
-                                <div class="small text-muted mt-1">
-                                    Solo amministratore: editor con immagini. Il contenuto viene ripulito automaticamente.
-                                </div>
-                            @else
-                                <textarea name="content" id="content" rows="3"
-                                          class="form-control border-0 @error('content') is-invalid @enderror"
-                                          maxlength="1000"
-                                          placeholder="Scrivi qui il tuo messaggio per gli altri utenti registrati...">{{ old('content') }}</textarea>
-                            @endif
-                            </div>
-                            @error('content')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                        @php
-                            $emojis = ['😀','😁','😂','🤣','😊','😍','😘','😉','🤗','😎','🤔','😢','😭','😡','🙏','👏','👍','👎','❤️','🔥'];
-                        @endphp
-                        <div class="d-flex align-items-start gap-2 flex-wrap flex-sm-nowrap">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-paper-plane"></i> Invia
-                            </button>
-                            <div class="chat-emoji-box border rounded p-2 bg-light">
-                                <div class="d-flex flex-wrap gap-1 justify-content-start">
-                                    @foreach($emojis as $emoji)
-                                        <button type="button" class="btn btn-light btn-sm chat-emoji-btn" data-emoji="{{ $emoji }}">{{ $emoji }}</button>
-                                    @endforeach
-                                </div>
-                            </div>
-                        </div>
-                    </form>
-                @else
-                    <p class="text-muted">
-                        Devi essere registrato per scrivere in chat.
-                        <a href="{{ route('login') }}">Accedi</a> o <a href="{{ route('register') }}">registrati</a>.
-                    </p>
-                @endauth
             </div>
         </div>
     </div>
@@ -594,6 +626,12 @@
             color: #4b2aad;
             font-size: 1.02rem;
         }
+        .chat-nickname a {
+            color: inherit;
+        }
+        .chat-nickname a:hover {
+            text-decoration: underline !important;
+        }
 
         .chat-message-avatar {
             width: 2rem;
@@ -626,10 +664,15 @@
             padding: 0.25rem 0.45rem;
         }
         .chat-emoji-box {
-            max-width: 22rem;
+            max-width: 26rem;
+        }
+        .chat-emoji-grid {
+            display: grid;
+            gap: 0.25rem;
         }
         .chat-emoji-box .chat-emoji-btn {
-            min-width: 2.1rem;
+            min-width: 0;
+            width: 100%;
             text-align: center;
         }
         .chat-reply-prefix {
@@ -680,6 +723,25 @@
             const replyWhenInput = document.getElementById('reply_to_when');
             const replyBadge = document.getElementById('replyBadge');
             const replyBadgeText = document.getElementById('replyBadgeText');
+
+            function openChatComposeBox() {
+                var el = document.getElementById('chatComposeCollapse');
+                if (!el) return;
+                if (typeof bootstrap !== 'undefined' && bootstrap.Collapse) {
+                    bootstrap.Collapse.getOrCreateInstance(el, { toggle: false }).show();
+                } else {
+                    el.classList.add('show');
+                }
+            }
+
+            var addrToggleBtn = document.getElementById('chatAddressedUserToggleBtn');
+            if (addrToggleBtn) {
+                addrToggleBtn.addEventListener('click', function () {
+                    // Il box "Indirizza a utente" è dentro il box "Inserisci messaggio":
+                    // aprilo anche se era chiuso, altrimenti il box appena aperto non si vede.
+                    openChatComposeBox();
+                });
+            }
 
             function resetAddressedEmailRadios() {
                 var r1 = document.getElementById('chat_addr_email_1');
@@ -825,6 +887,7 @@
                     if (addr) addr.value = '';
                     resetAddressedEmailRadios();
                     applyChatReplyTarget(nick, when);
+                    openChatComposeBox();
 
                     // Focus editor/textarea
                     if (adminTextarea && typeof CKEDITOR !== 'undefined' && CKEDITOR.instances && CKEDITOR.instances['chat_admin_content']) {

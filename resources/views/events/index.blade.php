@@ -274,7 +274,7 @@
                                                 <i class="fas fa-users" aria-hidden="true"></i>
                                                 <strong>{{ $event->participants_count }}</strong>@if($maxPosti !== null)<span class="text-white-50 fw-normal"> / </span><strong>{{ $maxPosti }}</strong>@endif
                                             </span>
-                                            @if($event->deadline)
+                                            @if($event->deadline || !$event->isRegistrationOpen())
                                                 @php
                                                     $iscrOpen = $event->isRegistrationOpen();
                                                     $deadline = $event->deadline;
@@ -286,8 +286,12 @@
                                                 @endphp
                                                 <span class="badge event-meta-badges__badge event-card-iscr-badge {{ $iscrClass }}">
                                                     <i class="fas fa-clock"></i>
-                                                    Iscrizioni {{ $iscrOpen ? 'entro' : 'chiuse' }}:
-                                                    {{ $event->deadline->locale('it')->translatedFormat('l, j F') . ', H. ' . $event->deadline->format('H:i') }}
+                                                    @if($iscrOpen)
+                                                        Iscrizioni entro:
+                                                        {{ $event->deadline->locale('it')->translatedFormat('l, j F') . ', H. ' . $event->deadline->format('H:i') }}
+                                                    @else
+                                                        Adesioni chiuse
+                                                    @endif
                                                 </span>
                                             @endif
                                         </div>

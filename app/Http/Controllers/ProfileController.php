@@ -263,6 +263,24 @@ class ProfileController extends Controller
     }
 
     /**
+     * Nasconde/mostra agli altri utenti l'elenco "Eventi partecipati" del proprio profilo.
+     * Il proprietario e gli amministratori continuano sempre a vederlo.
+     */
+    public function toggleHideParticipatedEvents(Request $request, User $user)
+    {
+        if ((int) $request->user()->getKey() !== (int) $user->getKey()) {
+            abort(403);
+        }
+
+        $user->nascondi_eventi_partecipati = !$user->nascondi_eventi_partecipati;
+        $user->save();
+
+        return back()->with('success', $user->nascondi_eventi_partecipati
+            ? 'Il tuo elenco eventi partecipati è ora nascosto agli altri utenti.'
+            : 'Il tuo elenco eventi partecipati è ora visibile a tutti.');
+    }
+
+    /**
      * Nota amministratore associata all'utente (solo admin).
      */
     public function updateAdminNote(Request $request, User $user)

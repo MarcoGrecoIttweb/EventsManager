@@ -208,45 +208,32 @@ class UserController extends Controller
             ->distinct()
             ->count('user_id');
 
-        $distinctLegacy = UserLoginEvent::query()
-            ->where('logged_in_at', '>=', $since)
-            ->where('source', UserLoginEvent::SOURCE_LEGACY)
-            ->distinct()
-            ->count('user_id');
-
         $loginByUser = UserLoginEvent::query()
             ->where('logged_in_at', '>=', $since)
-            ->selectRaw('user_id, source, MAX(logged_in_at) as last_at')
-            ->groupBy('user_id', 'source')
+            ->where('source', UserLoginEvent::SOURCE_LARAVEL)
+            ->selectRaw('user_id, MAX(logged_in_at) as last_at, COUNT(*) as logins_count')
+            ->groupBy('user_id')
             ->get()
-            ->groupBy('user_id');
+            ->keyBy('user_id');
 
         $users = User::query()
             ->whereIn('userID', $loginByUser->keys())
             ->get()
             ->map(function (User $user) use ($loginByUser) {
-                $rows = $loginByUser->get($user->userID, collect());
-                $laravel = $rows->firstWhere('source', UserLoginEvent::SOURCE_LARAVEL);
-                $legacy = $rows->firstWhere('source', UserLoginEvent::SOURCE_LEGACY);
+                $row = $loginByUser->get($user->userID);
 
-                $user->last_login_laravel = $laravel?->last_at;
-                $user->last_login_legacy = $legacy?->last_at;
+                $user->last_login_laravel = $row?->last_at;
+                $user->login_count_laravel = (int) ($row?->logins_count ?? 0);
 
                 return $user;
             })
-            ->sortByDesc(function (User $user) {
-                $laravel = $user->last_login_laravel ? strtotime($user->last_login_laravel) : 0;
-                $legacy = $user->last_login_legacy ? strtotime($user->last_login_legacy) : 0;
-
-                return max($laravel, $legacy);
-            })
+            ->sortByDesc(fn (User $user) => $user->last_login_laravel ? strtotime($user->last_login_laravel) : 0)
             ->values();
 
         return view('admin.users.logins', compact(
             'users',
             'days',
-            'distinctLaravel',
-            'distinctLegacy'
+            'distinctLaravel'
         ));
     }
 

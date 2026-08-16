@@ -68,22 +68,35 @@
                                 <div class="d-flex flex-wrap gap-2">
                                     @if(auth()->user()->isAdmin() || auth()->id() === $event->id_organizzatore)
                                         @if(auth()->user()->isAdmin())
-                                            <a href="{{ route('admin.events.edit', $event) }}" class="btn btn-warning btn-sm btn-border-brown">
-                                                <i class="fas fa-edit"></i> Modifica evento
+                                            <a href="{{ route('admin.events.edit', $event) }}" class="btn btn-warning btn-sm btn-border-brown" data-hint="Modifica evento">
+                                                <i class="fas fa-edit"></i> Modifica
                                             </a>
                                         @else
-                                            <a href="{{ route('manage.events.edit', $event) }}" class="btn btn-warning btn-sm btn-border-brown">
-                                                <i class="fas fa-edit"></i> Modifica evento
+                                            <a href="{{ route('manage.events.edit', $event) }}" class="btn btn-warning btn-sm btn-border-brown" data-hint="Modifica evento">
+                                                <i class="fas fa-edit"></i> Modifica
                                             </a>
                                         @endif
+                                    @endif
+                                    @if(auth()->user()->isAdmin() || auth()->id() === $event->id_organizzatore)
+                                        <form action="{{ route(auth()->user()->isAdmin() ? 'admin.events.toggle-registration' : 'manage.events.toggle-registration', $event) }}"
+                                              method="POST"
+                                              onsubmit="return confirm('{{ $event->iscrizioni_chiuse ? 'Vuoi riaprire le iscrizioni a questo evento?' : 'Vuoi chiudere le iscrizioni a questo evento? Chi è già iscritto resta iscritto, ma nessun altro potrà iscriversi.' }}');">
+                                            @csrf
+                                            <button type="submit"
+                                                    class="btn btn-sm {{ $event->iscrizioni_chiuse ? 'btn-outline-success' : 'btn-outline-secondary' }}"
+                                                    data-hint="{{ $event->iscrizioni_chiuse ? 'Riapre le iscrizioni a questo evento' : 'Chiude le iscrizioni: chi è già iscritto resta iscritto, ma non se ne aggiungono altri' }}">
+                                                <i class="fas {{ $event->iscrizioni_chiuse ? 'fa-lock-open' : 'fa-lock' }}"></i>
+                                                {{ $event->iscrizioni_chiuse ? 'Riapri Adesioni' : 'Chiusura Adesioni' }}
+                                            </button>
+                                        </form>
                                     @endif
                                     @if(auth()->user()->isAdmin())
                                         <form action="{{ route('admin.events.destroy', $event) }}" method="POST"
                                               onsubmit="return confirm('Sei sicuro di voler cancellare definitivamente questo evento?');">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-danger btn-sm">
-                                                <i class="fas fa-trash-alt"></i> Cancella evento
+                                            <button type="submit" class="btn btn-danger btn-sm" data-hint="Cancella evento">
+                                                <i class="fas fa-trash-alt"></i> Cancella
                                             </button>
                                         </form>
                                     @endif
@@ -202,8 +215,9 @@
                                                     <div class="d-flex flex-nowrap gap-2 align-items-stretch event-participation-btns event-participation-btns--toglimi">
                                                         <form action="{{ route('events.cancel', $event) }}" method="POST" class="mb-0 d-flex align-items-stretch">
                                                             @csrf
-                                                            <button type="submit" class="btn btn-danger btn-sm event-btn-participate-map-height event-btn-meta-height btn-border-brown">
-                                                                <i class="fas fa-times"></i> Toglimi
+                                                            <button type="submit" class="btn btn-danger btn-sm w-100 event-btn-participate-map-height event-btn-meta-height event-btn-toglimi"
+                                                                    data-hint="Mi cancello da questo evento.">
+                                                                Annulla Adesione <i class="fas fa-rotate-left event-btn-toglimi-icon"></i>
                                                             </button>
                                                         </form>
                                                         @if($canSendEventComms)
@@ -227,13 +241,13 @@
                                             @else
                                                 @php
                                                     $cannotJoin = $event->isFull() || !$event->isRegistrationOpen();
-                                                    $joinLabel = !$event->isRegistrationOpen() ? 'Iscrizioni chiuse' : ($event->isFull() ? 'Evento al completo' : 'Iscrivimi all\'evento');
+                                                    $joinLabel = !$event->isRegistrationOpen() ? 'Iscrizioni chiuse' : ($event->isFull() ? 'Evento al completo' : 'Partecipo all\'evento');
                                                     $joinIcon = $cannotJoin ? 'lock' : 'check';
                                                 @endphp
                                                 <div class="d-flex flex-wrap align-items-center gap-2 w-100">
                                                     <form action="{{ route('events.participate', $event) }}" method="POST" class="mb-0 flex-grow-1 w-100">
                                                         @csrf
-                                                        <button type="submit" class="btn btn-sm w-100 event-btn-participate-map-height event-btn-iscrivimi-all-evento btn-iscrivimi-state-{{ $cannotJoin ? 'off' : 'on' }} {{ $event->isFull() ? 'btn-iscrivimi-full' : '' }}"
+                                                        <button type="submit" class="btn btn-sm w-100 event-btn-participate-map-height event-btn-iscrivimi-all-evento btn-iscrivimi-state-{{ $cannotJoin ? 'off' : 'on' }} {{ $event->isFull() ? 'btn-iscrivimi-full' : '' }} {{ !$event->isRegistrationOpen() ? 'btn-iscrivimi-closed' : '' }}"
                                                             data-hint="Clicca per iscriverti a questo evento"
                                                             {{ $cannotJoin ? 'disabled' : '' }}>
                                                             <i class="fas fa-{{ $joinIcon }}"></i>
@@ -511,28 +525,38 @@
                                             </div>
                                         @endif
                                     </div>
+                                    @php
+                                        $iscrOpen = $event->isRegistrationOpen();
+                                        $deadlineTs = optional($event->deadline)->timestamp ?? null;
+                                        $nowTs = now()->timestamp;
+                                        $secondsToDeadline = is_int($deadlineTs) ? ($deadlineTs - $nowTs) : null;
+                                        $iscrSoon = $iscrOpen && is_int($secondsToDeadline) && $secondsToDeadline > 0 && $secondsToDeadline <= 86400; // 24h
+                                        // Chiusura anticipata: chiuse a mano prima che la scadenza naturale sia arrivata (o senza scadenza impostata).
+                                        $isEarlyClosure = !$iscrOpen && $event->iscrizioni_chiuse && (!is_int($secondsToDeadline) || $secondsToDeadline > 0);
+                                    @endphp
                                     @if($event->deadline)
-                                        @php
-                                            $iscrOpen = $event->isRegistrationOpen();
-                                            $deadlineTs = optional($event->deadline)->timestamp ?? null;
-                                            $nowTs = now()->timestamp;
-                                            $secondsToDeadline = is_int($deadlineTs) ? ($deadlineTs - $nowTs) : null;
-                                            $iscrSoon = $iscrOpen && is_int($secondsToDeadline) && $secondsToDeadline > 0 && $secondsToDeadline <= 86400; // 24h
-                                        @endphp
                                         <div class="event-registration-deadline-box event-meta-row__cell rounded">
                                             <i class="fas fa-clock"></i>
                                             <span class="event-meta-iscr-line {{ $iscrOpen ? ($iscrSoon ? 'event-iscr-status--soon' : 'event-iscr-status--open') : 'event-iscr-status--closed' }}">
-                                                <span class="fw-semibold">Iscrizioni</span>
-                                                {{ $iscrOpen ? ' entro ' : ' chiuse ' }}
-                                                {{ $event->deadline->locale('it')->translatedFormat('l, j F') . ', H. ' . $event->deadline->format('H:i') }}
+                                                @if($isEarlyClosure)
+                                                    <span class="fw-semibold">Adesioni chiuse anticipatamente</span>
+                                                @else
+                                                    <span class="fw-semibold">Iscrizioni</span>
+                                                    {{ $iscrOpen ? ' entro ' : ' chiuse ' }}
+                                                    {{ $event->deadline->locale('it')->translatedFormat('l, j F') . ', H. ' . $event->deadline->format('H:i') }}
+                                                @endif
                                             </span>
                                         </div>
                                     @else
                                         <div class="event-meta-iscr-empty-box event-meta-row__cell">
                                             <i class="fas fa-clock"></i>
                                             <span class="event-meta-iscr-line">
-                                                <span class="fw-semibold">Iscrizioni</span>
-                                                <span class="ms-1">—</span>
+                                                @if($isEarlyClosure)
+                                                    <span class="fw-semibold">Adesioni chiuse anticipatamente</span>
+                                                @else
+                                                    <span class="fw-semibold">Iscrizioni</span>
+                                                    <span class="ms-1">—</span>
+                                                @endif
                                             </span>
                                         </div>
                                     @endif
@@ -742,6 +766,8 @@
                                                         if (!$canAddMoreGuests) {
                                                             if (!$event->allow_guests) {
                                                                 $addGuestBlockReason = 'Questo evento non permette di portare ospiti.';
+                                                            } elseif (!$event->isRegistrationOpen()) {
+                                                                $addGuestBlockReason = 'Le iscrizioni a questo evento sono chiuse: non puoi aggiungere altri ospiti.';
                                                             } elseif ($event->isFull()) {
                                                                 $addGuestBlockReason = 'L\'evento è al completo: non puoi aggiungere altri ospiti.';
                                                             } else {
@@ -861,7 +887,9 @@
                                         $authCanAddMoreGuests = auth()->user()->isApproved() && $event->canAddMoreGuests(auth()->user());
                                         $addGuestBlockReasonInvite = '';
                                         if (!$authCanAddMoreGuests) {
-                                            if ($event->isFull()) {
+                                            if (!$event->isRegistrationOpen()) {
+                                                $addGuestBlockReasonInvite = 'Le iscrizioni a questo evento sono chiuse: non puoi aggiungere altri ospiti.';
+                                            } elseif ($event->isFull()) {
                                                 $addGuestBlockReasonInvite = 'L\'evento è al completo: non puoi aggiungere altri ospiti.';
                                             } else {
                                                 $addGuestBlockReasonInvite = 'Hai raggiunto il limite di ospiti consentiti per questo evento.';
@@ -1175,6 +1203,8 @@
                                                         if (!$canAddMoreGuests) {
                                                             if (!$event->allow_guests) {
                                                                 $addGuestBlockReason = 'Questo evento non permette di portare ospiti.';
+                                                            } elseif (!$event->isRegistrationOpen()) {
+                                                                $addGuestBlockReason = 'Le iscrizioni a questo evento sono chiuse: non puoi aggiungere altri ospiti.';
                                                             } elseif ($event->isFull()) {
                                                                 $addGuestBlockReason = 'L\'evento è al completo: non puoi aggiungere altri ospiti.';
                                                             } else {
@@ -1293,7 +1323,9 @@
                                     $authCanAddMoreGuests = auth()->user()->isApproved() && $event->canAddMoreGuests(auth()->user());
                                     $addGuestBlockReasonInvite = '';
                                     if (!$authCanAddMoreGuests) {
-                                        if ($event->isFull()) {
+                                        if (!$event->isRegistrationOpen()) {
+                                            $addGuestBlockReasonInvite = 'Le iscrizioni a questo evento sono chiuse: non puoi aggiungere altri ospiti.';
+                                        } elseif ($event->isFull()) {
                                             $addGuestBlockReasonInvite = 'L\'evento è al completo: non puoi aggiungere altri ospiti.';
                                         } else {
                                             $addGuestBlockReasonInvite = 'Hai raggiunto il limite di ospiti consentiti per questo evento.';
@@ -1804,6 +1836,10 @@
             border: 2px solid #0d6efd !important;
             opacity: 1;
         }
+        /* Iscrizioni chiuse (manualmente o per scadenza): bordo rosso, sfondo grigio invariato */
+        .btn.event-btn-iscrivimi-all-evento.btn-iscrivimi-closed:disabled {
+            border-color: #dc3545 !important;
+        }
         .btn.event-btn-iscrivimi-all-evento.btn-iscrivimi-full:disabled {
             background-color: #dc3545 !important;
             color: #fff !important;
@@ -2082,14 +2118,20 @@
         }
 
         .event-participation-btns > .btn,
-        .event-participation-btns > form {
+        .event-participation-btns > form,
+        .event-participation-btns > .event-porti-guest-box {
             flex: 1 1 0;
             min-width: 0;
         }
 
-        .event-participation-btns--toglimi > form {
-            flex: 0 0 auto;
-            min-width: 0;
+        /* Toglimi: bordo blu per evidenziarlo un po' di più rispetto agli altri due (sfondo rosso invariato) */
+        .btn.event-btn-toglimi {
+            border: 2px solid #0d6efd !important;
+            font-weight: 600;
+            font-size: 1.1rem !important;
+        }
+        .event-btn-toglimi-icon {
+            color: #0dcaf0;
         }
 
         /* Box «Porti» accanto a Toglimi: stessa altezza (event-btn-meta-height), riempimento rosso */
@@ -2097,7 +2139,6 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            flex: 0 0 auto;
             box-sizing: border-box;
             background-color: #dc3545;
             color: #fff;

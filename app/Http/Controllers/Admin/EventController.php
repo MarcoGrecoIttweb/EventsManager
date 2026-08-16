@@ -638,6 +638,22 @@ class EventController extends Controller
         return back()->with('success', "Evento {$status} con successo!");
     }
 
+    /**
+     * Chiude/riapre manualmente le iscrizioni all'evento, indipendentemente dalla
+     * scadenza impostata: chi è già iscritto resta iscritto, ma non se ne possono
+     * aggiungere di nuovi.
+     */
+    public function toggleRegistration(Event $event)
+    {
+        $event->update([
+            'iscrizioni_chiuse' => $event->iscrizioni_chiuse ? 0 : 1,
+        ]);
+
+        $label = $event->iscrizioni_chiuse ? 'chiuse' : 'riaperte';
+
+        return back()->with('success', "Iscrizioni {$label} con successo!");
+    }
+
     private function processGalleryImages(array $images, Event $event): void
     {
         $uploadResults = $this->imageService->uploadEventImages($images, $event->getKey());

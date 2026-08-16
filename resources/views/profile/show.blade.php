@@ -8,6 +8,8 @@
             $isAdminViewer = auth()->check() && auth()->user()->isAdmin();
             $canSeePrivateContacts = auth()->check() && (auth()->id() === $user->id || $isAdminViewer);
             $adminViewingOtherUser = $isAdminViewer && auth()->check() && (int) auth()->id() !== (int) $user->getKey();
+            $isProfileOwner = auth()->check() && (int) auth()->id() === (int) $user->getKey();
+            $canSeeParticipatedEvents = !$user->nascondi_eventi_partecipati || $isProfileOwner || $isAdminViewer;
         @endphp
         <div class="mb-3">
             @if(!empty($profileReturnUrl))
@@ -317,13 +319,6 @@
                                                          <a href="{{ route('profile.edit', $user) }}?openPassword=1" class="btn btn-outline-secondary btn-sm profile-main-action-btn">
                                                              <i class="fas fa-key me-1"></i> Modifica passw
                                                          </a>
-                                                         <form action="{{ route('profile.delete-request', $user) }}" method="POST" class="d-inline-flex m-0"
-                                                               onsubmit="return confirm('Sei sicuro di voler richiedere la cancellazione del tuo account? L\'account verrà eliminato da un amministratore dopo aver ricevuto la richiesta.');">
-                                                             @csrf
-                                                             <button type="submit" class="btn btn-outline-danger btn-sm profile-main-action-btn">
-                                                                 <i class="fas fa-user-slash me-1"></i> Cancella account
-                                                             </button>
-                                                         </form>
                                                      @elseif($isAdminViewer && !$adminViewingOtherUser)
                                                         <button type="button"
                                                                 class="btn btn-outline-secondary btn-sm profile-main-action-btn"
@@ -364,6 +359,19 @@
                                             Ultimo collegamento: {{ $user->ultimo_accesso ? $user->ultimo_accesso->format('d/m/Y H:i') : '—' }}
                                         </span>
                                     </div>
+                                    @auth
+                                        @if(auth()->id() === $user->id)
+                                            <div class="d-flex align-items-center gap-2 flex-wrap w-100">
+                                                <form action="{{ route('profile.delete-request', $user) }}" method="POST" class="d-inline-flex m-0"
+                                                      onsubmit="return confirm('Sei sicuro di voler richiedere la cancellazione del tuo account? L\'account verrà eliminato da un amministratore dopo aver ricevuto la richiesta.');">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-outline-danger btn-sm profile-main-action-btn">
+                                                        <i class="fas fa-user-slash me-1"></i> Cancella account
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        @endif
+                                    @endauth
                                     @auth
                                         @if(auth()->user()->isAdmin() && !$user->isAdmin() && !$adminViewingOtherUser)
                                             @if($user->status === 'banned')
@@ -422,14 +430,36 @@
 
             <div class="col-12">
                 <div class="card">
-                    <div class="card-header">
+                    <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
                         <h4 class="mb-0">
                             <i class="fas fa-calendar"></i> Eventi Partecipati
-                            <span class="badge bg-primary">{{ $allParticipatedEvents->count() }}</span>
+                            @if($canSeeParticipatedEvents)
+                                <span class="badge bg-primary">{{ $allParticipatedEvents->count() }}</span>
+                            @endif
                         </h4>
+                        @if($isProfileOwner)
+                            <form action="{{ route('profile.toggle-hide-participated-events', $user) }}" method="POST" class="m-0">
+                                @csrf
+                                <button type="submit" class="btn btn-outline-secondary btn-sm">
+                                    @if($user->nascondi_eventi_partecipati)
+                                        <i class="fas fa-eye me-1"></i> Mostra elenco agli altri utenti
+                                    @else
+                                        <i class="fas fa-eye-slash me-1"></i> Nascondi elenco agli altri utenti
+                                    @endif
+                                </button>
+                            </form>
+                        @endif
                     </div>
                     <div class="card-body">
-                        @if($allParticipatedEvents->count() > 0)
+                        @if(!$canSeeParticipatedEvents)
+                            <div class="text-center py-4">
+                                <i class="fas fa-eye-slash fa-3x text-muted mb-3"></i>
+                                <h5>Elenco nascosto</h5>
+                                <p class="text-muted mb-0">
+                                    {{ $user->username }} ha scelto di nascondere il proprio elenco eventi partecipati.
+                                </p>
+                            </div>
+                        @elseif($allParticipatedEvents->count() > 0)
                             <div class="table-responsive">
                                 <table class="table table-sm table-striped table-hover align-middle mb-0 profile-events-table">
                                     <thead>

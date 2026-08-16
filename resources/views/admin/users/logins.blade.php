@@ -52,13 +52,13 @@
                     </div>
                     <div class="card-body">
                         <div class="row g-3 mb-4">
-                            <div class="col-md-6">
+                            <div class="col-md-4 col-lg-3">
                                 <div class="table-responsive">
                                     <table class="table table-sm table-bordered mb-0 align-middle">
                                         <thead class="table-success">
                                         <tr>
                                             <th colspan="2" class="text-center">
-                                                Sito nuovo (Laravel / amici.excursio.org)
+                                                Lista ingressi
                                             </th>
                                         </tr>
                                         </thead>
@@ -67,27 +67,6 @@
                                             <td class="fw-semibold">Visite distinte</td>
                                             <td class="text-end">
                                                 <span class="badge bg-success fs-6">{{ number_format((int) ($distinctLaravel ?? 0), 0, ',', '.') }}</span>
-                                            </td>
-                                        </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="table-responsive">
-                                    <table class="table table-sm table-bordered mb-0 align-middle">
-                                        <thead class="table-primary">
-                                        <tr>
-                                            <th colspan="2" class="text-center">
-                                                Sito vecchio (excursio.org)
-                                            </th>
-                                        </tr>
-                                        </thead>
-                                        <tbody>
-                                        <tr>
-                                            <td class="fw-semibold">Visite distinte</td>
-                                            <td class="text-end">
-                                                <span class="badge bg-primary fs-6">{{ number_format((int) ($distinctLegacy ?? 0), 0, ',', '.') }}</span>
                                             </td>
                                         </tr>
                                         </tbody>
@@ -107,8 +86,7 @@
                                         <th>Nome</th>
                                         <th>Cognome</th>
                                         <th>Stato</th>
-                                        <th>Sito nuovo (Laravel)</th>
-                                        <th>Sito vecchio (excursio.org)</th>
+                                        <th>Data</th>
                                     </tr>
                                     </thead>
                                     <tbody>
@@ -154,13 +132,9 @@
                                             <td>
                                                 @if($user->last_login_laravel)
                                                     <span class="badge bg-success">{{ \Carbon\Carbon::parse($user->last_login_laravel)->format('d/m/Y H:i') }}</span>
-                                                @else
-                                                    <span class="text-muted">—</span>
-                                                @endif
-                                            </td>
-                                            <td>
-                                                @if($user->last_login_legacy)
-                                                    <span class="badge bg-primary">{{ \Carbon\Carbon::parse($user->last_login_legacy)->format('d/m/Y H:i') }}</span>
+                                                    @if($user->login_count_laravel > 1)
+                                                        <span class="badge bg-secondary ms-1">{{ $user->login_count_laravel }} ingressi</span>
+                                                    @endif
                                                 @else
                                                     <span class="text-muted">—</span>
                                                 @endif

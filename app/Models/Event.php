@@ -31,6 +31,7 @@ class Event extends Model
         'allow_guests', 'max_guests_per_user',
         'greeting_box_enabled', 'greeting_box_duration', 'greeting_box_message',
         'greeting_box_max_width', 'greeting_box_border_color', 'greeting_box_bg_color',
+        'iscrizioni_chiuse',
     ];
 
     protected $casts = [
@@ -41,6 +42,7 @@ class Event extends Model
         'elenco_visibile' => 'boolean',
         'allow_guests' => 'boolean',
         'greeting_box_enabled' => 'boolean',
+        'iscrizioni_chiuse' => 'boolean',
     ];
 
     // ─── Accessors (legacy → Laravel names used by views) ─────────
@@ -351,6 +353,9 @@ class Event extends Model
 
     public function isRegistrationOpen(): bool
     {
+        if ($this->iscrizioni_chiuse) {
+            return false;
+        }
         if ($this->datascadenza && $this->datascadenza->year > 1 && $this->datascadenza->isPast()) {
             return false;
         }
@@ -368,6 +373,10 @@ class Event extends Model
     public function canAddMoreGuests(User $user): bool
     {
         if (!$this->allow_guests) {
+            return false;
+        }
+
+        if (!$this->isRegistrationOpen()) {
             return false;
         }
 

@@ -318,6 +318,23 @@ class EventManageController extends Controller
         return back()->with('success', "Evento {$label} con successo!");
     }
 
+    /**
+     * Chiude/riapre manualmente le iscrizioni all'evento, indipendentemente dalla
+     * scadenza impostata: chi è già iscritto resta iscritto, ma non se ne possono
+     * aggiungere di nuovi.
+     */
+    public function toggleRegistration(Event $event)
+    {
+        $this->authorizeEvent($event);
+
+        $event->iscrizioni_chiuse = !$event->iscrizioni_chiuse;
+        $event->save();
+
+        $label = $event->iscrizioni_chiuse ? 'chiuse' : 'riaperte';
+
+        return back()->with('success', "Iscrizioni {$label} con successo!");
+    }
+
     private function authorizeEvent(Event $event): void
     {
         $user = Auth::user();

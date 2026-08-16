@@ -850,6 +850,8 @@ Route::middleware(['auth', 'approved'])->group(function () {
         ->middleware('admin');
     Route::post('/profile/{user}/delete-request', [ProfileController::class, 'requestAccountDeletion'])
         ->name('profile.delete-request');
+    Route::post('/profile/{user}/toggle-hide-participated-events', [ProfileController::class, 'toggleHideParticipatedEvents'])
+        ->name('profile.toggle-hide-participated-events');
 
     // Amicizie
     Route::get('/friends', [FriendController::class, 'index'])->name('friends.index');
@@ -892,6 +894,7 @@ Route::middleware(['auth', 'can-manage-events'])->prefix('manage')->name('manage
     Route::put('/events/{event}', [\App\Http\Controllers\EventManageController::class, 'update'])->name('events.update');
     Route::delete('/events/{event}', [\App\Http\Controllers\EventManageController::class, 'destroy'])->name('events.destroy');
     Route::post('/events/{event}/toggle-status', [\App\Http\Controllers\EventManageController::class, 'toggleStatus'])->name('events.toggle-status');
+    Route::post('/events/{event}/toggle-registration', [\App\Http\Controllers\EventManageController::class, 'toggleRegistration'])->name('events.toggle-registration');
     Route::get('/events', [\App\Http\Controllers\EventManageController::class, 'index'])->name('events.index');
 });
 
@@ -925,6 +928,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/events/{event}/duplicate', [\App\Http\Controllers\Admin\EventController::class, 'duplicate'])->name('events.duplicate');
     Route::post('/events/{event}/cancel-duplicate', [\App\Http\Controllers\Admin\EventController::class, 'cancelDuplicate'])->name('events.cancel-duplicate');
     Route::post('/events/{event}/toggle-status', [\App\Http\Controllers\Admin\EventController::class, 'toggleStatus'])->name('events.toggle-status');
+    Route::post('/events/{event}/toggle-registration', [\App\Http\Controllers\Admin\EventController::class, 'toggleRegistration'])->name('events.toggle-registration');
     Route::get('/users/finder-suggestions', [\App\Http\Controllers\Admin\UserController::class, 'finderSuggestions'])->name('users.finder-suggestions');
     Route::get('/users', [\App\Http\Controllers\Admin\UserController::class, 'index'])->name('users.index');
     Route::post('/users/{user}/impersonate', [ImpersonationController::class, 'start'])->name('users.impersonate');

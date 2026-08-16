@@ -35,24 +35,42 @@
         }
         // Contrasto e selezione visibile nell’iframe (incolla da Word/siti con testo bianco o “windowtext”).
         var ckCustomCss = @json($ckCustomCssUrl);
-        CKEDITOR.replace(id, {
-            language: 'it',
-            height: {{ $ckHeight }},
-            removePlugins: 'elementspath',
-            resize_dir: 'vertical',
-            versionCheck: false,
-            // Incolla da Word/browser: senza questo CKEditor può scartare o svuotare il contenuto (ACF).
-            // L’HTML viene comunque ripulito al salvataggio da SafeRichText::sanitize.
-            allowedContent: true,
-            pasteFilter: null,
-            pasteFromWordRemoveFontStyles: false,
-            pasteFromWordRemoveStyles: false,
-            contentsCss: [CKEDITOR.getUrl('contents.css'), ckCustomCss],
-            // Upload immagini (tab "Carica" nel dialog "Immagine")
-            filebrowserImageUploadUrl: @json(route('ckeditor.upload', ['_token' => csrf_token()])),
-            // Upload generico (altri dialog)
-            filebrowserUploadUrl: @json(route('ckeditor.upload', ['_token' => csrf_token()])),
-            filebrowserUploadMethod: 'form'
-        });
+        function initCkEditor() {
+            if (CKEDITOR.instances[id]) {
+                return;
+            }
+            CKEDITOR.replace(id, {
+                language: 'it',
+                height: {{ $ckHeight }},
+                removePlugins: 'elementspath',
+                resize_dir: 'vertical',
+                versionCheck: false,
+                // Incolla da Word/browser: senza questo CKEditor può scartare o svuotare il contenuto (ACF).
+                // L’HTML viene comunque ripulito al salvataggio da SafeRichText::sanitize.
+                allowedContent: true,
+                pasteFilter: null,
+                pasteFromWordRemoveFontStyles: false,
+                pasteFromWordRemoveStyles: false,
+                contentsCss: [CKEDITOR.getUrl('contents.css'), ckCustomCss],
+                // Upload immagini (tab "Carica" nel dialog "Immagine")
+                filebrowserImageUploadUrl: @json(route('ckeditor.upload', ['_token' => csrf_token()])),
+                // Upload generico (altri dialog)
+                filebrowserUploadUrl: @json(route('ckeditor.upload', ['_token' => csrf_token()])),
+                filebrowserUploadMethod: 'form'
+            });
+        }
+        // Se la textarea è dentro un pannello a scomparsa (Bootstrap collapse) ancora chiuso,
+        // CKEditor calcolerebbe le dimensioni su un contenitore nascosto (width/height 0) e la
+        // maniglia di ridimensionamento resterebbe rotta anche dopo l'apertura: si rimanda
+        // l'inizializzazione a quando il pannello viene effettivamente mostrato.
+        var hiddenCollapseAncestor = el.closest('.collapse:not(.show)');
+        if (hiddenCollapseAncestor) {
+            hiddenCollapseAncestor.addEventListener('shown.bs.collapse', function onShown() {
+                hiddenCollapseAncestor.removeEventListener('shown.bs.collapse', onShown);
+                initCkEditor();
+            });
+        } else {
+            initCkEditor();
+        }
     });
 </script>

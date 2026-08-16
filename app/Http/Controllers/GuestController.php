@@ -25,6 +25,10 @@ class GuestController extends Controller
             return back()->with('error', 'Questo evento non permette di portare ospiti.');
         }
 
+        if (!$event->isRegistrationOpen()) {
+            return back()->with('error', 'Le iscrizioni a questo evento sono chiuse: non puoi aggiungere altri ospiti.');
+        }
+
         $currentGuests = (int) ($participation->pivot->amici ?? 0);
         $maxGuests = (int) ($event->max_guests_per_user ?? 10);
         if ($maxGuests < 1) {
