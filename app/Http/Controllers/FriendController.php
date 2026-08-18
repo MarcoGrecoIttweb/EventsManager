@@ -11,7 +11,7 @@ class FriendController extends Controller
 {
     public function index()
     {
-        $friends = Auth::user()->friends()->orderBy('nome')->get();
+        $friends = Auth::user()->friends()->where('abilitato', '!=', 2)->orderBy('nome')->get();
         return view('friends.index', compact('friends'));
     }
 
