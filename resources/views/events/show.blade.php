@@ -1186,9 +1186,13 @@
                     <div class="card-body py-2">
                         <p class="mb-0">
                             <i class="fas fa-user"></i>
-                            <a href="{{ route('profile.show', $event->user) }}?{{ $eventProfileBackQuery }}">
-                                {{ $event->user->nickname }}
-                            </a>
+                            @if($event->user)
+                                <a href="{{ route('profile.show', $event->user) }}?{{ $eventProfileBackQuery }}">
+                                    {{ $event->user->nickname }}
+                                </a>
+                            @else
+                                <span class="text-muted">Utente cancellato</span>
+                            @endif
                         </p>
                     </div>
                 </div>
