@@ -162,13 +162,13 @@
                         </div>
                     @endif
                     @if($event->is_past_event)
-                        <div class="alert alert-secondary border-dark mb-0 rounded-0" role="alert">
+                        <div class="alert alert-warning border-dark mb-0 rounded-0" role="alert">
                             <div class="d-flex flex-wrap align-items-center gap-2 justify-content-between">
                                 <div class="d-flex align-items-center gap-2">
-                                    <i class="fas fa-flag-checkered fa-lg"></i>
+                                    <i class="fas fa-flag-checkered fa-lg text-danger"></i>
                                     <div>
-                                        <strong>Evento concluso</strong>
-                                        <span class="d-block small text-muted mb-0">La data dell'evento è nel passato.</span>
+                                        <strong class="fs-5 text-danger">Evento concluso</strong>
+                                        <span class="d-block small fw-bold mb-0">La data dell'evento è nel passato.</span>
                                     </div>
                                 </div>
                                 @auth
@@ -180,6 +180,91 @@
                                     @endif
                                 @endauth
                             </div>
+                        </div>
+
+                        @php
+                            $userRating = auth()->check() ? $event->ratingByUser(auth()->user()) : null;
+                            $canRateEvent = auth()->check() && $event->canBeRatedBy(auth()->user());
+                            $isEventManagerViewer = auth()->check() && (auth()->user()->isAdmin() || (int) auth()->id() === (int) $event->id_organizzatore);
+                        @endphp
+                        <div class="event-rating-box border-top p-3" role="note">
+                            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+                                <h5 class="mb-0" data-hint="Per garantire valutazione autentiche, il voto è consentito solo a chi ha effettivamente preso parte all'evento"><i class="fas fa-star text-warning"></i> Voto evento</h5>
+                                @if($event->ratings_count > 0)
+                                    <span class="badge bg-secondary fs-6 px-3 py-2" style="color: #ffc107;" data-hint="Per garantire valutazione autentiche, il voto è consentito solo a chi ha effettivamente preso parte all'evento">
+                                        <i class="fas fa-star"></i> {{ $event->average_rating }} / 5
+                                        <span class="ms-1">({{ $event->ratings_count }} {{ $event->ratings_count === 1 ? 'voto' : 'voti' }})</span>
+                                    </span>
+                                @else
+                                    <span class="text-muted small">Nessun voto ancora</span>
+                                @endif
+                            </div>
+
+                            @if($canRateEvent && !$userRating)
+                                <form action="{{ route('events.rating.store', $event) }}" method="POST" class="mb-0">
+                                    @csrf
+                                    <div class="event-rating-stars mb-2" role="radiogroup" aria-label="Vota da 1 a 5 stelle">
+                                        @for($i = 5; $i >= 1; $i--)
+                                            <input type="radio" name="rating" id="eventRatingStar{{ $i }}" value="{{ $i }}"
+                                                   {{ (int) old('rating', 0) === $i ? 'checked' : '' }}>
+                                            <label for="eventRatingStar{{ $i }}" title="{{ $i }} stell{{ $i === 1 ? 'a' : 'e' }}">
+                                                <i class="fas fa-star"></i>
+                                            </label>
+                                        @endfor
+                                    </div>
+                                    <div class="mb-2">
+                                        <textarea name="comment" rows="2" maxlength="2000" class="form-control form-control-sm" style="border: 2px solid #795548;"
+                                                  placeholder="Commento facoltativo. Dici la tua. Dicci la tua! Condividi impressioni, punti di forza e suggerimenti su questo evento">{{ old('comment') }}</textarea>
+                                    </div>
+                                    <button type="submit" class="btn btn-sm btn-success" data-hint="Invia il tuo voto per questo evento">
+                                        <i class="fas fa-check"></i> Invia voto
+                                    </button>
+                                </form>
+                            @elseif($userRating)
+                                <div class="alert alert-light border mb-0 py-2 px-3">
+                                    <div class="event-rating-stars event-rating-stars-readonly mb-1" aria-hidden="true">
+                                        @for($i = 5; $i >= 1; $i--)
+                                            <i class="fas fa-star {{ $i <= $userRating->rating ? 'text-warning' : 'text-muted' }}"></i>
+                                        @endfor
+                                    </div>
+                                    <small class="text-muted d-block">Hai già votato questo evento ({{ $userRating->rating }} / 5). Il voto non può essere modificato.</small>
+                                    @if($userRating->comment)
+                                        <div class="small mt-1"><em>{{ $userRating->comment }}</em></div>
+                                    @endif
+                                </div>
+                            @endif
+
+                            @if($isEventManagerViewer)
+                                @php $allRatings = $event->ratings; @endphp
+                                @if($allRatings->count() > 0)
+                                    <div class="mt-3 p-2 rounded" style="background-color: #ffc107; border: 2px solid #795548;">
+                                        <button class="btn btn-sm" type="button" style="background-color: #ffc107; border: 2px solid #795548; color: #000;"
+                                                data-bs-toggle="collapse" data-bs-target="#eventRatingComments"
+                                                data-hint="Tutti i voti e i commenti privati lasciati per questo evento, visibili solo a te">
+                                            <i class="fas fa-comments"></i> Voti e commenti privati ({{ $allRatings->count() }})
+                                        </button>
+                                        <div class="collapse mt-2" id="eventRatingComments">
+                                            <ul class="list-group list-group-flush">
+                                                @foreach($allRatings->sortByDesc('created_at') as $r)
+                                                    <li class="list-group-item" style="background-color: #ffc107; border-color: #795548; color: #000;">
+                                                        <strong style="color: #000;">{{ optional($r->user)->nickname ?? 'Utente' }}</strong>
+                                                        <span class="ms-1">
+                                                            @for($s = 1; $s <= 5; $s++)
+                                                                <i class="fas fa-star" style="color: {{ $s <= $r->rating ? '#795548' : '#fff3cd' }};"></i>
+                                                            @endfor
+                                                        </span>
+                                                        @if(trim((string) $r->comment) !== '')
+                                                            <p class="mb-0 small" style="color: #000;">{{ $r->comment }}</p>
+                                                        @else
+                                                            <p class="mb-0 small fst-italic" style="color: #000;">Nessun commento</p>
+                                                        @endif
+                                                    </li>
+                                                @endforeach
+                                            </ul>
+                                        </div>
+                                    </div>
+                                @endif
+                            @endif
                         </div>
                     @endif
 
@@ -213,13 +298,15 @@
                                                 @endphp
                                                 <div class="d-flex justify-content-end">
                                                     <div class="d-flex flex-nowrap gap-2 align-items-stretch event-participation-btns event-participation-btns--toglimi">
-                                                        <form action="{{ route('events.cancel', $event) }}" method="POST" class="mb-0 d-flex align-items-stretch">
-                                                            @csrf
-                                                            <button type="submit" class="btn btn-danger btn-sm w-100 event-btn-participate-map-height event-btn-meta-height event-btn-toglimi"
-                                                                    data-hint="Mi cancello da questo evento.">
-                                                                Annulla Adesione <i class="fas fa-rotate-left event-btn-toglimi-icon"></i>
-                                                            </button>
-                                                        </form>
+                                                        @if(!$event->is_past_event)
+                                                            <form action="{{ route('events.cancel', $event) }}" method="POST" class="mb-0 d-flex align-items-stretch">
+                                                                @csrf
+                                                                <button type="submit" class="btn btn-danger btn-sm w-100 event-btn-participate-map-height event-btn-meta-height event-btn-toglimi"
+                                                                        data-hint="Mi cancello da questo evento.">
+                                                                    Annulla Adesione <i class="fas fa-rotate-left event-btn-toglimi-icon"></i>
+                                                                </button>
+                                                            </form>
+                                                        @endif
                                                         @if($canSendEventComms)
                                                             <button type="button"
                                                                     class="btn btn-success btn-sm event-btn-participate-map-height event-btn-meta-height btn-border-brown"
@@ -262,7 +349,7 @@
                                                             <i class="fas fa-bullhorn"></i> Comunicazioni
                                                         </button>
                                                     @endif
-                                                    @if($cannotJoin)
+                                                    @if($cannotJoin && !$event->is_past_event)
                                                         @php
                                                             $wlBoxId = 'waitlistBoxEventShow' . $event->getKey();
                                                             $waitName = auth()->user()->nickname ?? trim((auth()->user()->nome ?? '') . ' ' . (auth()->user()->cognome ?? '')) ?: 'Utente';
@@ -711,13 +798,11 @@
                     <!-- Partecipanti (mobile) -->
                     <div class="event-participants-box mb-3">
                         <h5 class="mb-2">
-                            <i class="fas fa-users"></i> Partecipanti
+                            <i class="fas fa-users"></i> Iscritti all'evento
                             <span class="badge rounded-pill text-white event-show-part-pill--hint {{ $event->isFull() ? 'bg-danger' : 'bg-secondary' }} {{ $eventMetaPostiGapBlink ? 'event-show-part-pill--gap' : '' }}"
-                                  title="{{ $eventMetaPostiGapBlink
+                                  data-hint="{{ $eventMetaPostiGapBlink
                                       ? 'Restano 1 o 2 posti liberi rispetto al massimo: il box lampeggia per segnalare che l’evento è quasi al completo.'
-                                      : ($postiTotali !== null
-                                          ? 'Mostra quanti partecipanti ci sono (iscritti più eventuali ospiti) rispetto al numero massimo di posti previsto dall’organizzatore.'
-                                          : 'Mostra il numero di partecipanti (iscritti più eventuali ospiti); l’organizzatore non ha indicato un numero massimo di posti.') }}">
+                                      : 'Numero di iscritti e ospiti sul totale dei posti' }}">
                                 <i class="fas fa-users me-1" aria-hidden="true"></i><strong>{{ $event->participants_count }}</strong>@if($postiTotali !== null)<span class="text-white-50 fw-normal"> / </span><strong>{{ $postiTotali }}</strong>@endif
                             </span>
                             @auth
@@ -1146,13 +1231,11 @@
                 <!-- Partecipanti -->
                 <div class="event-participants-box mb-3 d-none d-md-block">
                 <h5 class="mb-2">
-                    <i class="fas fa-users"></i> Partecipanti
+                    <i class="fas fa-users"></i> Iscritti all'evento
                     <span class="badge rounded-pill text-white event-show-part-pill--hint {{ $event->isFull() ? 'bg-danger' : 'bg-secondary' }} {{ $eventMetaPostiGapBlink ? 'event-show-part-pill--gap' : '' }}"
-                          title="{{ $eventMetaPostiGapBlink
+                          data-hint="{{ $eventMetaPostiGapBlink
                               ? 'Restano 1 o 2 posti liberi rispetto al massimo: il box lampeggia per segnalare che l’evento è quasi al completo.'
-                              : ($postiTotali !== null
-                                  ? 'Mostra quanti partecipanti ci sono (iscritti più eventuali ospiti) rispetto al numero massimo di posti previsto dall’organizzatore.'
-                                  : 'Mostra il numero di partecipanti (iscritti più eventuali ospiti); l’organizzatore non ha indicato un numero massimo di posti.') }}">
+                              : 'Numero di iscritti e ospiti sul totale dei posti' }}">
                         <i class="fas fa-users me-1" aria-hidden="true"></i><strong>{{ $event->participants_count }}</strong>@if($postiTotali !== null)<span class="text-white-50 fw-normal"> / </span><strong>{{ $postiTotali }}</strong>@endif
                     </span>
                     @auth
@@ -1836,9 +1919,10 @@
             border: 2px solid #0d6efd !important;
             opacity: 1;
         }
-        /* Iscrizioni chiuse (manualmente o per scadenza): bordo rosso, sfondo grigio invariato */
+        /* Iscrizioni chiuse (manualmente o per scadenza): bordo e titolo rossi, sfondo grigio invariato */
         .btn.event-btn-iscrivimi-all-evento.btn-iscrivimi-closed:disabled {
             border-color: #dc3545 !important;
+            color: #dc3545 !important;
         }
         .btn.event-btn-iscrivimi-all-evento.btn-iscrivimi-full:disabled {
             background-color: #dc3545 !important;
@@ -2025,6 +2109,29 @@
 
         .event-meta-posti-sep {
             color: #adb5bd;
+        }
+
+        .event-rating-box {
+            background-color: #fffdf5;
+        }
+        .event-rating-stars {
+            display: inline-flex;
+            flex-direction: row-reverse;
+        }
+        .event-rating-stars input {
+            display: none;
+        }
+        .event-rating-stars label {
+            cursor: pointer;
+            font-size: 1.6rem;
+            color: #d0d0d0;
+            padding: 0 0.1rem;
+            transition: color 0.15s ease;
+        }
+        .event-rating-stars input:checked ~ label,
+        .event-rating-stars label:hover,
+        .event-rating-stars label:hover ~ label {
+            color: #ffc107;
         }
 
         .event-registration-deadline-box {

@@ -283,6 +283,44 @@ class Event extends Model
             ->withPivot('amici', 'data_iscrizione', 'ospiti_inseriti_il');
     }
 
+    public function ratings(): HasMany
+    {
+        return $this->hasMany(EventRating::class, 'event_id', 'IDevento');
+    }
+
+    /**
+     * L'utente ha partecipato a questo evento (a prescindere dagli ospiti portati).
+     */
+    public function wasAttendedBy(User $user): bool
+    {
+        return $this->participants()->where('utente.userID', $user->getKey())->exists();
+    }
+
+    /**
+     * L'utente può votare l'evento: deve averlo frequentato ed essere già concluso.
+     */
+    public function canBeRatedBy(User $user): bool
+    {
+        return $this->is_past_event && $this->wasAttendedBy($user);
+    }
+
+    public function ratingByUser(User $user): ?EventRating
+    {
+        return $this->ratings->firstWhere('user_id', $user->getKey());
+    }
+
+    public function getAverageRatingAttribute(): ?float
+    {
+        $avg = $this->ratings->avg('rating');
+
+        return $avg !== null ? round((float) $avg, 1) : null;
+    }
+
+    public function getRatingsCountAttribute(): int
+    {
+        return $this->ratings->count();
+    }
+
     /**
      * Iscrive automaticamente l'organizzatore come partecipante (se non già presente).
      * Utile per eventi creati/duplicati dal pannello admin.

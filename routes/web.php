@@ -115,7 +115,6 @@ Route::post('/mercatino/vetrina/header-image', [MercatinoVetrinaHeaderImageContr
 
 // Mercatino: solo utenti registrati e approvati (come la chat)
 Route::get('/mercatino', function (Request $request) {
-    MercatinoAnnuncioStorage::purgeExpired();
     $bozze = collect();
     $base = 'mercatino_bozze/' . auth()->id();
     // Bozze locali il cui nome cartella coincide con un annuncio già in vetrina: rimosse automaticamente (niente doppioni).
@@ -317,8 +316,12 @@ Route::post('/mercatino/bozze/{folder}', function (Request $request, string $fol
 
 // Mercatino: vetrina annunci pubblicati (cartelle sotto public/upload_immagini/mercatino_annunci; legacy anche storage/app/public)
 Route::get('/mercatino/vetrina', function () {
-    MercatinoAnnuncioStorage::purgeExpired();
     $annunci = MercatinoAnnuncioStorage::listPublished();
+    if (! (auth()->check() && auth()->user()->isAdmin())) {
+        $annunci = $annunci->reject(function ($row) {
+            return MercatinoAnnuncioStorage::isExpired($row['dati'] ?? null);
+        })->values();
+    }
     $vetrinaHeaderImage = MercatinoVetrinaHeaderImageController::headerPublicRelative();
 
     return view('mercatino.vetrina', compact('annunci', 'vetrinaHeaderImage'));
@@ -547,7 +550,6 @@ Route::post('/mercatino/vetrina/annuncio/rinnova', function (Request $request) {
     $validated = $request->validate([
         'folder' => ['required', 'string', 'max:64', 'regex:/^[a-zA-Z0-9_\-]+$/'],
     ]);
-    MercatinoAnnuncioStorage::purgeExpired();
     $folder = $validated['folder'];
     if (! MercatinoAnnuncioStorage::annuncioExists($folder)) {
         return back()->with('error', 'Annuncio non trovato, già scaduto o rimosso.');
@@ -821,6 +823,9 @@ Route::middleware(['auth', 'approved'])->group(function () {
 
     Route::post('/events/{event}/cancel', [EventController::class, 'cancelParticipation'])
         ->name('events.cancel');
+
+    Route::post('/events/{event}/rating', [\App\Http\Controllers\EventRatingController::class, 'store'])
+        ->name('events.rating.store');
 
     Route::post('/events/{event}/waitlist', [EventController::class, 'joinWaitlist'])
         ->name('events.waitlist.join');

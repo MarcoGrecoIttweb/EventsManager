@@ -450,6 +450,9 @@
                                     <div>
                                         <div class="mercatino-vetrina-titleline">
                                             {{ $d['titolo'] ?? 'Senza titolo' }}
+                                            @if($isAdminViewer && \App\Support\MercatinoAnnuncioStorage::isExpired($d))
+                                                <span class="badge bg-danger ms-1" data-hint="Annuncio scaduto: visibile solo a te come amministratore, non agli altri utenti">Scaduto</span>
+                                            @endif
                                         </div>
                                         <div class="mercatino-vetrina-subline">
                                             {{ $mercatinoLblCat[$d['categoria'] ?? ''] ?? ($d['categoria'] ?? '—') }}

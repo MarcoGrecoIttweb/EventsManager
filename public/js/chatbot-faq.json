@@ -5,6 +5,11 @@
     "answer": "Excursio è una community di amici che organizza eventi e uscite a Milano. L'obiettivo è offrire opportunità per conoscere nuove persone e fare amicizia, uscendo dalla routine quotidiana. Gli eventi hanno costi modesti e a volte sono gratuiti, senza alcun fine di lucro. La registrazione è completamente gratuita!"
   },
   {
+    "keywords": ["voto evento", "votare evento", "come voto", "valutazione evento", "vota evento", "chi può votare", "posso votare", "voto passato", "stelle evento", "rating evento", "votazione", "voti evento passato"],
+    "question": "Come funziona il voto degli eventi passati?",
+    "answer": "Ogni evento concluso può essere valutato con un voto da 1 a 5 stelle, a cui puoi aggiungere anche un commento facoltativo. Il voto è riservato esclusivamente a chi ha effettivamente partecipato all'evento: se non risultavi tra gli iscritti presenti, il pulsante per votare non comparirà. Per votare apri la pagina dell'evento concluso, clicca sul numero di stelle che vuoi assegnare, scrivi (se vuoi) un breve commento e conferma con «Invia voto». Attenzione: puoi votare una sola volta e, una volta inviato, il voto non può più essere modificato, quindi decidi con calma prima di confermare. La media dei voti e il numero totale di votazioni ricevute sono visibili a tutti nella pagina dell'evento; il commento invece resta privato e viene letto solo dall'organizzatore e dagli amministratori, mai dagli altri partecipanti. Il voto non serve solo a fini statistici: è uno strumento concreto per migliorare l'organizzazione degli eventi. Grazie ai voti e ai commenti, organizzatori e amministratori capiscono quanto è piaciuta un'uscita, cosa ha funzionato e cosa no, e possono decidere se riproporla così com'è, modificarla (ad esempio cambiando location, orario o formula) oppure evitare di ripetere scelte poco gradite. Per questo il tuo voto sincero, anche se breve, è davvero prezioso: aiuta a rendere i prossimi eventi sempre migliori."
+  },
+  {
     "keywords": ["dove", "milano", "città", "zona", "luogo"],
     "question": "Dove si svolgono gli eventi?",
     "answer": "Gli eventi di Excursio si svolgono a Milano e dintorni. Ogni evento ha un indirizzo preciso indicato nella sua pagina: troverai il nome del locale, la via, il numero civico e la città, così puoi raggiungerlo facilmente."
@@ -22,7 +27,7 @@
   {
     "keywords": ["foto registrazione", "foto obbligatoria", "quale foto", "immagine profilo registrazione"],
     "question": "Devo caricare una foto per registrarmi?",
-    "answer": "Sì, una foto è richiesta durante la registrazione. Può essere un tuo ritratto, una foto che ti rappresenta o anche un'immagine simpatica. Formati accettati: JPG, PNG, WebP o GIF, massimo 4 MB. Questa foto sarà visibile sul tuo profilo e aiuta gli altri membri a riconoscerti."
+    "answer": "Sì, una foto è richiesta durante la registrazione. Deve essere una foto in cui l'utente sia chiaramente riconoscibile. Formati accettati: JPG, PNG, WebP o GIF, massimo 4 MB. Questa foto sarà visibile sul tuo profilo e aiuta gli altri membri a riconoscerti."
   },
   {
     "keywords": ["approvazione", "attesa", "account in attesa", "non riesco ad accedere", "non posso entrare", "quanto tempo", "quando approvano"],
@@ -328,6 +333,11 @@
     "keywords": ["cercare eventi passati", "trovare evento vecchio", "ricerca storico"],
     "question": "Come cerco un evento passato specifico?",
     "answer": "Nella pagina «Eventi passati» trovi una barra di ricerca in alto. Puoi cercare per titolo dell'evento o per descrizione. Scrivi una parola chiave e il sito ti mostrerà gli eventi corrispondenti. Puoi anche filtrare per vedere solo gli eventi a cui hai partecipato tu."
+  },
+  {
+    "keywords": ["a cosa serve il voto", "perché votare", "scopo voto", "utilità voto", "a che serve votare", "perché valutare evento", "obiettivo voto", "perché lasciare un voto"],
+    "question": "A cosa serve davvero il voto di un evento?",
+    "answer": "Il voto non è un semplice numero da mettere in statistica: è lo strumento con cui organizzatori e amministratori misurano il gradimento reale di un evento. Nello specifico serve a: capire cosa è piaciuto e cosa no (grazie anche al commento privato, se lo scrivi); decidere se un evento va riproposto così com'è, perché ha funzionato bene; capire se invece va modificato — location, orario, prezzo, formula — prima di riorganizzarlo; ed evitare di ripetere scelte che non hanno convinto i partecipanti. In pratica, ogni voto contribuisce direttamente a migliorare la qualità dei prossimi eventi della community: più persone votano con sincerità, più gli organizzatori hanno un quadro chiaro su cui basare le decisioni future."
   },
   {
     "keywords": ["album foto", "foto eventi", "galleria", "immagini", "google foto"],

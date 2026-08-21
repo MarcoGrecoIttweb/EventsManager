@@ -339,6 +339,10 @@ class EventController extends Controller
             return redirect()->route('login');
         }
 
+        if ($event->is_past_event) {
+            return back()->with('error', 'Non puoi annullare l\'adesione a un evento concluso.');
+        }
+
         Auth::user()->events()->detach($event->getKey());
 
         $this->notifyAdminsEventSubscriptionChange($event, Auth::user(), 'cancellato');
@@ -447,6 +451,13 @@ class EventController extends Controller
         if (!Auth::check() || !Auth::user()->isApproved()) {
             return redirect()->route('login')
                 ->with('error', 'Devi essere un utente approvato per iscriverti alla lista d’attesa.');
+        }
+
+        if ($event->is_past_event) {
+            return back()->with([
+                'error' => 'Non puoi iscriverti alla lista d’attesa di un evento concluso.',
+                'waitlist_flash_event_id' => $event->getKey(),
+            ]);
         }
 
         $alreadyParticipant = $event->participants()->where('utente.userID', Auth::id())->exists();

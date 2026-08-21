@@ -166,8 +166,8 @@
                             </div>
                             <div class="card-footer bg-transparent">
                                 <div class="d-grid gap-2">
-                                    <a href="{{ route('events.show', $event) }}" class="btn btn-outline-secondary w-100">
-                                        <i class="fas fa-eye"></i> Dettagli evento
+                                    <a href="{{ route('events.show', $event) }}" class="btn btn-primary border-warning border-2 w-100" data-hint="Apri Dettagli evento / Vota Evento se vi hai partecipato">
+                                        <i class="fas fa-eye"></i> <span class="text-white">Dettagli evento</span> <span class="text-black">/</span> <span class="text-warning">Vota Evento</span>
                                     </a>
                                     @auth
                                         @if(auth()->user()->isAdmin())
