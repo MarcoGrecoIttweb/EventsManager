@@ -27,15 +27,16 @@
                                                     <option value="nome" {{ request('field', 'nome') === 'nome' ? 'selected' : '' }}>Evento</option>
                                                     <option value="locale" {{ request('field') === 'locale' ? 'selected' : '' }}>Locale</option>
                                                     <option value="indirizzo" {{ request('field') === 'indirizzo' ? 'selected' : '' }}>Indirizzo</option>
+                                                    <option value="data" {{ request('field') === 'data' ? 'selected' : '' }}>Data</option>
                                                 </select>
                                             </div>
                                         </div>
                                         <div class="admin-events-search-field admin-events-search-field--q flex-shrink-0">
                                             <div class="input-group input-group-sm">
-                                                <span class="input-group-text">Testo</span>
+                                                <span id="adminEventsSearchQueryLabel" class="input-group-text">{{ request('field') === 'data' ? 'Data' : 'Testo' }}</span>
                                                 <input
                                                     id="adminEventsSearchQuery"
-                                                    type="search"
+                                                    type="{{ request('field') === 'data' ? 'date' : 'search' }}"
                                                     name="q"
                                                     value="{{ request('q', '') }}"
                                                     class="form-control"
@@ -547,6 +548,10 @@
             function fetchSuggestions() {
                 var q = (input.value || '').trim();
                 var field = (select.value || 'nome').trim();
+                if (field === 'data') {
+                    clearOptions();
+                    return;
+                }
                 var key = field + '|' + q;
                 if (key === lastKey) return;
                 lastKey = key;
@@ -574,9 +579,28 @@
             });
             input.addEventListener('focus', schedule);
             input.addEventListener('compositionend', schedule);
+
+            var label = document.getElementById('adminEventsSearchQueryLabel');
+
+            function syncFieldMode() {
+                if (select.value === 'data') {
+                    input.type = 'date';
+                    input.removeAttribute('list');
+                    input.placeholder = '';
+                    if (label) label.textContent = 'Data';
+                    clearOptions();
+                } else {
+                    input.type = 'search';
+                    input.setAttribute('list', 'adminEventsSearchSuggestions');
+                    input.placeholder = 'Scrivi…';
+                    if (label) label.textContent = 'Testo';
+                }
+            }
+
             select.addEventListener('change', function () {
                 lastKey = '';
                 clearOptions();
+                syncFieldMode();
                 schedule();
             });
         })();

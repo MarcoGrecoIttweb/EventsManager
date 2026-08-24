@@ -29,12 +29,24 @@ class EventController extends Controller
         $request = request();
         $term = trim((string) $request->query('q', ''));
         $field = (string) $request->query('field', 'nome');
-        if (!in_array($field, ['nome', 'locale', 'indirizzo'], true)) {
+        if (!in_array($field, ['nome', 'locale', 'indirizzo', 'data'], true)) {
             $field = 'nome';
         }
 
         $events = Event::with(['user', 'participants'])
             ->when($term !== '', function ($q) use ($term, $field) {
+                if ($field === 'data') {
+                    try {
+                        $date = \Carbon\Carbon::createFromFormat('Y-m-d', $term);
+                    } catch (\Throwable $e) {
+                        $date = null;
+                    }
+                    if ($date !== null) {
+                        $q->whereDate('dataevento', $date);
+                    }
+                    return;
+                }
+
                 $like = '%' . $term . '%';
 
                 if ($field === 'nome') {
