@@ -204,6 +204,29 @@
             border-bottom: 0 !important;
             box-shadow: none !important;
         }
+        /* Sfondo navbar: grigio scuro */
+        .excursio-navbar {
+            background-color: #3d3d3d !important;
+        }
+        /* Testi e link della navbar: giallo ocra */
+        .excursio-navbar,
+        .excursio-navbar .nav-link,
+        .excursio-navbar .navbar-brand,
+        .excursio-navbar .navbar-text,
+        .excursio-navbar .btn-link {
+            color: #FFB300 !important;
+        }
+        .excursio-navbar .nav-link:hover,
+        .excursio-navbar .nav-link:focus,
+        .excursio-navbar .navbar-brand:hover,
+        .excursio-navbar .btn-link:hover {
+            color: #FFCC33 !important;
+        }
+        /* "Stai impersonando NOME": resta bianco, non giallo ocra */
+        .excursio-navbar .excursio-navbar-impersonating,
+        .excursio-navbar .excursio-navbar-impersonating strong {
+            color: #ffffff !important;
+        }
 
         /* Header + navbar sempre visibili in alto durante lo scroll */
         .site-nav-sticky {
@@ -293,7 +316,7 @@
                 </li>
                 @if(session()->has('impersonator_id'))
                     <li class="nav-item d-flex align-items-center">
-                        <span class="navbar-text text-warning small">
+                        <span class="navbar-text small excursio-navbar-impersonating">
                             <i class="fas fa-user-secret me-1"></i>
                             Stai impersonando <strong>{{ session('impersonated_username') }}</strong>
                         </span>

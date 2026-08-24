@@ -181,9 +181,13 @@
                                                 @endif
                                             </td>
                                             <td>
-                                                <a href="{{ route('profile.show', $event->user) }}" class="text-decoration-none">
-                                                    {{ $event->user->nickname }}
-                                                </a>
+                                                @if($event->user)
+                                                    <a href="{{ route('profile.show', $event->user) }}" class="text-decoration-none">
+                                                        {{ $event->user->nickname }}
+                                                    </a>
+                                                @else
+                                                    <span class="text-muted">Utente cancellato</span>
+                                                @endif
                                             </td>
                                             <td>
                                                 <div class="btn-group" role="group">

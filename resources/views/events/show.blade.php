@@ -58,6 +58,7 @@
                 </div>
             @endif
         </div>
+
         <div class="row">
             <div class="col-md-8">
                 <div class="card event-main-card">
@@ -332,15 +333,43 @@
                                                     $joinIcon = $cannotJoin ? 'lock' : 'check';
                                                 @endphp
                                                 <div class="d-flex flex-wrap align-items-center gap-2 w-100">
-                                                    <form action="{{ route('events.participate', $event) }}" method="POST" class="mb-0 flex-grow-1 w-100">
+                                                    <form id="participateForm{{ $event->getKey() }}" action="{{ route('events.participate', $event) }}" method="POST" class="mb-0 flex-grow-1 w-100 position-relative">
                                                         @csrf
-                                                        <button type="submit" class="btn btn-sm w-100 event-btn-participate-map-height event-btn-iscrivimi-all-evento btn-iscrivimi-state-{{ $cannotJoin ? 'off' : 'on' }} {{ $event->isFull() ? 'btn-iscrivimi-full' : '' }} {{ !$event->isRegistrationOpen() ? 'btn-iscrivimi-closed' : '' }}"
+                                                        <div id="participateTooltip{{ $event->getKey() }}"
+                                                             style="display:none; position:absolute; bottom:100%; left:0; right:0; margin-bottom:8px; z-index:2000; background:#fff; color:#000; border:2px solid #000; border-radius:6px; padding:8px 12px; font-size:0.85rem; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.25);">
+                                                            <i class="fas fa-star" style="color:#000;"></i>
+                                                            Ricorda: a evento concluso potrai votare (1-5 stelle + commento facoltativo per l'organizzatore). Iscrizione in corso...
+                                                        </div>
+                                                        <button type="submit" id="participateBtn{{ $event->getKey() }}" class="btn btn-sm w-100 event-btn-participate-map-height event-btn-iscrivimi-all-evento btn-iscrivimi-state-{{ $cannotJoin ? 'off' : 'on' }} {{ $event->isFull() ? 'btn-iscrivimi-full' : '' }} {{ !$event->isRegistrationOpen() ? 'btn-iscrivimi-closed' : '' }}"
                                                             data-hint="Clicca per iscriverti a questo evento"
                                                             {{ $cannotJoin ? 'disabled' : '' }}>
                                                             <i class="fas fa-{{ $joinIcon }}"></i>
                                                             {{ $joinLabel }}
                                                         </button>
                                                     </form>
+                                                    @unless($cannotJoin)
+                                                        <script>
+                                                            (function() {
+                                                                var form = document.getElementById('participateForm{{ $event->getKey() }}');
+                                                                var tooltip = document.getElementById('participateTooltip{{ $event->getKey() }}');
+                                                                var btn = document.getElementById('participateBtn{{ $event->getKey() }}');
+                                                                if (!form || !tooltip || !btn) return;
+                                                                var confirmed = false;
+                                                                form.addEventListener('submit', function(e) {
+                                                                    if (confirmed) return;
+                                                                    e.preventDefault();
+                                                                    tooltip.style.display = 'block';
+                                                                    btn.disabled = true;
+                                                                    tooltip.scrollIntoView({behavior: 'smooth', block: 'center'});
+                                                                    setTimeout(function() {
+                                                                        confirmed = true;
+                                                                        tooltip.style.display = 'none';
+                                                                        form.submit();
+                                                                    }, 7000);
+                                                                });
+                                                            })();
+                                                        </script>
+                                                    @endunless
                                                     @if($canSendEventComms)
                                                         <button type="button"
                                                                 class="btn btn-success btn-sm event-btn-participate-map-height btn-border-brown w-100"
