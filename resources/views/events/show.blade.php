@@ -192,8 +192,12 @@
                             <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
                                 <h5 class="mb-0" data-hint="Per garantire valutazione autentiche, il voto è consentito solo a chi ha effettivamente preso parte all'evento"><i class="fas fa-star text-warning"></i> Voto evento</h5>
                                 @if($event->ratings_count > 0)
+                                    @php
+                                        $ratingEmojiMap = [1 => '😡', 2 => '😞', 3 => '😐', 4 => '🙂', 5 => '😍'];
+                                        $avgEmoji = $ratingEmojiMap[max(1, min(5, (int) round($event->average_rating)))];
+                                    @endphp
                                     <span class="badge bg-secondary fs-6 px-3 py-2" style="color: #ffc107;" data-hint="Per garantire valutazione autentiche, il voto è consentito solo a chi ha effettivamente preso parte all'evento">
-                                        <i class="fas fa-star"></i> {{ $event->average_rating }} / 5
+                                        <span style="font-size:1.1em;">{{ $avgEmoji }}</span> {{ $event->average_rating }} / 5
                                         <span class="ms-1">({{ $event->ratings_count }} {{ $event->ratings_count === 1 ? 'voto' : 'voti' }})</span>
                                     </span>
                                 @else
@@ -202,14 +206,19 @@
                             </div>
 
                             @if($canRateEvent && !$userRating)
+                                @php
+                                    $ratingEmojiMap = $ratingEmojiMap ?? [1 => '😡', 2 => '😞', 3 => '😐', 4 => '🙂', 5 => '😍'];
+                                    $ratingLabelMap = [1 => 'Pessimo', 2 => 'Scarso', 3 => 'Sufficiente', 4 => 'Buono', 5 => 'Ottimo'];
+                                @endphp
                                 <form action="{{ route('events.rating.store', $event) }}" method="POST" class="mb-0">
                                     @csrf
-                                    <div class="event-rating-stars mb-2" role="radiogroup" aria-label="Vota da 1 a 5 stelle">
-                                        @for($i = 5; $i >= 1; $i--)
+                                    <div class="event-rating-emojis mb-2" role="radiogroup" aria-label="Vota da Pessimo a Ottimo">
+                                        @for($i = 1; $i <= 5; $i++)
                                             <input type="radio" name="rating" id="eventRatingStar{{ $i }}" value="{{ $i }}"
                                                    {{ (int) old('rating', 0) === $i ? 'checked' : '' }}>
-                                            <label for="eventRatingStar{{ $i }}" title="{{ $i }} stell{{ $i === 1 ? 'a' : 'e' }}">
-                                                <i class="fas fa-star"></i>
+                                            <label for="eventRatingStar{{ $i }}" title="{{ $ratingLabelMap[$i] }}">
+                                                <span class="event-rating-emoji">{{ $ratingEmojiMap[$i] }}</span>
+                                                <span class="event-rating-emoji-label">{{ $ratingLabelMap[$i] }}</span>
                                             </label>
                                         @endfor
                                     </div>
@@ -222,11 +231,12 @@
                                     </button>
                                 </form>
                             @elseif($userRating)
+                                @php
+                                    $ratingEmojiMap = $ratingEmojiMap ?? [1 => '😡', 2 => '😞', 3 => '😐', 4 => '🙂', 5 => '😍'];
+                                @endphp
                                 <div class="alert alert-light border mb-0 py-2 px-3">
-                                    <div class="event-rating-stars event-rating-stars-readonly mb-1" aria-hidden="true">
-                                        @for($i = 5; $i >= 1; $i--)
-                                            <i class="fas fa-star {{ $i <= $userRating->rating ? 'text-warning' : 'text-muted' }}"></i>
-                                        @endfor
+                                    <div class="mb-1" style="font-size:2rem; line-height:1;" aria-hidden="true">
+                                        {{ $ratingEmojiMap[max(1, min(5, (int) $userRating->rating))] }}
                                     </div>
                                     <small class="text-muted d-block">Hai già votato questo evento ({{ $userRating->rating }} / 5). Il voto non può essere modificato.</small>
                                     @if($userRating->comment)
@@ -249,11 +259,10 @@
                                                 @foreach($allRatings->sortByDesc('created_at') as $r)
                                                     <li class="list-group-item" style="background-color: #ffc107; border-color: #795548; color: #000;">
                                                         <strong style="color: #000;">{{ optional($r->user)->nickname ?? 'Utente' }}</strong>
-                                                        <span class="ms-1">
-                                                            @for($s = 1; $s <= 5; $s++)
-                                                                <i class="fas fa-star" style="color: {{ $s <= $r->rating ? '#795548' : '#fff3cd' }};"></i>
-                                                            @endfor
+                                                        <span class="ms-1" style="font-size:1.3rem; vertical-align:middle;">
+                                                            {{ ($ratingEmojiMap ?? [1 => '😡', 2 => '😞', 3 => '😐', 4 => '🙂', 5 => '😍'])[max(1, min(5, (int) $r->rating))] }}
                                                         </span>
+                                                        <span class="small">({{ $r->rating }}/5)</span>
                                                         @if(trim((string) $r->comment) !== '')
                                                             <p class="mb-0 small" style="color: #000;">{{ $r->comment }}</p>
                                                         @else
@@ -2147,24 +2156,39 @@
         .event-rating-box {
             background-color: #fffdf5;
         }
-        .event-rating-stars {
+        .event-rating-emojis {
             display: inline-flex;
-            flex-direction: row-reverse;
+            flex-wrap: wrap;
+            gap: 0.5rem;
         }
-        .event-rating-stars input {
+        .event-rating-emojis input {
             display: none;
         }
-        .event-rating-stars label {
+        .event-rating-emojis label {
             cursor: pointer;
-            font-size: 1.6rem;
-            color: #d0d0d0;
-            padding: 0 0.1rem;
-            transition: color 0.15s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.15rem;
+            padding: 0.25rem 0.4rem;
+            border-radius: 8px;
+            filter: grayscale(1);
+            opacity: 0.45;
+            transition: filter 0.15s ease, opacity 0.15s ease, transform 0.15s ease, background-color 0.15s ease;
         }
-        .event-rating-stars input:checked ~ label,
-        .event-rating-stars label:hover,
-        .event-rating-stars label:hover ~ label {
-            color: #ffc107;
+        .event-rating-emoji {
+            font-size: 1.8rem;
+            line-height: 1;
+        }
+        .event-rating-emoji-label {
+            font-size: 0.7rem;
+        }
+        .event-rating-emojis input:checked + label,
+        .event-rating-emojis label:hover {
+            filter: grayscale(0);
+            opacity: 1;
+            transform: scale(1.12);
+            background-color: rgba(255, 193, 7, 0.15);
         }
 
         .event-registration-deadline-box {
