@@ -223,8 +223,11 @@
                                         @endfor
                                     </div>
                                     <div class="mb-2">
-                                        <textarea name="comment" rows="2" maxlength="2000" class="form-control form-control-sm" style="border: 2px solid #795548;"
-                                                  placeholder="Commento facoltativo. Dici la tua. Dicci la tua! Condividi impressioni, punti di forza e suggerimenti su questo evento">{{ old('comment') }}</textarea>
+                                        <label for="eventRatingComment" class="small mb-1 d-block">
+                                            <strong style="color:#795548;">(Facoltativo)</strong> Dicci la tua!
+                                        </label>
+                                        <textarea id="eventRatingComment" name="comment" rows="2" maxlength="2000" class="form-control form-control-sm" style="border: 2px solid #795548;"
+                                                  placeholder="Spazio ai dettagli! Cosa ti è piaciuto di più? L'atmosfera, la compagnia... Com'è andata davvero?">{{ old('comment') }}</textarea>
                                     </div>
                                     <button type="submit" class="btn btn-sm btn-success" data-hint="Invia il tuo voto per questo evento">
                                         <i class="fas fa-check"></i> Invia voto
