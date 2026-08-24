@@ -182,7 +182,8 @@
                                 @endauth
                             </div>
                         </div>
-
+                    @endif
+                    @if($event->hasStarted())
                         @php
                             $userRating = auth()->check() ? $event->ratingByUser(auth()->user()) : null;
                             $canRateEvent = auth()->check() && $event->canBeRatedBy(auth()->user());

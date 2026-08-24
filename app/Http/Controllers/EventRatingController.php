@@ -14,7 +14,7 @@ class EventRatingController extends Controller
         $user = Auth::user();
 
         if (!$event->canBeRatedBy($user)) {
-            return back()->with('error', 'Puoi votare solo eventi conclusi a cui hai partecipato.');
+            return back()->with('error', 'Puoi votare solo eventi già iniziati a cui hai partecipato.');
         }
 
         if ($event->ratings()->where('user_id', $user->getKey())->exists()) {

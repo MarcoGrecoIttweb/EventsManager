@@ -297,11 +297,28 @@ class Event extends Model
     }
 
     /**
-     * L'utente può votare l'evento: deve averlo frequentato ed essere già concluso.
+     * L'utente può votare l'evento: deve averlo frequentato e l'evento deve essere già iniziato
+     * (si può votare anche durante lo svolgimento, non solo a evento concluso).
      */
     public function canBeRatedBy(User $user): bool
     {
-        return $this->is_past_event && $this->wasAttendedBy($user);
+        return $this->hasStarted() && $this->wasAttendedBy($user);
+    }
+
+    /**
+     * True dalla data/ora di inizio dell'evento in poi (durante o dopo, non solo il giorno successivo).
+     */
+    public function hasStarted(): bool
+    {
+        if (!$this->dataevento) {
+            return false;
+        }
+
+        try {
+            return $this->dataevento->lte(now());
+        } catch (\Throwable $e) {
+            return false;
+        }
     }
 
     public function ratingByUser(User $user): ?EventRating
