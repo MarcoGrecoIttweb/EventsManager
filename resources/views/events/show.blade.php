@@ -395,8 +395,8 @@
                                                         @csrf
                                                         <div id="participateTooltip{{ $event->getKey() }}"
                                                              style="display:none; position:absolute; bottom:100%; left:0; right:0; margin-bottom:8px; z-index:2000; background:#fff; color:#000; border:2px solid #000; border-radius:6px; padding:8px 12px; font-size:0.85rem; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.25);">
-                                                            <i class="fas fa-star" style="color:#000;"></i>
-                                                            Ricorda: a evento concluso potrai votare (1-5 stelle + commento facoltativo per l'organizzatore). Iscrizione in corso...
+                                                            <span style="color:#000;">😍</span>
+                                                            Ricorda: dall'inizio dell'evento (anche durante!) potrai votare con una faccina da Pessimo a Ottimo + commento facoltativo per l'organizzatore. Iscrizione in corso...
                                                         </div>
                                                         <button type="submit" id="participateBtn{{ $event->getKey() }}" class="btn btn-sm w-100 event-btn-participate-map-height event-btn-iscrivimi-all-evento btn-iscrivimi-state-{{ $cannotJoin ? 'off' : 'on' }} {{ $event->isFull() ? 'btn-iscrivimi-full' : '' }} {{ !$event->isRegistrationOpen() ? 'btn-iscrivimi-closed' : '' }}"
                                                             data-hint="Clicca per iscriverti a questo evento"
