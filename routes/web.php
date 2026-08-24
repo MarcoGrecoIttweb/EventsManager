@@ -826,6 +826,10 @@ Route::middleware(['auth', 'approved'])->group(function () {
 
     Route::post('/events/{event}/rating', [\App\Http\Controllers\EventRatingController::class, 'store'])
         ->name('events.rating.store');
+    Route::put('/events/{event}/rating/{rating}', [\App\Http\Controllers\EventRatingController::class, 'update'])
+        ->name('events.rating.update');
+    Route::delete('/events/{event}/rating/{rating}', [\App\Http\Controllers\EventRatingController::class, 'destroy'])
+        ->name('events.rating.destroy');
 
     Route::post('/events/{event}/waitlist', [EventController::class, 'joinWaitlist'])
         ->name('events.waitlist.join');

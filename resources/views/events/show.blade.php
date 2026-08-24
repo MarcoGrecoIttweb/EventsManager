@@ -249,7 +249,12 @@
                             @endif
 
                             @if($isEventManagerViewer)
-                                @php $allRatings = $event->ratings; @endphp
+                                @php
+                                    $allRatings = $event->ratings;
+                                    $isAdminRatingManager = auth()->check() && auth()->user()->isAdmin();
+                                    $ratingEmojiMap = $ratingEmojiMap ?? [1 => '😡', 2 => '😞', 3 => '😐', 4 => '🙂', 5 => '😍'];
+                                    $ratingLabelMap = $ratingLabelMap ?? [1 => 'Pessimo', 2 => 'Scarso', 3 => 'Sufficiente', 4 => 'Buono', 5 => 'Ottimo'];
+                                @endphp
                                 @if($allRatings->count() > 0)
                                     <div class="mt-3 p-2 rounded" style="background-color: #ffc107; border: 2px solid #795548;">
                                         <button class="btn btn-sm" type="button" style="background-color: #ffc107; border: 2px solid #795548; color: #000;"
@@ -261,15 +266,55 @@
                                             <ul class="list-group list-group-flush">
                                                 @foreach($allRatings->sortByDesc('created_at') as $r)
                                                     <li class="list-group-item" style="background-color: #ffc107; border-color: #795548; color: #000;">
-                                                        <strong style="color: #000;">{{ optional($r->user)->nickname ?? 'Utente' }}</strong>
-                                                        <span class="ms-1" style="font-size:1.3rem; vertical-align:middle;">
-                                                            {{ ($ratingEmojiMap ?? [1 => '😡', 2 => '😞', 3 => '😐', 4 => '🙂', 5 => '😍'])[max(1, min(5, (int) $r->rating))] }}
-                                                        </span>
-                                                        <span class="small">({{ $r->rating }}/5)</span>
-                                                        @if(trim((string) $r->comment) !== '')
-                                                            <p class="mb-0 small" style="color: #000;">{{ $r->comment }}</p>
-                                                        @else
-                                                            <p class="mb-0 small fst-italic" style="color: #000;">Nessun commento</p>
+                                                        <div class="d-flex justify-content-between align-items-start gap-2">
+                                                            <div>
+                                                                <strong style="color: #000;">{{ optional($r->user)->nickname ?? 'Utente' }}</strong>
+                                                                <span class="ms-1" style="font-size:1.3rem; vertical-align:middle;">
+                                                                    {{ $ratingEmojiMap[max(1, min(5, (int) $r->rating))] }}
+                                                                </span>
+                                                                <span class="small">({{ $r->rating }}/5)</span>
+                                                                @if(trim((string) $r->comment) !== '')
+                                                                    <p class="mb-0 small" style="color: #000;">{{ $r->comment }}</p>
+                                                                @else
+                                                                    <p class="mb-0 small fst-italic" style="color: #000;">Nessun commento</p>
+                                                                @endif
+                                                            </div>
+                                                            @if($isAdminRatingManager)
+                                                                <div class="d-flex gap-1 flex-shrink-0">
+                                                                    <button type="button" class="btn btn-sm btn-outline-dark" data-bs-toggle="collapse" data-bs-target="#editRating{{ $r->getKey() }}" data-hint="Modifica questo voto (solo admin)">
+                                                                        <i class="fas fa-edit"></i>
+                                                                    </button>
+                                                                    <form action="{{ route('events.rating.destroy', [$event, $r]) }}" method="POST" class="mb-0" onsubmit="return confirm('Eliminare definitivamente questo voto?');">
+                                                                        @csrf
+                                                                        @method('DELETE')
+                                                                        <button type="submit" class="btn btn-sm btn-outline-danger" data-hint="Elimina questo voto (solo admin)">
+                                                                            <i class="fas fa-trash"></i>
+                                                                        </button>
+                                                                    </form>
+                                                                </div>
+                                                            @endif
+                                                        </div>
+                                                        @if($isAdminRatingManager)
+                                                            <div class="collapse mt-2" id="editRating{{ $r->getKey() }}">
+                                                                <form action="{{ route('events.rating.update', [$event, $r]) }}" method="POST" class="p-2 rounded" style="background-color: #fff3cd; border: 1px solid #795548;">
+                                                                    @csrf
+                                                                    @method('PUT')
+                                                                    <div class="event-rating-emojis mb-2">
+                                                                        @for($i = 1; $i <= 5; $i++)
+                                                                            <input type="radio" name="rating" id="editRatingStar{{ $r->getKey() }}_{{ $i }}" value="{{ $i }}"
+                                                                                   {{ (int) $r->rating === $i ? 'checked' : '' }}>
+                                                                            <label for="editRatingStar{{ $r->getKey() }}_{{ $i }}" title="{{ $ratingLabelMap[$i] }}">
+                                                                                <span class="event-rating-emoji">{{ $ratingEmojiMap[$i] }}</span>
+                                                                                <span class="event-rating-emoji-label">{{ $ratingLabelMap[$i] }}</span>
+                                                                            </label>
+                                                                        @endfor
+                                                                    </div>
+                                                                    <textarea name="comment" rows="2" maxlength="2000" class="form-control form-control-sm mb-2">{{ $r->comment }}</textarea>
+                                                                    <button type="submit" class="btn btn-sm btn-primary">
+                                                                        <i class="fas fa-check"></i> Salva modifiche
+                                                                    </button>
+                                                                </form>
+                                                            </div>
                                                         @endif
                                                     </li>
                                                 @endforeach
