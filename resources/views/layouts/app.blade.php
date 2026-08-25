@@ -383,7 +383,7 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('profile.show', auth()->user()) }}">
+                        <a class="nav-link" href="{{ route('profile.show', auth()->user()) }}" data-hint="Visualizza il tuo profilo">
                             <i class="fas fa-user-circle"></i> Profilo
                         </a>
                     </li>
@@ -435,13 +435,13 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('profile.show', auth()->user()) }}">
+                        <a class="nav-link" href="{{ route('profile.show', auth()->user()) }}" data-hint="Visualizza il tuo profilo">
                             <i class="fas fa-user-circle"></i> Profilo
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('users.search') }}">
-                            <i class="fas fa-search"></i> Cerca utenti
+                        <a class="nav-link" href="{{ route('users.search') }}" data-hint="Trova i tuoi amici con un click">
+                            <i class="fas fa-search"></i> Cerca amici
                         </a>
                     </li>
                     <li class="nav-item">
