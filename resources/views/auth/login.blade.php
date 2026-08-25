@@ -48,7 +48,7 @@
                                 <span style="color:#000;">😍</span>
                                 Novità! Ti ricordiamo che per gli eventi già trascorsi puoi valutare la tua esperienza scegliendo una faccina da "Pessimo" a "Ottimo". Accesso in corso...
                             </div>
-                            <button type="submit" id="loginBtn" class="btn btn-primary w-100">Login</button>
+                            <button type="button" id="loginBtn" class="btn btn-primary w-100">Login</button>
                         </div>
                     </form>
                     <script>
@@ -58,9 +58,9 @@
                             var btn = document.getElementById('loginBtn');
                             if (!form || !tooltip || !btn) return;
                             var confirmed = false;
-                            form.addEventListener('submit', function (e) {
+                            btn.addEventListener('click', function () {
                                 if (confirmed) return;
-                                e.preventDefault();
+                                if (typeof form.reportValidity === 'function' && !form.reportValidity()) return;
                                 tooltip.style.display = 'block';
                                 btn.disabled = true;
                                 tooltip.scrollIntoView({behavior: 'smooth', block: 'center'});
