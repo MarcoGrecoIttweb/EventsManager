@@ -445,8 +445,8 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('admin.common-event.form') }}">
-                            <i class="fas fa-random"></i> Eventi in comune
+                        <a class="nav-link" href="{{ route('admin.common-event.form') }}" data-hint="Scopri quali eventi avete frequentato insieme">
+                            <i class="fas fa-random"></i> Eventi condivisi
                         </a>
                     </li>
                     <li class="nav-item">
