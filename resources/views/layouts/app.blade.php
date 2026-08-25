@@ -535,7 +535,7 @@
         <div class="col-md-2 sidebar-left">
             @guest
                 {{-- Form login sidebar: nascosto su smartphone (login dalla navbar) --}}
-                <div class="card card-sidebar mb-3 d-none d-md-block">
+                <div class="card card-sidebar mb-3 d-none d-md-block" style="border: 1px solid #198754;">
                     <div class="card-header py-2">
                         <small class="fw-bold"><i class="fas fa-sign-in-alt"></i> Accedi</small>
                     </div>
