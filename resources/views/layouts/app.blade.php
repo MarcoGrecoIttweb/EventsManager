@@ -287,13 +287,13 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('register') }}">
+                        <a class="nav-link" href="{{ route('register') }}" data-hint="Non sei ancora registrato? Crea un account in pochi secondi.">
                             <i class="fas fa-user-plus"></i> Registrati
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('home') }}" id="btn-chi-siamo" title="Chi siamo e cosa facciamo">
-                            <i class="fas fa-info-circle"></i> Chi siamo e cosa facciamo
+                        <a class="nav-link" href="{{ route('home') }}" id="btn-chi-siamo" data-hint="Scopri chi siamo e cosa facciamo">
+                            <i class="fas fa-info-circle"></i> Conoscici meglio
                         </a>
                     </li>
                     @if($showAlbumsFotoLink)
