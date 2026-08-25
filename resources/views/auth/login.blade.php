@@ -66,7 +66,7 @@
                                     confirmed = true;
                                     tooltip.style.display = 'none';
                                     form.submit();
-                                }, 5000);
+                                }, 7000);
                             });
                         })();
                     </script>
