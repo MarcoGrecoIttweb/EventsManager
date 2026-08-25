@@ -562,7 +562,7 @@
                                     <span style="color:#000;">😍</span>
                                     Novità! Ti ricordiamo che per gli eventi già trascorsi puoi valutare la tua esperienza scegliendo una faccina da "Pessimo" a "Ottimo".
                                 </div>
-                                <button type="submit" id="sidebarLoginBtn" class="btn btn-primary btn-sm w-100">Entra</button>
+                                <button type="submit" id="sidebarLoginBtn" class="btn btn-primary btn-sm w-100"><i class="fas fa-sign-in-alt"></i> Accedi</button>
                             </div>
                         </form>
                         <script>
