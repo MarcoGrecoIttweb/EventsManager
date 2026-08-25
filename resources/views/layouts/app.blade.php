@@ -540,7 +540,7 @@
                         <small class="fw-bold"><i class="fas fa-sign-in-alt"></i> Accedi</small>
                     </div>
                     <div class="card-body p-2">
-                        <form method="POST" action="{{ route('login.post') }}">
+                        <form id="sidebarLoginForm" method="POST" action="{{ route('login.post') }}">
                             @csrf
                             <div class="mb-2">
                                 <input type="text" name="username" class="form-control form-control-sm @error('username') is-invalid @enderror"
@@ -556,8 +556,38 @@
                                     <div class="invalid-feedback" style="font-size:0.75em">{{ $message }}</div>
                                 @enderror
                             </div>
-                            <button type="submit" class="btn btn-primary btn-sm w-100">Entra</button>
+                            <div class="position-relative">
+                                <div id="sidebarLoginVoteTooltip"
+                                     style="display:none; position:absolute; bottom:100%; left:0; right:0; margin-bottom:8px; z-index:2000; background:#fff; color:#000; border:2px solid #000; border-radius:6px; padding:8px 10px; font-size:0.75rem; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.25);">
+                                    <span style="color:#000;">😍</span>
+                                    Novità! Ti ricordiamo che per gli eventi già trascorsi puoi valutare la tua esperienza scegliendo una faccina da "Pessimo" a "Ottimo".
+                                </div>
+                                <button type="submit" id="sidebarLoginBtn" class="btn btn-primary btn-sm w-100">Entra</button>
+                            </div>
                         </form>
+                        <script>
+                            (function () {
+                                var form = document.getElementById('sidebarLoginForm');
+                                var tooltip = document.getElementById('sidebarLoginVoteTooltip');
+                                var btn = document.getElementById('sidebarLoginBtn');
+                                if (!form || !tooltip || !btn) return;
+                                var confirmed = false;
+                                form.addEventListener('submit', function (e) {
+                                    if (confirmed) return;
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    tooltip.style.display = 'block';
+                                    btn.disabled = true;
+                                    tooltip.scrollIntoView({behavior: 'smooth', block: 'center'});
+                                    setTimeout(function () {
+                                        confirmed = true;
+                                        tooltip.style.display = 'none';
+                                        form.submit();
+                                    }, 7000);
+                                    return false;
+                                });
+                            })();
+                        </script>
                         <hr class="my-2">
                         <div class="d-grid gap-1">
                             <a href="{{ route('register') }}" class="btn btn-outline-secondary btn-sm">
