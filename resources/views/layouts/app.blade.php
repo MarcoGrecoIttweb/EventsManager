@@ -419,8 +419,8 @@
                     @endif
                     @if($showMercatinoLink)
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ route('mercatino.vetrina') }}">
-                                <i class="fas fa-store"></i> Mercatino
+                            <a class="nav-link" href="{{ route('mercatino.vetrina') }}" data-hint="La bacheca per l'usato e gli scambi tra compagni di uscita">
+                                <i class="fas fa-store"></i> Compra&amp;Vendi
                                 @if(!($featureMercatinoEnabled ?? true))
                                     <span class="ms-1 badge bg-secondary">OFF</span>
                                 @endif
@@ -486,8 +486,8 @@
                     @endif
                     @if($showMercatinoLink)
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ route('mercatino.vetrina') }}">
-                                <i class="fas fa-store"></i> Mercatino
+                            <a class="nav-link" href="{{ route('mercatino.vetrina') }}" data-hint="La bacheca per l'usato e gli scambi tra compagni di uscita">
+                                <i class="fas fa-store"></i> Compra&amp;Vendi
                                 @if(!($featureMercatinoEnabled ?? true))
                                     <span class="ms-1 badge bg-warning text-dark">IN ARRIVO</span>
                                 @endif
