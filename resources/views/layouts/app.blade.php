@@ -399,8 +399,8 @@
                     </li>
                     @if($showChatLink)
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ route('chat.index') }}">
-                                <i class="fas fa-comments"></i> Salottino delle chat
+                            <a class="nav-link" href="{{ route('chat.index') }}" data-hint="Partecipa alle conversazioni con gli amici della Community">
+                                <i class="fas fa-comments"></i> Area Chat
                                 @if(!($featureChatSalottinoEnabled ?? true))
                                     <span class="ms-1 badge bg-secondary">OFF</span>
                                 @endif
@@ -476,8 +476,8 @@
                     @endif
                     @if($showChatLink)
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ route('chat.index') }}">
-                                <i class="fas fa-comments"></i> Salottino delle chat
+                            <a class="nav-link" href="{{ route('chat.index') }}" data-hint="Partecipa alle conversazioni con gli amici della Community">
+                                <i class="fas fa-comments"></i> Area Chat
                                 @if(!($featureChatSalottinoEnabled ?? true))
                                     <span class="ms-1 badge bg-warning text-dark">IN ARRIVO</span>
                                 @endif
