@@ -378,8 +378,8 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('events.past') }}" data-hint="Eventi passati &amp; Votazioni degli eventi">
-                            <i class="fas fa-history"></i> Eventi passati &amp; Voti
+                        <a class="nav-link" href="{{ route('events.past') }}" data-hint="Sfoglia lo storico delle uscite e vota quelle a cui hai partecipato">
+                            <i class="fas fa-history"></i> Storico &amp; Voti
                         </a>
                     </li>
                     <li class="nav-item">
@@ -460,8 +460,8 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('events.past') }}" data-hint="Eventi passati &amp; Votazioni degli eventi">
-                            <i class="fas fa-history"></i> Eventi passati &amp; Voti
+                        <a class="nav-link" href="{{ route('events.past') }}" data-hint="Sfoglia lo storico delle uscite e vota quelle a cui hai partecipato">
+                            <i class="fas fa-history"></i> Storico &amp; Voti
                         </a>
                     </li>
                     @if($showAlbumsFotoLink)
