@@ -544,14 +544,14 @@
                             @csrf
                             <div class="mb-2">
                                 <input type="text" name="username" class="form-control form-control-sm @error('username') is-invalid @enderror"
-                                       placeholder="Nickname" value="{{ old('username') }}" required>
+                                       placeholder="Nickname" value="{{ old('username') }}" required style="border: 1px solid #CC9900;">
                                 @error('username')
                                     <div class="invalid-feedback" style="font-size:0.75em">{{ $message }}</div>
                                 @enderror
                             </div>
                             <div class="mb-2">
                                 <input type="password" name="password" class="form-control form-control-sm @error('password') is-invalid @enderror"
-                                       placeholder="Password" required>
+                                       placeholder="Password" required style="border: 1px solid #CC9900;">
                                 @error('password')
                                     <div class="invalid-feedback" style="font-size:0.75em">{{ $message }}</div>
                                 @enderror
@@ -590,7 +590,7 @@
                         </script>
                         <hr class="my-2">
                         <div class="d-grid gap-1">
-                            <a href="{{ route('register') }}" class="btn btn-outline-secondary btn-sm">
+                            <a href="{{ route('register') }}" class="btn btn-outline-secondary btn-sm" style="border: 1px solid #CC9900;">
                                 <i class="fas fa-user-plus"></i> Registrati
                             </a>
                             <a href="{{ route('password.request') }}" class="small text-center text-muted d-block mt-1">
