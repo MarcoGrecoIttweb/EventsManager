@@ -373,8 +373,8 @@
                         </li>
                     @endif
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('my-events.active') }}">
-                            <i class="fas fa-calendar-check"></i> I Tuoi Eventi Attivi
+                        <a class="nav-link" href="{{ route('my-events.active') }}" data-hint="Visualizza e gestisci gli eventi a cui sei iscritto">
+                            <i class="fas fa-calendar-check"></i> Eventi in programma
                         </a>
                     </li>
                     <li class="nav-item">
@@ -430,8 +430,8 @@
                 @else
                     {{-- Utente non admin: ordine classico community --}}
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('my-events.active') }}">
-                            <i class="fas fa-calendar-check"></i> I Tuoi Eventi Attivi
+                        <a class="nav-link" href="{{ route('my-events.active') }}" data-hint="Visualizza e gestisci gli eventi a cui sei iscritto">
+                            <i class="fas fa-calendar-check"></i> Eventi in programma
                         </a>
                     </li>
                     <li class="nav-item">
