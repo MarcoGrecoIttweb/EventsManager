@@ -298,8 +298,8 @@
                     </li>
                     @if($showAlbumsFotoLink)
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ route('photo-albums.index') }}">
-                                <i class="fas fa-images"></i> Album foto Eventi
+                            <a class="nav-link" href="{{ route('photo-albums.index') }}" data-hint="Esplora la raccolta foto delle nostre attività">
+                                <i class="fas fa-images"></i> Galleria Foto
                                 @if(!($featureAlbumsFotoEnabled ?? true))
                                     <span class="ms-1 badge bg-warning text-dark">IN ARRIVO</span>
                                 @endif
@@ -409,8 +409,8 @@
                     @endif
                     @if($showAlbumsFotoLink)
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ route('photo-albums.index') }}">
-                                <i class="fas fa-images"></i> Album foto Eventi
+                            <a class="nav-link" href="{{ route('photo-albums.index') }}" data-hint="Esplora la raccolta foto delle nostre attività">
+                                <i class="fas fa-images"></i> Galleria Foto
                                 @if(!($featureAlbumsFotoEnabled ?? true))
                                     <span class="ms-1 badge bg-secondary">OFF</span>
                                 @endif
@@ -466,8 +466,8 @@
                     </li>
                     @if($showAlbumsFotoLink)
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ route('photo-albums.index') }}">
-                                <i class="fas fa-images"></i> Album foto Eventi
+                            <a class="nav-link" href="{{ route('photo-albums.index') }}" data-hint="Esplora la raccolta foto delle nostre attività">
+                                <i class="fas fa-images"></i> Galleria Foto
                                 @if(!($featureAlbumsFotoEnabled ?? true))
                                     <span class="ms-1 badge bg-warning text-dark">IN ARRIVO</span>
                                 @endif
