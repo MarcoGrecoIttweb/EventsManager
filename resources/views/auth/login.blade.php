@@ -46,9 +46,9 @@
                             <div id="loginVoteTooltip"
                                  style="display:none; position:absolute; bottom:100%; left:0; right:0; margin-bottom:8px; z-index:2000; background:#fff; color:#000; border:2px solid #000; border-radius:6px; padding:8px 12px; font-size:0.85rem; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.25);">
                                 <span style="color:#000;">😍</span>
-                                Novità! Ti ricordiamo che per gli eventi già trascorsi puoi valutare la tua esperienza scegliendo una faccina da "Pessimo" a "Ottimo". Accesso in corso...
+                                Gentile utente, ti ricordiamo che per gli eventi già iniziati puoi lasciare la tua votazione sull'esperienza vissuta, scegliendo una faccina da Pessimo a Ottimo. Accesso in corso...
                             </div>
-                            <button type="button" id="loginBtn" class="btn btn-primary w-100">Login</button>
+                            <button type="submit" id="loginBtn" class="btn btn-primary w-100">Login</button>
                         </div>
                     </form>
                     <script>
@@ -58,9 +58,10 @@
                             var btn = document.getElementById('loginBtn');
                             if (!form || !tooltip || !btn) return;
                             var confirmed = false;
-                            btn.addEventListener('click', function () {
+                            form.addEventListener('submit', function (e) {
                                 if (confirmed) return;
-                                if (typeof form.reportValidity === 'function' && !form.reportValidity()) return;
+                                e.preventDefault();
+                                e.stopPropagation();
                                 tooltip.style.display = 'block';
                                 btn.disabled = true;
                                 tooltip.scrollIntoView({behavior: 'smooth', block: 'center'});
@@ -69,6 +70,7 @@
                                     tooltip.style.display = 'none';
                                     form.submit();
                                 }, 7000);
+                                return false;
                             });
                         })();
                     </script>
