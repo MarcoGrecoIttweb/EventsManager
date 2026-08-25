@@ -388,13 +388,13 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('friends.index') }}">
-                            <i class="fas fa-user-friends"></i> Amici
+                        <a class="nav-link" href="{{ route('friends.index') }}" data-hint="Gli amici che hai aggiunto al tuo profilo">
+                            <i class="fas fa-user-friends"></i> I Miei Amici
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('users.index') }}">
-                            <i class="fas fa-users"></i> Profili
+                        <a class="nav-link" href="{{ route('users.index') }}" data-hint="Gli amici che fanno parte della Community">
+                            <i class="fas fa-users"></i> Community
                         </a>
                     </li>
                     @if($showChatLink)
@@ -450,13 +450,13 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('friends.index') }}">
-                            <i class="fas fa-user-friends"></i> Amici
+                        <a class="nav-link" href="{{ route('friends.index') }}" data-hint="Gli amici che hai aggiunto al tuo profilo">
+                            <i class="fas fa-user-friends"></i> I Miei Amici
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('users.index') }}">
-                            <i class="fas fa-users"></i> Profili
+                        <a class="nav-link" href="{{ route('users.index') }}" data-hint="Gli amici che fanno parte della Community">
+                            <i class="fas fa-users"></i> Community
                         </a>
                     </li>
                     <li class="nav-item">
