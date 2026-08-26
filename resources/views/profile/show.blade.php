@@ -441,7 +441,7 @@
                             <form action="{{ route('profile.toggle-hide-participated-events', $user) }}" method="POST" class="m-0">
                                 @csrf
                                 @if($user->nascondi_eventi_partecipati)
-                                    <button type="submit" class="btn btn-sm" style="background-color: #CC9900; border-color: #CC9900; color: #fff;" data-hint="Visualizza l'elenco degli eventi a cui hai partecipato anche agli altri amici">
+                                    <button type="submit" class="btn btn-sm" style="background-color: #CC9900; border: 1px solid #dc3545; color: #dc3545;" data-hint="Visualizza l'elenco degli eventi a cui hai partecipato anche agli altri amici">
                                         <i class="fas fa-eye me-1"></i> Mostra elenco agli altri utenti
                                     </button>
                                 @else
