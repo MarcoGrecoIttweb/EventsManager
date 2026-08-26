@@ -440,13 +440,15 @@
                         @if($isProfileOwner)
                             <form action="{{ route('profile.toggle-hide-participated-events', $user) }}" method="POST" class="m-0">
                                 @csrf
-                                <button type="submit" class="btn btn-outline-secondary btn-sm">
-                                    @if($user->nascondi_eventi_partecipati)
+                                @if($user->nascondi_eventi_partecipati)
+                                    <button type="submit" class="btn btn-outline-secondary btn-sm">
                                         <i class="fas fa-eye me-1"></i> Mostra elenco agli altri utenti
-                                    @else
+                                    </button>
+                                @else
+                                    <button type="submit" class="btn btn-success btn-sm" data-hint="Nascondi elenco degli eventi a cui hai partecipato agli altri amici">
                                         <i class="fas fa-eye-slash me-1"></i> Nascondi elenco agli altri utenti
-                                    @endif
-                                </button>
+                                    </button>
+                                @endif
                             </form>
                         @endif
                     </div>
