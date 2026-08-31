@@ -65,6 +65,7 @@ class SafeRichText
             if (preg_match('/\btitle\s*=\s*(["\'])(.*?)\1/i', $tag, $tm)) {
                 $out .= ' title="' . e($tm[2]) . '"';
             }
+            $out .= self::extractSafeStyleAttr($tag);
 
             return '<iframe' . $out . '></iframe>';
         }, $html) ?? '';
@@ -92,6 +93,7 @@ class SafeRichText
             if (preg_match('/\bsrc\s*=\s*(["\'])(.*?)\1/i', $attrs, $sm) && self::isSafeMediaSrc(trim($sm[2]))) {
                 $out .= ' src="' . e(trim($sm[2])) . '"';
             }
+            $out .= self::extractSafeStyleAttr($attrs);
 
             $innerClean = self::sanitizeSourceTags($inner);
 
@@ -182,9 +184,26 @@ class SafeRichText
             } elseif (is_int($heightFromStyle) && $heightFromStyle > 0) {
                 $out .= ' height="' . $heightFromStyle . '"';
             }
+            $out .= self::extractSafeStyleAttr($tag);
 
             return '<img' . $out . ' />';
         }, $html) ?? '';
+    }
+
+    /**
+     * Estrae da un frammento di tag (con eventuale attributo style) la dichiarazione
+     * style="..." già filtrata sulle proprietà sicure, pronta per essere concatenata
+     * (con lo spazio iniziale incluso), oppure stringa vuota se non c'è nulla di sicuro.
+     */
+    private static function extractSafeStyleAttr(string $tagOrAttrs): string
+    {
+        if (! preg_match('/style\s*=\s*(["\'])(.*?)\1/is', $tagOrAttrs, $stm)) {
+            return '';
+        }
+        $styleRaw = html_entity_decode($stm[2], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $safeStyle = self::sanitizeCssDeclarationsForRichText($styleRaw);
+
+        return $safeStyle !== '' ? ' style="' . e($safeStyle) . '"' : '';
     }
 
     private static function isSafeImgSrc(string $url): bool
@@ -261,7 +280,8 @@ class SafeRichText
     }
 
     /**
-     * Estrae solo color e background-color con valori considerati sicuri (niente url(), var(), ecc.).
+     * Estrae solo le proprietà CSS ammesse (colore e allineamento) con valori sicuri
+     * (niente url(), var(), expression(), ecc.).
      */
     private static function sanitizeCssDeclarationsForRichText(string $style): string
     {
@@ -271,12 +291,34 @@ class SafeRichText
                 continue;
             }
             $prop = strtolower($cm[1]);
-            if ($prop !== 'color' && $prop !== 'background-color') {
+            $val = trim($cm[2]);
+
+            if ($prop === 'color' || $prop === 'background-color') {
+                if (self::isSafeCssColorValue($val)) {
+                    $out[] = $prop . ': ' . $val;
+                }
                 continue;
             }
-            $val = trim($cm[2]);
-            if (self::isSafeCssColorValue($val)) {
-                $out[] = $prop . ': ' . $val;
+
+            if ($prop === 'text-align' && preg_match('/^(left|right|center|justify|start|end)$/i', $val)) {
+                $out[] = $prop . ': ' . strtolower($val);
+                continue;
+            }
+
+            if ($prop === 'float' && preg_match('/^(left|right|none)$/i', $val)) {
+                $out[] = $prop . ': ' . strtolower($val);
+                continue;
+            }
+
+            if ($prop === 'display' && preg_match('/^(block|inline|inline-block)$/i', $val)) {
+                $out[] = $prop . ': ' . strtolower($val);
+                continue;
+            }
+
+            if (in_array($prop, ['margin', 'margin-left', 'margin-right', 'margin-top', 'margin-bottom'], true)
+                && preg_match('/^(auto|0|[0-9]{1,4}(\.[0-9]+)?(px|em|rem|%))(\s+(auto|0|[0-9]{1,4}(\.[0-9]+)?(px|em|rem|%))){0,3}$/i', $val)) {
+                $out[] = $prop . ': ' . strtolower($val);
+                continue;
             }
         }
 
