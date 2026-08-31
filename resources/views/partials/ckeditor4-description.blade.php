@@ -43,8 +43,22 @@
                 language: 'it',
                 height: {{ $ckHeight }},
                 removePlugins: 'elementspath',
+                extraPlugins: 'justify',
                 resize_dir: 'vertical',
                 versionCheck: false,
+                toolbar: [
+                    { name: 'document', items: ['Source'] },
+                    { name: 'clipboard', items: ['Undo', 'Redo'] },
+                    { name: 'editing', items: ['Find', 'Replace', 'SelectAll'] },
+                    { name: 'basicstyles', items: ['Bold', 'Italic', 'Underline', 'Strike', 'RemoveFormat'] },
+                    '/',
+                    { name: 'paragraph', items: ['NumberedList', 'BulletedList', 'Outdent', 'Indent', 'Blockquote', 'JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock'] },
+                    { name: 'links', items: ['Link', 'Unlink'] },
+                    { name: 'insert', items: ['Image', 'Table', 'HorizontalRule', 'SpecialChar', 'Iframe'] },
+                    { name: 'styles', items: ['Format', 'Font', 'FontSize'] },
+                    { name: 'colors', items: ['TextColor', 'BGColor'] },
+                    { name: 'tools', items: ['Maximize', 'ShowBlocks'] }
+                ],
                 // Incolla da Word/browser: senza questo CKEditor può scartare o svuotare il contenuto (ACF).
                 // L’HTML viene comunque ripulito al salvataggio da SafeRichText::sanitize.
                 allowedContent: true,
