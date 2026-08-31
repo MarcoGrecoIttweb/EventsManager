@@ -18,6 +18,8 @@ class UserLoginEvent extends Model
         'logged_in_at',
         'last_seen_at',
         'ended_at',
+        'page_views_count',
+        'pages_visited',
         'ip_address',
         'source',
     ];

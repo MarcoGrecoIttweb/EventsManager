@@ -220,7 +220,7 @@ class UserController extends Controller
             ->where('logged_in_at', '>=', $since)
             ->where('source', UserLoginEvent::SOURCE_LARAVEL)
             ->orderByDesc('logged_in_at')
-            ->get(['user_id', 'logged_in_at', 'last_seen_at', 'ended_at'])
+            ->get(['user_id', 'logged_in_at', 'last_seen_at', 'ended_at', 'page_views_count', 'pages_visited'])
             ->groupBy('user_id')
             ->map(function ($rows) {
                 $latest = $rows->first();
@@ -229,6 +229,8 @@ class UserController extends Controller
                     'last_at' => $latest->logged_in_at,
                     'logins_count' => $rows->count(),
                     'session_end' => $latest->ended_at ?? $latest->last_seen_at,
+                    'page_views_count' => (int) $latest->page_views_count,
+                    'pages_visited' => $latest->pages_visited,
                 ];
             });
 
@@ -256,6 +258,9 @@ class UserController extends Controller
                 } else {
                     $user->session_duration_seconds = null;
                 }
+
+                $user->pages_visited_count = $row?->page_views_count ?? 0;
+                $user->pages_visited_list = $row?->pages_visited;
 
                 return $user;
             })

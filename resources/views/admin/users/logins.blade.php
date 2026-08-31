@@ -90,6 +90,9 @@
                                         <th data-hint="Durata dell'ultima sessione: dall'accesso all'ultima attività registrata (o al logout, se esplicito). Il pallino verde indica che l'utente è online in questo momento.">
                                             Tempo di permanenza
                                         </th>
+                                        <th data-hint="Pagine viste nell'ultima sessione ed elenco abbreviato delle sezioni visitate">
+                                            Pagine visitate
+                                        </th>
                                     </tr>
                                     </thead>
                                     <tbody>
@@ -159,6 +162,16 @@
                                                     </span>
                                                 @else
                                                     <span class="text-muted" data-hint="Durata non disponibile: login registrato prima dell'introduzione del tracciamento, oppure nessuna attività rilevata dopo l'accesso">—</span>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if($user->pages_visited_list)
+                                                    <span class="badge bg-info text-dark" data-hint="Elenco completo: {{ $user->pages_visited_list }}">
+                                                        {{ $user->pages_visited_count }}
+                                                        <span class="ms-1">{{ \Illuminate\Support\Str::limit($user->pages_visited_list, 40) }}</span>
+                                                    </span>
+                                                @else
+                                                    <span class="text-muted" data-hint="Nessun dato: login registrato prima dell'introduzione del tracciamento">—</span>
                                                 @endif
                                             </td>
                                         </tr>
