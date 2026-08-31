@@ -691,7 +691,7 @@
                                                     aria-expanded="false"
                                                     aria-controls="eventMapCollapse"
                                                     id="btnEventMapToggle">
-                                                <i class="fas fa-map"></i> Mostra Mappa / Come arrivare
+                                                <i class="fas fa-map"></i> Vedi Mappa
                                             </button>
                                         @else
                                             <div class="event-meta-map-unavailable">
@@ -805,7 +805,7 @@
                                             if (!btn) return;
                                             btn.innerHTML = open
                                                 ? '<i class="fas fa-compress-alt"></i> Riduci mappa'
-                                                : '<i class="fas fa-map"></i> Mostra Mappa / Come arrivare';
+                                                : '<i class="fas fa-map"></i> Vedi Mappa';
                                             btn.setAttribute('aria-expanded', open ? 'true' : 'false');
                                         }
 
