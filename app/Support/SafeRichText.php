@@ -7,7 +7,7 @@ namespace App\Support;
  */
 class SafeRichText
 {
-    public const ALLOWED_TAGS = '<p><br><strong><b><em><i><u><a><ul><ol><li><code><pre><span><div><h1><h2><h3><h4><h5><h6><blockquote><table><thead><tbody><tr><th><td><img>';
+    public const ALLOWED_TAGS = '<p><br><strong><b><em><i><u><a><ul><ol><li><code><pre><span><div><h1><h2><h3><h4><h5><h6><blockquote><table><thead><tbody><tr><th><td><img><iframe><video><source>';
 
     public static function sanitize(?string $html, bool $decodeEntities = false): string
     {
@@ -21,10 +21,117 @@ class SafeRichText
 
         $clean = strip_tags($html, self::ALLOWED_TAGS);
         $clean = self::sanitizeImgTags($clean);
+        $clean = self::sanitizeIframeTags($clean);
+        $clean = self::sanitizeVideoTags($clean);
         $clean = self::sanitizeAnchorTags($clean);
         $clean = self::stripAttributesFromNonMediaTags($clean);
 
         return $clean;
+    }
+
+    /**
+     * <iframe>: consente qualsiasi sorgente http/https (embed video da qualunque piattaforma),
+     * ma blocca schemi javascript:/data:/vbscript: che non sono mai embed video legittimi.
+     */
+    private static function sanitizeIframeTags(string $html): string
+    {
+        return preg_replace_callback('/<iframe\b[^>]*>.*?<\/iframe>/is', function (array $m): string {
+            $tag = $m[0];
+
+            if (! preg_match('/src\s*=\s*(["\'])(.*?)\1/i', $tag, $sm)) {
+                return '';
+            }
+            $url = trim($sm[2]);
+            if (! self::isSafeMediaSrc($url)) {
+                return '';
+            }
+
+            $out = ' src="' . e($url) . '"';
+            if (preg_match('/\bwidth\s*=\s*(["\']?)(\d+)\1/i', $tag, $wm)) {
+                $out .= ' width="' . (int) $wm[2] . '"';
+            }
+            if (preg_match('/\bheight\s*=\s*(["\']?)(\d+)\1/i', $tag, $hm)) {
+                $out .= ' height="' . (int) $hm[2] . '"';
+            }
+            if (preg_match('/\ballowfullscreen\b/i', $tag)) {
+                $out .= ' allowfullscreen';
+            }
+            if (preg_match('/\bframeborder\s*=\s*(["\']?)(\d+)\1/i', $tag, $fm)) {
+                $out .= ' frameborder="' . (int) $fm[2] . '"';
+            }
+            if (preg_match('/\ballow\s*=\s*(["\'])(.*?)\1/i', $tag, $am)) {
+                $out .= ' allow="' . e($am[2]) . '"';
+            }
+            if (preg_match('/\btitle\s*=\s*(["\'])(.*?)\1/i', $tag, $tm)) {
+                $out .= ' title="' . e($tm[2]) . '"';
+            }
+
+            return '<iframe' . $out . '></iframe>';
+        }, $html) ?? '';
+    }
+
+    /**
+     * <video>/<source>: consente file video con sorgente http/https o percorso locale del sito.
+     */
+    private static function sanitizeVideoTags(string $html): string
+    {
+        $html = preg_replace_callback('/<video\b([^>]*)>(.*?)<\/video>/is', function (array $m): string {
+            $attrs = $m[1];
+            $inner = $m[2];
+
+            $out = '';
+            if (preg_match('/\bwidth\s*=\s*(["\']?)(\d+)\1/i', $attrs, $wm)) {
+                $out .= ' width="' . (int) $wm[2] . '"';
+            }
+            if (preg_match('/\bheight\s*=\s*(["\']?)(\d+)\1/i', $attrs, $hm)) {
+                $out .= ' height="' . (int) $hm[2] . '"';
+            }
+            if (preg_match('/\bcontrols\b/i', $attrs)) {
+                $out .= ' controls';
+            }
+            if (preg_match('/\bsrc\s*=\s*(["\'])(.*?)\1/i', $attrs, $sm) && self::isSafeMediaSrc(trim($sm[2]))) {
+                $out .= ' src="' . e(trim($sm[2])) . '"';
+            }
+
+            $innerClean = self::sanitizeSourceTags($inner);
+
+            return '<video' . $out . '>' . $innerClean . '</video>';
+        }, $html) ?? '';
+
+        // <source> fuori da un tag <video> non ha senso da solo: eliminali per sicurezza.
+        return preg_replace('/<source\b[^>]*\/?>(?!.*<\/video>)/is', '', $html) ?? '';
+    }
+
+    private static function sanitizeSourceTags(string $html): string
+    {
+        return preg_replace_callback('/<source\b[^>]*\/?>/i', function (array $m): string {
+            $tag = $m[0];
+            if (! preg_match('/src\s*=\s*(["\'])(.*?)\1/i', $tag, $sm) || ! self::isSafeMediaSrc(trim($sm[2]))) {
+                return '';
+            }
+            $out = ' src="' . e(trim($sm[2])) . '"';
+            if (preg_match('/\btype\s*=\s*(["\'])(.*?)\1/i', $tag, $tm)) {
+                $out .= ' type="' . e($tm[2]) . '"';
+            }
+
+            return '<source' . $out . '>';
+        }, $html) ?? '';
+    }
+
+    /**
+     * Src sicura per iframe/video: qualsiasi http(s) o percorso locale del sito, mai javascript:/data:/vbscript:.
+     */
+    private static function isSafeMediaSrc(string $url): bool
+    {
+        if ($url === '') {
+            return false;
+        }
+        $lower = strtolower($url);
+        if (str_starts_with($lower, 'javascript:') || str_starts_with($lower, 'data:') || str_starts_with($lower, 'vbscript:')) {
+            return false;
+        }
+
+        return true;
     }
 
     private static function sanitizeImgTags(string $html): string
@@ -132,7 +239,7 @@ class SafeRichText
     {
         $result = preg_replace_callback('/<([a-z][a-z0-9]*)\s+([^>]+)>/i', function (array $m): string {
             $tag = strtolower($m[1]);
-            if ($tag === 'img' || $tag === 'a') {
+            if ($tag === 'img' || $tag === 'a' || $tag === 'iframe' || $tag === 'video' || $tag === 'source') {
                 return $m[0];
             }
 
