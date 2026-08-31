@@ -8,6 +8,7 @@ use App\Models\UserLoginEvent;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
@@ -216,14 +217,32 @@ class UserController extends Controller
             ->get()
             ->keyBy('user_id');
 
+        // "Tempo di permanenza": il sito non registra il logout, quindi la durata della
+        // sessione è calcolabile solo per gli utenti ancora online in questo momento
+        // (tabella utentionline, aggiornata ad ogni richiesta e ripulita dopo alcuni minuti
+        // di inattività). Per chi non è più online non abbiamo modo di ricostruirla.
+        $onlineSince = DB::table('utentionline')
+            ->whereIn('id_utente', $loginByUser->keys())
+            ->pluck('time', 'id_utente');
+
         $users = User::query()
             ->whereIn('userID', $loginByUser->keys())
             ->get()
-            ->map(function (User $user) use ($loginByUser) {
+            ->map(function (User $user) use ($loginByUser, $onlineSince) {
                 $row = $loginByUser->get($user->userID);
 
                 $user->last_login_laravel = $row?->last_at;
                 $user->login_count_laravel = (int) ($row?->logins_count ?? 0);
+
+                $user->is_online_now = $onlineSince->has($user->userID);
+                if ($user->is_online_now && $user->last_login_laravel) {
+                    $user->session_duration_seconds = max(
+                        0,
+                        (int) $onlineSince->get($user->userID) - strtotime($user->last_login_laravel)
+                    );
+                } else {
+                    $user->session_duration_seconds = null;
+                }
 
                 return $user;
             })

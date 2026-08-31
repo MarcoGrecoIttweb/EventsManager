@@ -87,6 +87,9 @@
                                         <th>Cognome</th>
                                         <th>Stato</th>
                                         <th>Data</th>
+                                        <th data-hint="Tempo trascorso dall'ultimo accesso ad ora, disponibile solo se l'utente è ancora online: il sito non registra il logout, quindi per le sessioni concluse la durata non è ricostruibile.">
+                                            Tempo di permanenza
+                                        </th>
                                     </tr>
                                     </thead>
                                     <tbody>
@@ -137,6 +140,21 @@
                                                     @endif
                                                 @else
                                                     <span class="text-muted">—</span>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if($user->is_online_now && $user->session_duration_seconds !== null)
+                                                    @php
+                                                        $secs = $user->session_duration_seconds;
+                                                        $h = intdiv($secs, 3600);
+                                                        $m = intdiv($secs % 3600, 60);
+                                                        $durationLabel = $h > 0 ? "{$h}h {$m}m" : "{$m}m";
+                                                    @endphp
+                                                    <span class="badge bg-success" data-hint="Utente ancora online: tempo trascorso dall'ultimo accesso ad ora">
+                                                        <i class="fas fa-circle small"></i> {{ $durationLabel }}
+                                                    </span>
+                                                @else
+                                                    <span class="text-muted" data-hint="Sessione non più attiva: la durata non è ricostruibile">—</span>
                                                 @endif
                                             </td>
                                         </tr>
