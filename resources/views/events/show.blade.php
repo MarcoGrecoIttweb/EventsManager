@@ -1741,9 +1741,10 @@
             .event-cover-frame {
                 max-height: 240px;
             }
-            .event-meta-date-value {
-                font-size: 1.05rem;
-            }
+        }
+
+        .event-meta-date-value {
+            font-size: 1.05rem;
         }
 
         .event-meta-stack {
