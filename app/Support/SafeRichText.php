@@ -320,6 +320,11 @@ class SafeRichText
                 $out[] = $prop . ': ' . strtolower($val);
                 continue;
             }
+
+            if ($prop === 'line-height' && preg_match('/^[0-9]{1}(\.[0-9]+)?(px|em|rem|%)?$/i', $val)) {
+                $out[] = $prop . ': ' . strtolower($val);
+                continue;
+            }
         }
 
         return implode('; ', $out);

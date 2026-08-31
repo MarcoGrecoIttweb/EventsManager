@@ -35,6 +35,54 @@
         }
         // Contrasto e selezione visibile nell’iframe (incolla da Word/siti con testo bianco o “windowtext”).
         var ckCustomCss = @json($ckCustomCssUrl);
+
+        // CKEditor 4 non ha un pulsante nativo per l'interlinea: lo aggiungiamo come mini-plugin
+        // (richcombo) che applica style="line-height: X" ai blocchi (p, li, ecc.) selezionati.
+        if (!CKEDITOR.plugins.get('lineheight')) {
+            CKEDITOR.plugins.add('lineheight', {
+                requires: 'richcombo',
+                init: function (editor) {
+                    var values = ['1', '1.15', '1.5', '2', '2.5', '3'];
+                    editor.ui.addRichCombo('LineHeight', {
+                        label: 'Interlinea',
+                        title: 'Interlinea',
+                        toolbar: 'paragraph,10',
+                        panel: {
+                            css: [CKEDITOR.skin.getPath('editor')].concat(editor.config.contentsCss)
+                        },
+                        init: function () {
+                            this.startGroup('Interlinea');
+                            values.forEach(function (v) {
+                                this.add(v, v, v);
+                            }, this);
+                        },
+                        onClick: function (value) {
+                            editor.focus();
+                            editor.fire('saveSnapshot');
+                            var ranges = editor.getSelection().getRanges();
+                            for (var r = 0; r < ranges.length; r++) {
+                                var iterator = ranges[r].createIterator();
+                                var block;
+                                while ((block = iterator.getNextParagraph())) {
+                                    block.setStyle('line-height', value);
+                                }
+                            }
+                            editor.fire('saveSnapshot');
+                        },
+                        onRender: function () {
+                            var combo = this;
+                            editor.on('selectionChange', function (ev) {
+                                var path = ev.data.path;
+                                var block = path.block || path.blockLimit;
+                                var value = block ? (block.getStyle('line-height') || '') : '';
+                                combo.setValue(value);
+                            });
+                        }
+                    });
+                }
+            });
+        }
+
         function initCkEditor() {
             if (CKEDITOR.instances[id]) {
                 return;
@@ -43,7 +91,7 @@
                 language: 'it',
                 height: {{ $ckHeight }},
                 removePlugins: 'elementspath',
-                extraPlugins: 'justify',
+                extraPlugins: 'justify,lineheight',
                 resize_dir: 'vertical',
                 versionCheck: false,
                 toolbar: [
@@ -52,7 +100,7 @@
                     { name: 'editing', items: ['Find', 'Replace', 'SelectAll'] },
                     { name: 'basicstyles', items: ['Bold', 'Italic', 'Underline', 'Strike', 'RemoveFormat'] },
                     '/',
-                    { name: 'paragraph', items: ['NumberedList', 'BulletedList', 'Outdent', 'Indent', 'Blockquote', 'JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock'] },
+                    { name: 'paragraph', items: ['NumberedList', 'BulletedList', 'Outdent', 'Indent', 'Blockquote', 'JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock', 'LineHeight'] },
                     { name: 'links', items: ['Link', 'Unlink'] },
                     { name: 'insert', items: ['Image', 'Table', 'HorizontalRule', 'SpecialChar', 'Iframe'] },
                     { name: 'styles', items: ['Format', 'Font', 'FontSize'] },
