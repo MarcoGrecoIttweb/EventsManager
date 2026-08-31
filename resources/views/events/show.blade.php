@@ -1829,7 +1829,7 @@
         /* Riga 3: Prezzo (colonna stretta) | Mappa (colonna stretta) | Iscrizioni | Iscritti */
         .event-meta-row--line3 {
             display: grid;
-            grid-template-columns: minmax(0, 5.2rem) minmax(0, 6.4rem) minmax(0, 1fr) minmax(0, 1.05fr);
+            grid-template-columns: minmax(0, 5.2rem) minmax(0, 8rem) minmax(0, 0.85fr) minmax(0, 1.05fr);
             gap: 0.28rem;
             width: 100%;
             box-sizing: border-box;
