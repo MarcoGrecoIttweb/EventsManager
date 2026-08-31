@@ -643,8 +643,8 @@
                                     <div class="event-meta-place-box event-meta-row__cell">
                                         <i class="fas fa-store"></i>
                                         <span class="event-meta-place-line">
-                                            <span class="fw-semibold">Nome del locale</span>
-                                            <span class="ms-1">{{ $venueDisplay !== '' ? $venueDisplay : '—' }}</span>
+                                            <span class="fw-semibold">Dove</span>
+                                            <span class="ms-1 event-meta-date-value">{{ $venueDisplay !== '' ? $venueDisplay : '—' }}</span>
                                         </span>
                                     </div>
                                 </div>
@@ -656,9 +656,9 @@
                                         <span class="event-meta-place-line">
                                             <span class="fw-semibold">Indirizzo</span>
                                             @auth
-                                                <span class="ms-1">{{ $event->address ?: '—' }}</span>
+                                                <span class="ms-1 event-meta-date-value">{{ $event->address ?: '—' }}</span>
                                             @else
-                                                <span class="ms-1">
+                                                <span class="ms-1 event-meta-date-value">
                                                     <a href="{{ route('login') }}" class="event-meta-localita-login-link">Accedi</a> per l’indirizzo
                                                 </span>
                                             @endauth
@@ -668,7 +668,7 @@
                                         <i class="fas fa-city"></i>
                                         <span class="event-meta-place-line">
                                             <span class="fw-semibold">Città</span>
-                                            <span class="ms-1">{{ $event->city ? $event->city : '—' }}</span>
+                                            <span class="ms-1 event-meta-date-value">{{ $event->city ? $event->city : '—' }}</span>
                                         </span>
                                     </div>
                                 </div>
@@ -679,7 +679,7 @@
                                         <i class="fas fa-euro-sign"></i>
                                         <span class="event-meta-price-line">
                                             <span class="fw-semibold">€</span>
-                                            <span class="ms-1">{{ $event->formatted_cost ?? '0,00' }}</span>
+                                            <span class="ms-1 event-meta-date-value">{{ $event->formatted_cost ?? '0,00' }}</span>
                                         </span>
                                     </div>
                                     <div class="event-meta-map-slot event-meta-row__cell">
