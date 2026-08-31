@@ -636,8 +636,8 @@
                                          title="Indica data e ora di inizio dell’evento.">
                                         <i class="fas fa-calendar"></i>
                                         <span class="event-meta-date-line">
-                                            <span class="fw-semibold">Data Evento</span>
-                                            <span class="ms-1">{{ $event->italian_event_date ?? $event->date->format('d/m/Y H:i') }}</span>
+                                            <span class="fw-semibold">Data</span>
+                                            <span class="ms-1 event-meta-date-value">{{ $event->italian_event_date ?? $event->date->format('d/m/Y H:i') }}</span>
                                         </span>
                                     </div>
                                     <div class="event-meta-place-box event-meta-row__cell">
@@ -1740,6 +1740,9 @@
         @media (max-width: 767.98px) {
             .event-cover-frame {
                 max-height: 240px;
+            }
+            .event-meta-date-value {
+                font-size: 1.05rem;
             }
         }
 
