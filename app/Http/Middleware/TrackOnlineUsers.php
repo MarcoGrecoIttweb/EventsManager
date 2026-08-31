@@ -42,6 +42,20 @@ class TrackOnlineUsers
                         'id_utente' => $userId,
                     ]);
                 }
+
+                // Heartbeat per il "tempo di permanenza" (pagina admin Ingressi giornalieri):
+                // aggiorna last_seen_at sull'ultima sessione di login aperta, non più di una
+                // volta al minuto per evitare una scrittura ad ogni singola richiesta.
+                DB::table('user_login_events')
+                    ->where('user_id', $userId)
+                    ->whereNull('ended_at')
+                    ->where(function ($q) use ($now) {
+                        $q->whereNull('last_seen_at')
+                            ->orWhere('last_seen_at', '<', date('Y-m-d H:i:s', $now - 60));
+                    })
+                    ->orderByDesc('logged_in_at')
+                    ->limit(1)
+                    ->update(['last_seen_at' => date('Y-m-d H:i:s', $now)]);
             }
         } catch (QueryException $e) {
             // MySQL spento, rifiuto connessione, timeout: non bloccare l'intera richiesta

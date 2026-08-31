@@ -16,6 +16,8 @@ class UserLoginEvent extends Model
     protected $fillable = [
         'user_id',
         'logged_in_at',
+        'last_seen_at',
+        'ended_at',
         'ip_address',
         'source',
     ];
@@ -24,6 +26,8 @@ class UserLoginEvent extends Model
 
     protected $casts = [
         'logged_in_at' => 'datetime',
+        'last_seen_at' => 'datetime',
+        'ended_at' => 'datetime',
     ];
 
     public function user(): BelongsTo

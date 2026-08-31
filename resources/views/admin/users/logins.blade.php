@@ -87,7 +87,7 @@
                                         <th>Cognome</th>
                                         <th>Stato</th>
                                         <th>Data</th>
-                                        <th data-hint="Tempo trascorso dall'ultimo accesso ad ora, disponibile solo se l'utente è ancora online: il sito non registra il logout, quindi per le sessioni concluse la durata non è ricostruibile.">
+                                        <th data-hint="Durata dell'ultima sessione: dall'accesso all'ultima attività registrata (o al logout, se esplicito). Il pallino verde indica che l'utente è online in questo momento.">
                                             Tempo di permanenza
                                         </th>
                                     </tr>
@@ -143,18 +143,22 @@
                                                 @endif
                                             </td>
                                             <td>
-                                                @if($user->is_online_now && $user->session_duration_seconds !== null)
+                                                @if($user->session_duration_seconds !== null)
                                                     @php
                                                         $secs = $user->session_duration_seconds;
                                                         $h = intdiv($secs, 3600);
                                                         $m = intdiv($secs % 3600, 60);
                                                         $durationLabel = $h > 0 ? "{$h}h {$m}m" : "{$m}m";
                                                     @endphp
-                                                    <span class="badge bg-success" data-hint="Utente ancora online: tempo trascorso dall'ultimo accesso ad ora">
-                                                        <i class="fas fa-circle small"></i> {{ $durationLabel }}
+                                                    <span class="badge {{ $user->is_online_now ? 'bg-success' : 'bg-secondary' }}"
+                                                          data-hint="{{ $user->is_online_now ? 'Utente ancora online: tempo trascorso dall\'ultimo accesso ad ora' : 'Tempo di permanenza dell\'ultima sessione (dall\'accesso all\'ultima attività registrata)' }}">
+                                                        @if($user->is_online_now)
+                                                            <i class="fas fa-circle small"></i>
+                                                        @endif
+                                                        {{ $durationLabel }}
                                                     </span>
                                                 @else
-                                                    <span class="text-muted" data-hint="Sessione non più attiva: la durata non è ricostruibile">—</span>
+                                                    <span class="text-muted" data-hint="Durata non disponibile: login registrato prima dell'introduzione del tracciamento, oppure nessuna attività rilevata dopo l'accesso">—</span>
                                                 @endif
                                             </td>
                                         </tr>

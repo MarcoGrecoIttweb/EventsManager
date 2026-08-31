@@ -209,18 +209,31 @@ class UserController extends Controller
             ->distinct()
             ->count('user_id');
 
-        $loginByUser = UserLoginEvent::query()
+        // Tempo di permanenza: per ogni utente prendiamo l'evento di login più recente nel
+        // periodo, con il relativo last_seen_at (heartbeat aggiornato ad ogni richiesta,
+        // vedi TrackOnlineUsers) ed ended_at (impostato al logout esplicito). La durata è
+        // (ended_at ?? last_seen_at) - logged_in_at: disponibile anche per sessioni ormai
+        // concluse, non solo per chi è online in questo momento. Per i login registrati
+        // prima dell'introduzione di questo tracciamento, last_seen_at è nullo e la durata
+        // resta non disponibile.
+        $latestEventPerUser = UserLoginEvent::query()
             ->where('logged_in_at', '>=', $since)
             ->where('source', UserLoginEvent::SOURCE_LARAVEL)
-            ->selectRaw('user_id, MAX(logged_in_at) as last_at, COUNT(*) as logins_count')
+            ->orderByDesc('logged_in_at')
+            ->get(['user_id', 'logged_in_at', 'last_seen_at', 'ended_at'])
             ->groupBy('user_id')
-            ->get()
-            ->keyBy('user_id');
+            ->map(function ($rows) {
+                $latest = $rows->first();
 
-        // "Tempo di permanenza": il sito non registra il logout, quindi la durata della
-        // sessione è calcolabile solo per gli utenti ancora online in questo momento
-        // (tabella utentionline, aggiornata ad ogni richiesta e ripulita dopo alcuni minuti
-        // di inattività). Per chi non è più online non abbiamo modo di ricostruirla.
+                return (object) [
+                    'last_at' => $latest->logged_in_at,
+                    'logins_count' => $rows->count(),
+                    'session_end' => $latest->ended_at ?? $latest->last_seen_at,
+                ];
+            });
+
+        $loginByUser = $latestEventPerUser;
+
         $onlineSince = DB::table('utentionline')
             ->whereIn('id_utente', $loginByUser->keys())
             ->pluck('time', 'id_utente');
@@ -233,12 +246,12 @@ class UserController extends Controller
 
                 $user->last_login_laravel = $row?->last_at;
                 $user->login_count_laravel = (int) ($row?->logins_count ?? 0);
-
                 $user->is_online_now = $onlineSince->has($user->userID);
-                if ($user->is_online_now && $user->last_login_laravel) {
+
+                if ($row?->last_at && $row?->session_end) {
                     $user->session_duration_seconds = max(
                         0,
-                        (int) $onlineSince->get($user->userID) - strtotime($user->last_login_laravel)
+                        \Carbon\Carbon::parse($row->session_end)->diffInSeconds(\Carbon\Carbon::parse($row->last_at))
                     );
                 } else {
                     $user->session_duration_seconds = null;

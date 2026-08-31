@@ -96,6 +96,7 @@ class AuthController extends Controller
             \App\Models\UserLoginEvent::create([
                 'user_id' => $user->getKey(),
                 'logged_in_at' => $now,
+                'last_seen_at' => $now,
                 'ip_address' => $request->ip(),
                 'source' => \App\Models\UserLoginEvent::SOURCE_LARAVEL,
             ]);
@@ -223,6 +224,19 @@ class AuthController extends Controller
         $userId = Auth::id();
         if ($userId) {
             DB::table('utentionline')->where('id_utente', $userId)->delete();
+
+            // Chiude esplicitamente l'ultima sessione registrata (per il calcolo del
+            // tempo di permanenza nella pagina admin "Ingressi giornalieri").
+            try {
+                $now = now();
+                \App\Models\UserLoginEvent::where('user_id', $userId)
+                    ->whereNull('ended_at')
+                    ->orderByDesc('logged_in_at')
+                    ->limit(1)
+                    ->update(['ended_at' => $now, 'last_seen_at' => $now]);
+            } catch (\Throwable $e) {
+                // Non bloccare il logout se questo aggiornamento fallisce
+            }
         }
         Auth::logout();
         $request->session()->invalidate();
