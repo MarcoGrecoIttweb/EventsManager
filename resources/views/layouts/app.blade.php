@@ -560,7 +560,7 @@
                                 <div id="sidebarLoginVoteTooltip"
                                      style="display:none; position:absolute; top:100%; left:0; right:0; margin-top:8px; z-index:2000; background:#fff; color:#000; border:2px solid #000; border-radius:6px; padding:8px 10px; font-size:0.75rem; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.25);">
                                     <span style="color:#000;">😍</span>
-                                    Novità! Ti ricordiamo che per gli eventi già trascorsi puoi valutare la tua esperienza scegliendo una faccina da "Pessimo" a "Ottimo".
+                                    Ti ricordiamo che ora puoi valutare la tua esperienza per gli eventi lasciando un giudizio da "Scarso" ad "Ottimo".
                                 </div>
                                 <button type="submit" id="sidebarLoginBtn" class="btn btn-primary btn-sm w-100" style="border: 2px solid #CC9900;"><i class="fas fa-sign-in-alt"></i> Accedi</button>
                             </div>
@@ -583,7 +583,7 @@
                                         confirmed = true;
                                         tooltip.style.display = 'none';
                                         form.submit();
-                                    }, 7000);
+                                    }, 5000);
                                     return false;
                                 });
                             })();
