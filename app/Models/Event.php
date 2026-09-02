@@ -43,6 +43,7 @@ class Event extends Model
         'allow_guests' => 'boolean',
         'greeting_box_enabled' => 'boolean',
         'iscrizioni_chiuse' => 'boolean',
+        'visite' => 'integer',
     ];
 
     // ─── Accessors (legacy → Laravel names used by views) ─────────

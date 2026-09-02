@@ -1281,6 +1281,11 @@
                                 <span class="text-muted">Utente cancellato</span>
                             @endif
                         </p>
+                        @if(auth()->check() && auth()->user()->isAdmin())
+                            <p class="mb-0 mt-1 small text-muted" data-hint="Numero di volte in cui la pagina dell'evento è stata aperta. Visibile solo agli amministratori.">
+                                <i class="fas fa-eye"></i> Visite: <strong>{{ number_format((int) $event->visite, 0, ',', '.') }}</strong>
+                            </p>
+                        @endif
                     </div>
                 </div>
 
