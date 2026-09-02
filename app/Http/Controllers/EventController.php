@@ -191,11 +191,21 @@ class EventController extends Controller
         }
 
         // Contatore visite: traccia quante volte la pagina evento è stata aperta dagli utenti,
-        // escluse le visite dell'organizzatore dell'evento stesso.
+        // escluse le visite dell'organizzatore dell'evento stesso. Registra anche chi ha
+        // visitato (event_page_visits), per l'elenco username mostrato all'amministratore.
         try {
             $isOrganizerViewing = (int) Auth::id() === (int) $event->id_organizzatore;
             if (!$isOrganizerViewing) {
                 $event->increment('visite');
+
+                $visit = \App\Models\EventPageVisit::firstOrNew([
+                    'event_id' => $event->getKey(),
+                    'user_id' => Auth::id(),
+                ]);
+                $visit->visits_count = ($visit->visits_count ?? 0) + 1;
+                $visit->first_visited_at = $visit->first_visited_at ?? now();
+                $visit->last_visited_at = now();
+                $visit->save();
             }
         } catch (\Throwable $e) {
             // Non bloccare la visualizzazione dell'evento se il conteggio fallisce
@@ -256,7 +266,15 @@ class EventController extends Controller
                 ->exists();
         }
 
-        return view('events.show', compact('event', 'userParticipating', 'comments', 'isWaitlisted', 'waitlistCount', 'waitlistEntries'));
+        $eventVisitors = collect();
+        if (Auth::check() && Auth::user()->isAdmin()) {
+            $eventVisitors = \App\Models\EventPageVisit::with('user')
+                ->where('event_id', $event->getKey())
+                ->orderByDesc('last_visited_at')
+                ->get();
+        }
+
+        return view('events.show', compact('event', 'userParticipating', 'comments', 'isWaitlisted', 'waitlistCount', 'waitlistEntries', 'eventVisitors'));
     }
 
     public function photoAlbums(Request $request)

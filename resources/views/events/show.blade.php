@@ -1282,9 +1282,32 @@
                             @endif
                         </p>
                         @if(auth()->check() && auth()->user()->isAdmin())
-                            <p class="mb-0 mt-1 small text-muted" data-hint="Numero di volte in cui la pagina dell'evento è stata aperta. Visibile solo agli amministratori.">
-                                <i class="fas fa-eye"></i> Visite: <strong>{{ number_format((int) $event->visite, 0, ',', '.') }}</strong>
+                            <p class="mb-0 mt-1 small text-muted">
+                                <i class="fas fa-eye"></i> Visite:
+                                <a href="#" class="text-decoration-underline" role="button"
+                                   data-bs-toggle="collapse" data-bs-target="#eventVisitorsList"
+                                   aria-expanded="false" aria-controls="eventVisitorsList"
+                                   data-hint="Clicca per vedere chi ha visitato la pagina">
+                                    <strong>{{ number_format((int) $event->visite, 0, ',', '.') }}</strong>
+                                </a>
                             </p>
+                            <div class="collapse mt-1" id="eventVisitorsList">
+                                @if($eventVisitors->isNotEmpty())
+                                    <ul class="list-unstyled small mb-0 ps-1" style="max-height: 220px; overflow-y: auto;">
+                                        @foreach($eventVisitors as $visit)
+                                            <li class="py-1 border-top">
+                                                <i class="fas fa-user text-muted me-1"></i>
+                                                {{ optional($visit->user)->nickname ?? 'Utente cancellato' }}
+                                                <span class="text-muted">
+                                                    ({{ $visit->visits_count }} {{ $visit->visits_count === 1 ? 'visita' : 'visite' }})
+                                                </span>
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                @else
+                                    <p class="small text-muted mb-0">Nessuna visita registrata ancora.</p>
+                                @endif
+                            </div>
                         @endif
                     </div>
                 </div>
