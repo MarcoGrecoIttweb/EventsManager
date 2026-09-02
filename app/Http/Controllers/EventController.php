@@ -190,9 +190,13 @@ class EventController extends Controller
                 ->with('error', 'Devi essere loggato per vedere i dettagli dell\'evento.');
         }
 
-        // Contatore visite: traccia quante volte la pagina evento è stata aperta.
+        // Contatore visite: traccia quante volte la pagina evento è stata aperta dagli utenti,
+        // escluse le visite dell'organizzatore dell'evento stesso.
         try {
-            $event->increment('visite');
+            $isOrganizerViewing = (int) Auth::id() === (int) $event->id_organizzatore;
+            if (!$isOrganizerViewing) {
+                $event->increment('visite');
+            }
         } catch (\Throwable $e) {
             // Non bloccare la visualizzazione dell'evento se il conteggio fallisce
         }
