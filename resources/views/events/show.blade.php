@@ -202,7 +202,7 @@
                                         $ratingEmojiMap = [1 => '😡', 2 => '😞', 3 => '😐', 4 => '🙂', 5 => '😍'];
                                         $avgEmoji = $ratingEmojiMap[max(1, min(5, (int) round($event->average_rating)))];
                                     @endphp
-                                    <span class="badge bg-secondary fs-6 px-3 py-2" style="color: #ffc107;" data-hint="{{ $voteHint }}">
+                                    <span class="badge bg-secondary fs-6 px-3 py-2" style="color: #ffc107;" data-hint="Questa è la valutazione media data dai partecipanti su come è andato l'evento: la faccina e il numero (da 1 a 5) indicano il gradimento generale, e tra parentesi vedi quante persone hanno votato finora.">
                                         <span style="font-size:1.1em;">{{ $avgEmoji }}</span> {{ $event->average_rating }} / 5
                                         <span class="ms-1">({{ $event->ratings_count }} {{ $event->ratings_count === 1 ? 'voto' : 'voti' }})</span>
                                     </span>
