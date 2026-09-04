@@ -190,14 +190,19 @@
                             $isEventManagerViewer = auth()->check() && (auth()->user()->isAdmin() || (int) auth()->id() === (int) $event->id_organizzatore);
                         @endphp
                         <div class="event-rating-box border-top p-3" role="note">
+                            @php
+                                $voteHint = $userRating
+                                    ? 'Hai già effettuato la tua votazione per questo evento: il voto non può essere modificato.'
+                                    : 'Per garantire valutazione autentiche, il voto è consentito solo a chi ha effettivamente preso parte all\'evento';
+                            @endphp
                             <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
-                                <h5 class="mb-0" data-hint="Per garantire valutazione autentiche, il voto è consentito solo a chi ha effettivamente preso parte all'evento"><i class="fas fa-star text-warning"></i> Voto evento</h5>
+                                <h5 class="mb-0" data-hint="{{ $voteHint }}"><i class="fas fa-star text-warning"></i> Voto evento</h5>
                                 @if($event->ratings_count > 0)
                                     @php
                                         $ratingEmojiMap = [1 => '😡', 2 => '😞', 3 => '😐', 4 => '🙂', 5 => '😍'];
                                         $avgEmoji = $ratingEmojiMap[max(1, min(5, (int) round($event->average_rating)))];
                                     @endphp
-                                    <span class="badge bg-secondary fs-6 px-3 py-2" style="color: #ffc107;" data-hint="Per garantire valutazione autentiche, il voto è consentito solo a chi ha effettivamente preso parte all'evento">
+                                    <span class="badge bg-secondary fs-6 px-3 py-2" style="color: #ffc107;" data-hint="{{ $voteHint }}">
                                         <span style="font-size:1.1em;">{{ $avgEmoji }}</span> {{ $event->average_rating }} / 5
                                         <span class="ms-1">({{ $event->ratings_count }} {{ $event->ratings_count === 1 ? 'voto' : 'voti' }})</span>
                                     </span>
