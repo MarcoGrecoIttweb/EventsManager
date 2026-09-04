@@ -61,13 +61,6 @@ class AppServiceProvider extends ServiceProvider
             $view->with('featureChatReplyEmailUsersEnabled', SiteSettings::getBool('feature.chat_reply_email_users', true));
         });
 
-        // Direttive Blade per bloccare script di terze parti finché non c'è consenso.
-        // Uso: @thirdparty ... @endthirdparty
-        Blade::if('thirdparty', function () {
-            $request = request();
-            return CookieConsent::hasCategory($request, CookieConsent::CAT_THIRD_PARTY);
-        });
-
         // Contenuti esterni (es. Google Maps iframe).
         Blade::if('externalmedia', function () {
             $request = request();
