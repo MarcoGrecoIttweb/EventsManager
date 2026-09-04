@@ -63,10 +63,13 @@ class TrackOnlineUsers
                         $update['last_seen_at'] = date('Y-m-d H:i:s', $now);
                     }
 
-                    if ($isPageView) {
+                    // La Home è un passaggio obbligato per chiunque navighi il sito: non è
+                    // un'informazione utile su "quali pagine ha visitato", quindi non la
+                    // conteggiamo né la elenchiamo.
+                    $label = $isPageView ? self::pageLabel($request) : '';
+                    if ($isPageView && $label !== 'Home') {
                         $update['page_views_count'] = DB::raw('page_views_count + 1');
 
-                        $label = self::pageLabel($request);
                         $existing = array_filter(array_map('trim', explode(',', (string) $loginRow->pages_visited)));
                         if ($label !== '' && ! in_array($label, $existing, true) && count($existing) < 15) {
                             $existing[] = $label;
