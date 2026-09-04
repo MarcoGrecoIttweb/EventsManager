@@ -100,12 +100,22 @@ class TrackOnlineUsers
     {
         $routeName = optional($request->route())->getName();
 
+        // Profilo visitato: mostra lo username invece della generica "Profilo".
+        if ($routeName === 'profile.show') {
+            $bound = $request->route('user');
+            $visited = $bound instanceof \App\Models\User
+                ? $bound
+                : \App\Models\User::find($bound);
+            $username = $visited?->nickname ?: $visited?->username;
+
+            return $username ? 'Profilo: ' . mb_substr($username, 0, 20) : 'Profilo';
+        }
+
         $map = [
             'home' => 'Home',
             'events.index' => 'Home',
             'events.show' => 'Evento',
             'events.past' => 'Storico',
-            'profile.show' => 'Profilo',
             'profile.edit' => 'Modifica profilo',
             'chat.index' => 'Chat',
             'mercatino.vetrina' => 'Mercatino',
