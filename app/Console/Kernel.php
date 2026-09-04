@@ -16,6 +16,9 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         // $schedule->command('inspire')->hourly();
+
+        // Minimizzazione dati: elimina i log di consenso cookie più vecchi di 1 anno.
+        $schedule->command('cookie-consent-logs:prune')->daily();
     }
 
     /**
