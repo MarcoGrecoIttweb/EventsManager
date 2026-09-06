@@ -1300,16 +1300,12 @@
                                 @if($eventVisitors->isNotEmpty())
                                     <ul class="list-unstyled small mb-0 ps-1" style="max-height: 220px; overflow-y: auto;">
                                         @foreach($eventVisitors as $visit)
-                                            <li class="py-1 border-top">
+                                            <li class="py-1 border-top text-nowrap">
                                                 <i class="fas fa-user text-muted me-1"></i>
                                                 {{ optional($visit->user)->nickname ?? 'Utente cancellato' }}
-                                                <span class="text-muted">
-                                                    ({{ $visit->visits_count }} {{ $visit->visits_count === 1 ? 'visita' : 'visite' }})
-                                                </span>
+                                                <span class="text-muted">({{ $visit->visits_count }}V)</span>
                                                 @if($visit->last_visited_at)
-                                                    <span class="text-muted d-block small">
-                                                        Ultimo collegamento: {{ $visit->last_visited_at->format('d/m/Y H:i') }}
-                                                    </span>
+                                                    <span class="text-muted">{{ $visit->last_visited_at->format('d/m H:i') }}</span>
                                                 @endif
                                             </li>
                                         @endforeach
