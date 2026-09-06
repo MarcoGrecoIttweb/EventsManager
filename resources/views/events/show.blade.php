@@ -1306,6 +1306,11 @@
                                                 <span class="text-muted">
                                                     ({{ $visit->visits_count }} {{ $visit->visits_count === 1 ? 'visita' : 'visite' }})
                                                 </span>
+                                                @if($visit->last_visited_at)
+                                                    <span class="text-muted d-block small">
+                                                        Ultimo collegamento: {{ $visit->last_visited_at->format('d/m/Y H:i') }}
+                                                    </span>
+                                                @endif
                                             </li>
                                         @endforeach
                                     </ul>
