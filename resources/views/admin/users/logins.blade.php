@@ -166,10 +166,20 @@
                                             </td>
                                             <td>
                                                 @if($user->pages_visited_list)
-                                                    <span class="badge bg-info text-dark" data-hint="Elenco completo: {{ $user->pages_visited_list }}">
+                                                    @php $pagesCollapseId = 'pagesVisited' . $user->userID; @endphp
+                                                    <a href="#" role="button" class="badge bg-info text-dark text-decoration-none"
+                                                       data-bs-toggle="collapse" data-bs-target="#{{ $pagesCollapseId }}"
+                                                       aria-expanded="false" aria-controls="{{ $pagesCollapseId }}"
+                                                       data-hint="Clicca per vedere l'elenco completo">
                                                         {{ $user->pages_visited_count }}
                                                         <span class="ms-1">{{ \Illuminate\Support\Str::limit($user->pages_visited_list, 40) }}</span>
-                                                    </span>
+                                                        <i class="fas fa-caret-down ms-1"></i>
+                                                    </a>
+                                                    <div class="collapse mt-1" id="{{ $pagesCollapseId }}">
+                                                        <div class="small border rounded p-2 bg-light" style="max-width: 260px;">
+                                                            {{ $user->pages_visited_list }}
+                                                        </div>
+                                                    </div>
                                                 @else
                                                     <span class="text-muted" data-hint="Nessun dato: login registrato prima dell'introduzione del tracciamento">—</span>
                                                 @endif
