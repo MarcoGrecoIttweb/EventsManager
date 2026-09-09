@@ -17,8 +17,12 @@ class EventController extends Controller
 {
     public function index()
     {
+        // Un evento non pubblicato (es. rimandato/sospeso) resta visibile in home solo
+        // all'amministratore, per tenerlo sotto controllo; gli altri utenti non lo vedono.
+        $isAdminViewer = Auth::check() && Auth::user()->isAdmin();
+
         $events = Event::with(['user', 'participants'])
-            ->active()
+            ->when(!$isAdminViewer, fn ($q) => $q->active())
             ->upcoming()
             ->ordered()
             ->paginate(12);

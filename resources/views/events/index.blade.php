@@ -216,6 +216,11 @@
                     <div class="col-12 col-lg-6 d-flex">
                         <div id="event-card-{{ $event->getKey() }}"
                              class="card h-100 w-100 event-box {{ $event->isFull() ? 'event-box--full' : '' }} {{ session('waitlist_flash_event_id') == $event->getKey() ? 'event-box--flash' : '' }}">
+                            @if(!$event->is_active && auth()->check() && auth()->user()->isAdmin())
+                                <div class="card-header bg-secondary text-white text-center py-1 small" data-hint="Visibile in questo elenco solo a te come amministratore: gli altri utenti non lo vedono">
+                                    <i class="fas fa-eye-slash"></i> Non pubblicato — visibile solo a te
+                                </div>
+                            @endif
                             @if($event->isFull())
                                 <div class="card-header event-full-banner text-white text-center py-2">
                                     <span class="event-full-banner__blink">
