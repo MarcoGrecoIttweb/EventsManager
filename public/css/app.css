@@ -1,0 +1,42 @@
+/* Stili per le card degli eventi nella homepage */
+.event-preview {
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    color: #6c757d !important;
+}
+
+.card-event {
+    border: none;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    height: 100%;
+}
+
+.card-event:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.card-event-full {
+    border-left: 4px solid #dc3545;
+    opacity: 0.9;
+}
+
+.card-event-full .card-title {
+    color: #6c757d;
+}
+
+/* Badge per eventi completi */
+.badge-event-full {
+    background: linear-gradient(45deg, #dc3545, #c82333);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
