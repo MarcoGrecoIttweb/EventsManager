@@ -111,10 +111,20 @@ class TrackOnlineUsers
             return $username ? 'Profilo: ' . mb_substr($username, 0, 20) : 'Profilo';
         }
 
+        // Evento visitato: mostra il titolo invece del generico "Evento".
+        if ($routeName === 'events.show') {
+            $bound = $request->route('event');
+            $visited = $bound instanceof \App\Models\Event
+                ? $bound
+                : \App\Models\Event::find($bound);
+            $title = $visited?->nome;
+
+            return $title ? 'Evento: ' . mb_substr($title, 0, 20) : 'Evento';
+        }
+
         $map = [
             'home' => 'Home',
             'events.index' => 'Home',
-            'events.show' => 'Evento',
             'events.past' => 'Storico',
             'profile.edit' => 'Modifica profilo',
             'chat.index' => 'Chat',
