@@ -74,7 +74,8 @@
                     <div class="col-12 col-lg-3">
                         <div class="mb-3">
                             <label for="deadline" class="form-label text-primary-emphasis">Scadenza Iscrizioni</label>
-                            <input type="datetime-local" name="deadline" id="deadline" class="form-control border border-2 border-primary @error('deadline') is-invalid @enderror" value="{{ old('deadline', $event->deadline ? $event->deadline->format('Y-m-d\TH:i') : '') }}">
+                            <input type="datetime-local" lang="it" name="deadline" id="deadline" class="form-control border border-2 border-primary weekday-date-input @error('deadline') is-invalid @enderror" value="{{ old('deadline', $event->deadline ? $event->deadline->format('Y-m-d\TH:i') : '') }}">
+                            <span class="weekday-date-label" aria-live="polite"></span>
                             @error('deadline')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -278,6 +279,7 @@
         </div>
     </div>
 
+@include('partials.weekday-date-label')
 @include('partials.ckeditor4-description', ['height' => 400])
 @if(auth()->user()->isAdmin())
     @include('admin.events.partials.greeting-box-scripts', ['formId' => 'manage-event-edit-form'])
