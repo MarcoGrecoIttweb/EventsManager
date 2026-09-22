@@ -30,4 +30,24 @@ class SiteSettingsController extends Controller
             ->route('admin.dashboard')
             ->with('success', $label . ': ' . ($new ? 'attivato' : 'nascosto') . '.');
     }
+
+    public function updateAnnouncement(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'message' => 'nullable|string|max:2000',
+        ]);
+
+        $message = trim((string) ($validated['message'] ?? ''));
+
+        SiteSettings::set('site.announcement_message', $message);
+        // Attivo automaticamente se c'è del testo, disattivo se il campo è vuoto:
+        // niente interruttore separato da dimenticare di spuntare.
+        SiteSettings::set('site.announcement_enabled', $message !== '');
+
+        $successMessage = $message !== ''
+            ? 'Messaggio salvato e attivo: verrà mostrato agli utenti al prossimo login.'
+            : 'Messaggio rimosso: non verrà più mostrato.';
+
+        return redirect()->route('home')->with('success', $successMessage);
+    }
 }

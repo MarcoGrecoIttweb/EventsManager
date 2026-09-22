@@ -6,6 +6,7 @@ use App\Models\Comment;
 use App\Models\Event;
 use App\Models\EventWaitlistEntry;
 use App\Support\SafeRichText;
+use App\Support\SiteSettings;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use App\Http\Controllers\Admin\HomePendingBannerController;
@@ -93,6 +94,20 @@ class EventController extends Controller
             }
         }
 
+        // Messaggio da mostrare all'utente subito dopo il login (impostato da AuthController::login()).
+        $loginAnnouncementMessage = null;
+        if (session()->pull('show_login_announcement', false)) {
+            $announcementText = trim((string) SiteSettings::get('site.announcement_message', ''));
+            if (SiteSettings::getBool('site.announcement_enabled', false) && $announcementText !== '') {
+                $loginAnnouncementMessage = $announcementText;
+            }
+        }
+
+        // Testo corrente per il form admin "Inserisci Messaggio".
+        $adminAnnouncementMessage = $isAdminViewer
+            ? (string) SiteSettings::get('site.announcement_message', '')
+            : '';
+
         return view('events.index', compact(
             'events',
             'waitlistedEventIds',
@@ -100,7 +115,9 @@ class EventController extends Controller
             'activeUsersCount',
             'todayVisitsCount',
             'visitVsActivePct',
-            'adminPendingRegistrationBanner'
+            'adminPendingRegistrationBanner',
+            'loginAnnouncementMessage',
+            'adminAnnouncementMessage'
         ));
     }
 

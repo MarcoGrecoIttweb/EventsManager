@@ -116,6 +116,43 @@
 
 @section('content')
     @auth
+        @if(auth()->user()->isAdmin())
+            <div class="mb-3">
+                <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#adminAnnouncementModal">
+                    <i class="fas fa-bullhorn me-1"></i> Inserisci Messaggio
+                </button>
+            </div>
+
+            <div class="modal fade" id="adminAnnouncementModal" tabindex="-1" aria-labelledby="adminAnnouncementModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <form method="POST" action="{{ route('admin.site-settings.announcement') }}">
+                            @csrf
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="adminAnnouncementModalLabel">Messaggio per gli utenti</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="mb-2">
+                                    <label for="announcementMessage" class="form-label">Testo del messaggio</label>
+                                    <textarea id="announcementMessage" name="message" class="form-control" rows="5" maxlength="2000"
+                                              placeholder="Scrivi qui il messaggio da mostrare agli utenti subito dopo il login...">{{ old('message', $adminAnnouncementMessage ?? '') }}</textarea>
+                                </div>
+                                <p class="small text-muted mb-0">
+                                    Se scrivi un testo e premi Salva, verrà mostrato a ogni utente appena effettua il login.
+                                    Per disattivarlo, svuota la casella e premi Salva.
+                                </p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+                                <button type="submit" class="btn btn-primary">Salva</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         @if(isset($adminPendingRegistrationBanner) && is_array($adminPendingRegistrationBanner) && auth()->user()->isAdmin())
             <div class="alert alert-warning border border-warning shadow-sm mb-4 d-flex flex-wrap align-items-center justify-content-between gap-3"
                  role="alert"
@@ -142,6 +179,33 @@
             </div>
         @endif
     @endauth
+
+    @if(!empty($loginAnnouncementMessage))
+        <div class="modal fade" id="loginAnnouncementModal" tabindex="-1" aria-labelledby="loginAnnouncementModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="loginAnnouncementModalLabel"><i class="fas fa-bullhorn me-1"></i> Messaggio</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="mb-0" style="white-space: pre-line;">{{ $loginAnnouncementMessage }}</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Ho capito</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                var el = document.getElementById('loginAnnouncementModal');
+                if (el && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                    new bootstrap.Modal(el).show();
+                }
+            });
+        </script>
+    @endif
 
     {{-- Hero --}}
     <div class="hero-section mb-4">
