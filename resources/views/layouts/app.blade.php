@@ -556,38 +556,8 @@
                                     <div class="invalid-feedback" style="font-size:0.75em">{{ $message }}</div>
                                 @enderror
                             </div>
-                            <div class="position-relative">
-                                <div id="sidebarLoginVoteTooltip"
-                                     style="display:none; position:absolute; top:100%; left:0; right:0; margin-top:8px; z-index:2000; background:#fff; color:#000; border:2px solid #000; border-radius:6px; padding:8px 10px; font-size:0.75rem; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.25);">
-                                    <span style="color:#000;">😍</span>
-                                    Ti ricordiamo che ora puoi valutare la tua esperienza per gli eventi lasciando un giudizio da "Scarso" ad "Ottimo".
-                                </div>
-                                <button type="submit" id="sidebarLoginBtn" class="btn btn-primary btn-sm w-100" style="border: 2px solid #CC9900;"><i class="fas fa-sign-in-alt"></i> Accedi</button>
-                            </div>
+                            <button type="submit" id="sidebarLoginBtn" class="btn btn-primary btn-sm w-100" style="border: 2px solid #CC9900;"><i class="fas fa-sign-in-alt"></i> Accedi</button>
                         </form>
-                        <script>
-                            (function () {
-                                var form = document.getElementById('sidebarLoginForm');
-                                var tooltip = document.getElementById('sidebarLoginVoteTooltip');
-                                var btn = document.getElementById('sidebarLoginBtn');
-                                if (!form || !tooltip || !btn) return;
-                                var confirmed = false;
-                                form.addEventListener('submit', function (e) {
-                                    if (confirmed) return;
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    tooltip.style.display = 'block';
-                                    btn.disabled = true;
-                                    tooltip.scrollIntoView({behavior: 'smooth', block: 'center'});
-                                    setTimeout(function () {
-                                        confirmed = true;
-                                        tooltip.style.display = 'none';
-                                        form.submit();
-                                    }, 5000);
-                                    return false;
-                                });
-                            })();
-                        </script>
                         <hr class="my-2">
                         <div class="d-grid gap-1">
                             <a href="{{ route('register') }}" class="btn btn-outline-secondary btn-sm" style="border: 1px solid #CC9900;">
