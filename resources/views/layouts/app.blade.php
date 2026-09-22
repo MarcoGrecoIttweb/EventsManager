@@ -34,12 +34,8 @@
             }
         }
 
-        /* Sidebar boxes: evita tagli su smartphone */
+        /* Sidebar boxes: intestazione leggermente piu' piccola su smartphone */
         @media (max-width: 767.98px) {
-            .card-sidebar.sidebar-box--green .card-body {
-                max-height: none !important;
-                overflow-y: visible !important;
-            }
             .card-sidebar.sidebar-box--green .card-header small {
                 font-size: 0.92rem;
             }
@@ -120,12 +116,61 @@
             border-radius: 4px;
             padding-left: 2px;
         }
+        /* Nickname "Utenti online": stessa dimensione/peso del testo in "I miei Eventi Attivi" */
+        .online-user-row .small {
+            font-size: 0.95rem;
+        }
+        .online-user-row .small a {
+            font-weight: 500;
+        }
         @media (max-width: 767.98px) {
             /* Smartphone: sidebar non sticky, niente colonna “fissa” sullo sfondo */
             .sidebar-left {
                 position: static;
                 max-height: none;
                 overflow: visible;
+            }
+            /* Smartphone: "Utenti online", "I miei Eventi Attivi" e "Consigli e
+               suggerimenti" affiancati in un'unica riga, tutti della stessa larghezza.
+               Eventuali altri box (statistiche admin, invito guest) vanno a capo
+               su una riga a parte, a piena larghezza. */
+            .sidebar-mobile-row {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: stretch;
+                gap: 0.5rem;
+            }
+            .sidebar-mobile-row__item {
+                flex: 1 1 0;
+                min-width: 0;
+            }
+            .sidebar-mobile-row__item--online {
+                order: 1;
+            }
+            .sidebar-mobile-row__item--myevents {
+                order: 2;
+            }
+            .sidebar-mobile-row__item--suggestions {
+                order: 3;
+            }
+            .sidebar-mobile-row__item--full {
+                order: 4;
+                flex-basis: 100%;
+            }
+            .sidebar-mobile-row__item--full:empty {
+                display: none;
+            }
+            .sidebar-mobile-row__item .card {
+                height: 100%;
+                min-height: 0;
+                margin-bottom: 0 !important;
+            }
+            /* Visitatore non loggato: "Utenti online" e "Non sei registrato..." non
+               vanno ripetuti qui, compaiono gia' accanto alla galleria fotografica
+               (vedi home-slideshow-row in events/index). */
+            .sidebar-online-box--guest,
+            .sidebar-guest-participate--sidebar {
+                display: none;
             }
         }
 
@@ -296,16 +341,6 @@
                             <i class="fas fa-info-circle"></i> Conoscici meglio
                         </a>
                     </li>
-                    @if($showAlbumsFotoLink)
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ route('photo-albums.index') }}" data-hint="Esplora la raccolta foto delle nostre attività">
-                                <i class="fas fa-images"></i> Galleria Foto
-                                @if(!($featureAlbumsFotoEnabled ?? true))
-                                    <span class="ms-1 badge bg-warning text-dark">IN ARRIVO</span>
-                                @endif
-                            </a>
-                        </li>
-                    @endif
                 @else
                 <li class="nav-item d-flex align-items-center me-1 me-md-2">
                     <span class="navbar-text text-white-50 small">
@@ -571,74 +606,25 @@
                 </div>
             @endguest
 
-            {{-- Utenti online: visibile per tutti, elenco cliccabile verso il profilo --}}
-            <div class="card card-sidebar sidebar-box--green mb-3">
-                <div class="card-header py-2">
-                    <small class="fw-bold">
-                        <i class="fas fa-circle text-success me-1"></i> Utenti online
-                    </small>
-                </div>
-                <div class="card-body p-2" style="max-height: 220px; overflow-y: auto;">
-                    @php
-                        try {
-                            $idleMinutes = (int) config('session.online_timeout', 3);
-                            if ($idleMinutes < 1) { $idleMinutes = 3; }
-                            $onlineCutoff = time() - ($idleMinutes * 60);
-
-                            $onlineUsers = \Illuminate\Support\Facades\DB::table('utentionline')
-                                ->join('utente', 'utentionline.id_utente', '=', 'utente.userID')
-                                ->where('utente.abilitato', 1)
-                                ->where('utentionline.time', '>=', $onlineCutoff)
-                                ->groupBy('utentionline.id_utente', 'utente.username')
-                                ->selectRaw('utentionline.id_utente as userID, utente.username as nickname, MAX(utentionline.time) as last_time')
-                                ->orderByDesc('last_time')
-                                ->limit(30)
-                                ->get();
-                        } catch (\Illuminate\Database\QueryException $e) {
-                            $onlineUsers = collect();
-                        }
-                    @endphp
-                    @if($onlineUsers->isEmpty())
-                        <small class="text-muted">Nessun utente online in questo momento.</small>
-                    @else
-                        <ul class="list-unstyled mb-0">
-                            @foreach($onlineUsers as $online)
-                                <li class="d-flex align-items-center online-user-row py-1">
-                                    <span class="online-dot"></span>
-                                    <span class="small">
-                                        <a href="{{ route('profile.show', $online->userID) }}" class="text-decoration-none">
-                                            {{ $online->nickname }}
-                                        </a>
-                                    </span>
-                                </li>
-                            @endforeach
-                        </ul>
-                    @endif
-                </div>
+            <div class="sidebar-mobile-row">
+            {{-- Utenti online: visibile per tutti, elenco cliccabile verso il profilo.
+                 Per i visitatori non loggati, su smartphone questo box viene nascosto qui
+                 perche' viene mostrato accanto alla galleria fotografica (vedi events/index). --}}
+            <div class="sidebar-mobile-row__item sidebar-mobile-row__item--online @guest sidebar-online-box--guest @endguest">
+                @include('partials.online-users-box')
             </div>
 
             {{-- Contenuti opzionali sotto "Utenti online" (es. homepage stats) --}}
-            @yield('sidebar_after_online')
+            <div class="sidebar-mobile-row__item sidebar-mobile-row__item--full">
+                @yield('sidebar_after_online')
+            </div>
 
             @guest
-                {{-- Box per utenti non registrati: invito a partecipare scrivendo una email --}}
-                <div class="card card-sidebar mb-3" style="border: 1px solid #198754;">
-                    <div class="card-header py-2" role="button" data-bs-toggle="collapse" data-bs-target="#guestParticipateBox" aria-expanded="false" aria-controls="guestParticipateBox" style="cursor:pointer;">
-                        <small class="fw-bold">
-                            <i class="fas fa-envelope text-danger me-1"></i> Non sei registrato e vuoi partecipare?
-                        </small>
-                    </div>
-                    <div class="collapse" id="guestParticipateBox">
-                        <div class="card-body p-2">
-                            <div class="small mb-2">
-                                Se sei interessato a partecipare a un evento in programma per cominciare a conoscerci e per provare, scrivici una email e ti daremo tutte le informazioni.
-                            </div>
-                            <a href="mailto:excursio@libero.it?subject=Richiesta%20partecipazione%20evento&body=Ciao,%20vorrei%20partecipare%20all%27evento%3A%20%5BTITOLO%20EVENTO%5D%0AMio%20nome%3A%20%5BNOME%5D%0AMio%20numero%20di%20telefono%3A%20%5BTELEFONO%5D%0A%0AGrazie."
-                               class="btn btn-danger btn-sm w-100">
-                                <i class="fas fa-paper-plane me-1"></i> Scrivici per partecipare
-                            </a>
-                        </div>
-                    </div>
+                {{-- Box per utenti non registrati: invito a partecipare scrivendo una email.
+                     Su smartphone viene nascosto qui: compare sotto "Utenti online" accanto
+                     alla galleria fotografica (vedi events/index). --}}
+                <div class="sidebar-mobile-row__item sidebar-mobile-row__item--full sidebar-guest-participate--sidebar">
+                    @include('partials.guest-participate-box')
                 </div>
             @endguest
 
@@ -650,13 +636,14 @@
                         $mySubscribedEvents = collect();
                     }
                 @endphp
+                <div class="sidebar-mobile-row__item sidebar-mobile-row__item--myevents">
                 <div class="card card-sidebar sidebar-box--green mb-3">
                     <div class="card-header py-2">
                         <small class="fw-bold">
-                            <i class="fas fa-calendar-check text-info me-1"></i> Eventi attivi
+                            <i class="fas fa-calendar-check text-info me-1"></i> I miei Eventi Attivi
                         </small>
                     </div>
-                    <div class="card-body p-2" style="max-height: 220px; overflow-y: auto;">
+                    <div class="card-body p-2" style="height: 88px; min-height: 0; overflow-y: auto;">
                         @if($mySubscribedEvents->isEmpty())
                             <small class="text-muted">Non risulti iscritto a eventi futuri pubblicati.</small>
                         @else
@@ -672,10 +659,14 @@
                         @endif
                     </div>
                 </div>
+                </div>
 
                 {{-- Contenuti opzionali sotto "Eventi attivi" (per singole pagine) --}}
-                @yield('sidebar_after_my_events')
+                <div class="sidebar-mobile-row__item sidebar-mobile-row__item--suggestions">
+                    @yield('sidebar_after_my_events')
+                </div>
             @endauth
+            </div>
         </div>
         @endif
 

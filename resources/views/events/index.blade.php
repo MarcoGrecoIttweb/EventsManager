@@ -39,31 +39,6 @@
 
 @section('sidebar_after_my_events')
     @auth
-        @php $me = auth()->user(); @endphp
-        <div class="card border-2 border-success shadow-sm mb-3">
-            <div class="card-body p-2">
-                <div class="small fw-bold mb-2">
-                    <i class="fas fa-calendar-plus text-success me-1"></i> Vuoi organizzare eventi?
-                </div>
-                <div class="d-grid">
-                    @if($me->canManageEvents())
-                        @if($me->isAdmin())
-                            <a href="{{ route('admin.events.create') }}" class="btn btn-success btn-sm">
-                                Crea evento
-                            </a>
-                        @else
-                            <a href="{{ route('manage.events.create') }}" class="btn btn-success btn-sm">
-                                Crea evento
-                            </a>
-                        @endif
-                    @else
-                        <a href="{{ route('organizer.request') }}" class="btn btn-outline-success btn-sm">
-                            Richiedi abilitazione
-                        </a>
-                    @endif
-                </div>
-            </div>
-        </div>
         <div class="card border-2 border-success shadow-sm mb-3">
             <div class="card-body p-2">
                 <div class="small fw-bold mb-2" role="button" data-bs-toggle="collapse" data-bs-target="#suggestionsBox" aria-expanded="false" aria-controls="suggestionsBox" style="cursor:pointer;">
@@ -213,33 +188,38 @@
     </div>
 
     @if(count($slideImages) > 0)
-        <div class="home-slideshow-wrap mb-4 mx-auto" style="max-width:1200px;">
-            <div class="home-slideshow"
-                 id="homeSlideshow"
-                 data-interval="5500"
-                 role="img"
-                 aria-label="Slideshow fotografico Excursio">
-                @foreach($slideImages as $idx => $row)
-                    <img src="{{ asset('slide/' . $row['file']) }}"
-                         alt="{{ $row['alt'] }}"
-                         class="home-slideshow__img{{ $idx === 0 ? ' is-active' : '' }}"
-                         @if($idx > 0) loading="lazy" @endif>
-                @endforeach
+        <div class="home-slideshow-row">
+            @guest
+                {{-- Visitatore non loggato, solo smartphone: "Utenti online" a sinistra
+                     della galleria, "Non sei registrato..." a destra --}}
+                <div class="home-slideshow-row__online d-md-none">
+                    @include('partials.online-users-box')
+                </div>
+                <div class="home-slideshow-row__participate d-md-none">
+                    @include('partials.guest-participate-box', ['idSuffix' => 'Gallery'])
+                </div>
+            @endguest
+            <div class="home-slideshow-wrap mb-4 mx-auto" style="max-width:1200px;">
+                <div class="home-slideshow"
+                     id="homeSlideshow"
+                     data-interval="5500"
+                     role="img"
+                     aria-label="Slideshow fotografico Excursio">
+                    @foreach($slideImages as $idx => $row)
+                        <img src="{{ asset('slide/' . $row['file']) }}"
+                             alt="{{ $row['alt'] }}"
+                             class="home-slideshow__img{{ $idx === 0 ? ' is-active' : '' }}"
+                             @if($idx > 0) loading="lazy" @endif>
+                    @endforeach
+                </div>
+                <p class="home-slideshow-caption text-center small text-muted mt-2 mb-0 d-none d-md-block">
+                    <i class="fas fa-images"></i> Galleria fotografica
+                </p>
             </div>
-            <p class="home-slideshow-caption text-center small text-muted mt-2 mb-0">
-                <i class="fas fa-images"></i> Galleria fotografica
-            </p>
         </div>
     @endif
 
     <div class="container">
-        {{-- Mobile quick action: back to homepage --}}
-        <div class="d-block d-md-none mb-3">
-            <a href="{{ route('home') }}" class="btn btn-outline-primary w-100 btn-mobile-home">
-                <i class="fas fa-home"></i> Torna alla home
-            </a>
-        </div>
-
         <div class="text-center mb-4">
             <h2 class="mb-0 text-uppercase title-algerian">Eventi in programma</h2>
             @auth
@@ -293,6 +273,9 @@
                                 </div>
                             @endif
 
+                            {{-- Smartphone: titolo mostrato prima dell'immagine (su PC resta dentro alla card, invariato) --}}
+                            <h5 class="card-title d-block d-md-none px-3 pt-3 mb-0 {{ $event->isFull() ? 'text-muted' : '' }}">{{ $event->title }}</h5>
+
                             <div class="row g-0 h-100 event-card-row">
                                 <div class="col-md-4">
                                     @if($event->cover_image_url)
@@ -319,7 +302,7 @@
                                 </div>
                                 <div class="col-md-8 d-flex flex-column h-100 event-card-content">
                                     <div class="card-body">
-                                        <h5 class="card-title {{ $event->isFull() ? 'text-muted' : '' }}">{{ $event->title }}</h5>
+                                        <h5 class="card-title d-none d-md-block {{ $event->isFull() ? 'text-muted' : '' }}">{{ $event->title }}</h5>
                                         @php
                                             $rawMaxPart = $event->max_participants;
                                             $maxPosti = ($rawMaxPart !== null && $rawMaxPart !== '') ? (int) $rawMaxPart : null;
@@ -614,8 +597,45 @@
             z-index: 1;
         }
         @media (max-width: 767.98px) {
+            /* Immagine principale ridotta mantenendo le proporzioni (bordo compreso):
+               si riduce la larghezza, l'altezza si adatta di conseguenza via JS. */
             .home-slideshow-wrap {
-                width: 100%;
+                width: 50%;
+                margin-left: auto;
+                margin-right: auto;
+            }
+            /* Visitatore non loggato: "Utenti online" nel margine libero a sinistra
+               della galleria, "Non sei registrato..." in quello a destra. La galleria
+               resta sempre esattamente centrata (stessa larghezza/margini di prima),
+               i due box non la spostano. */
+            .home-slideshow-row {
+                position: relative;
+            }
+            .home-slideshow-row__online,
+            .home-slideshow-row__participate {
+                position: absolute;
+                top: 0;
+                width: 20%;
+                z-index: 2;
+            }
+            .home-slideshow-row__online {
+                left: 0;
+            }
+            .home-slideshow-row__participate {
+                right: 0;
+            }
+            .home-slideshow-row__online .card,
+            .home-slideshow-row__participate .card {
+                margin-bottom: 0.35rem !important;
+                font-size: 0.7rem;
+            }
+            .home-slideshow-row__online .card:last-child,
+            .home-slideshow-row__participate .card:last-child {
+                margin-bottom: 0 !important;
+            }
+            .home-slideshow-row__online .card-body {
+                height: 60px !important;
+                padding: 0.35rem !important;
             }
         }
 
@@ -714,7 +734,11 @@
             display: block;
         }
         @media (max-width: 767.98px) {
-            .event-thumb-box {
+            /* Altezza fissa (non solo minima): tutte le foto evento hanno lo stesso
+               riquadro larghezza/altezza; con object-fit:contain la foto intera resta
+               visibile, con eventuale bordo/sfondo se le proporzioni non combaciano. */
+            .event-thumb-box.h-100 {
+                height: 200px !important;
                 min-height: 200px;
             }
             /* Fix mobile: evita che l'h-100 nasconda il footer (pulsante guest) */
