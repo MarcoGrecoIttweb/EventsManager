@@ -310,12 +310,16 @@
                                             $postiLiberiEv = ($maxPosti !== null && !$event->isFull()) ? max(0, $maxPosti - $cntPart) : null;
                                             /* Lampeggio solo quando restano 1 o 2 posti al completamento */
                                             $mancanoPerCompletareMax = $postiLiberiEv !== null && $postiLiberiEv >= 1 && $postiLiberiEv <= 2;
+                                            $weekdayAbbrIt = [0 => 'dom', 1 => 'lun', 2 => 'mar', 3 => 'merc', 4 => 'gio', 5 => 'ven', 6 => 'sab'];
+                                            $eventDateShort = $event->date
+                                                ? $weekdayAbbrIt[(int) $event->date->format('w')] . ' ' . $event->date->format('j') . ' ' . $event->date->locale('it')->translatedFormat('F') . ' h' . $event->date->format('H:i')
+                                                : '';
                                         @endphp
-                                        <div class="mb-3 d-flex flex-wrap gap-2 event-meta-badges">
+                                        <div class="mb-3 event-meta-badges">
                                             <span class="badge bg-primary event-meta-badges__badge event-meta-badges__badge--hint"
                                                   title="Indica data e ora di inizio dell’evento.">
                                                 <i class="fas fa-calendar"></i>
-                                                {{ $event->italian_event_date ?? ($event->date ? $event->date->format('d/m/Y H:i') : '') }}
+                                                {{ $eventDateShort }}
                                             </span>
                                             <span class="badge event-meta-badges__badge event-meta-badges__badge--hint {{ $event->isFull() ? 'bg-danger' : 'bg-secondary' }} {{ $mancanoPerCompletareMax ? 'event-meta-badges__badge--part-gap' : '' }}"
                                                   title="{{ $mancanoPerCompletareMax
@@ -339,22 +343,17 @@
                                                 <span class="badge event-meta-badges__badge event-card-iscr-badge {{ $iscrClass }}">
                                                     <i class="fas fa-clock"></i>
                                                     @if($iscrOpen)
-                                                        Iscrizioni entro:
-                                                        {{ $event->deadline->locale('it')->translatedFormat('l, j F') . ', H. ' . $event->deadline->format('H:i') }}
+                                                        Iscriviti entro {{ $weekdayAbbrIt[(int) $event->deadline->format('w')] }} {{ $event->deadline->format('d/m') }} h{{ $event->deadline->format('H:i') }}
                                                     @else
                                                         Adesioni chiuse
                                                     @endif
                                                 </span>
                                             @endif
+                                            <button type="button" class="btn btn-guest-details btn-sm event-meta-badges__badge" data-bs-toggle="modal" data-bs-target="#homeParticipantsModal{{ $event->getKey() }}">
+                                                <i class="fas fa-users"></i> Lista iscritti
+                                            </button>
                                         </div>
-                                        <p class="card-text mb-2">
-                                            <i class="fas fa-map-marker-alt"></i>
-                                            <strong>{{ $event->city }}</strong>
-                                            <span class="text-muted small ms-2">
-                                                <strong>Org.</strong>
-                                                {{ $event->user->nickname ?? $event->user->nome ?? '—' }}
-                                            </span>
-                                        </p>
+
                                         @include('partials.event-public-preview', ['event' => $event, 'charLimit' => 100])
 
                                         @if($event->isFull() && (!auth()->check() || !auth()->user()->isApproved()))
@@ -492,10 +491,69 @@
                                             @include('partials.event-details-button', ['event' => $event])
                                         @else
                                             <a href="{{ route('login') }}" class="btn btn-guest-details w-100">
-                                                <i class="fas fa-lock"></i> Accedi per vedere i dettagli
+                                                <i class="fas fa-lock"></i> Accedi ai dettagli
                                             </a>
                                         @endauth
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Modale fuori dalla card: un genitore con "transform" (hover della card)
+                         romperebbe il posizionamento "fixed" del modale Bootstrap. --}}
+                    <div class="modal fade" id="homeParticipantsModal{{ $event->getKey() }}" tabindex="-1" aria-labelledby="homeParticipantsModalLabel{{ $event->getKey() }}" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-scrollable">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="homeParticipantsModalLabel{{ $event->getKey() }}">
+                                        <i class="fas fa-users"></i> Iscritti all'evento
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+                                </div>
+                                <div class="modal-body">
+                                    @if($event->participants->count() > 0)
+                                        <ul class="list-group list-group-flush">
+                                            @foreach($event->participants as $participant)
+                                                @php
+                                                    $homeHasGuests = $participant->pivot->amici > 0;
+                                                    $homeOspitiEntries = \App\Support\OspitiGuestStore::decode($participant->pivot->ospiti_inseriti_il ?? null);
+                                                @endphp
+                                                <li class="list-group-item">
+                                                    <div class="d-flex align-items-center gap-2">
+                                                        @if($participant->photo_url)
+                                                            <img src="{{ $participant->photo_url }}"
+                                                                 alt="{{ $participant->nickname }}"
+                                                                 class="rounded-circle"
+                                                                 style="width:32px;height:32px;object-fit:cover;flex-shrink:0;">
+                                                        @else
+                                                            <i class="fas fa-user"></i>
+                                                        @endif
+                                                        <span class="fw-semibold">{{ $participant->nickname }}</span>
+                                                    </div>
+                                                    @if($homeHasGuests)
+                                                        <ul class="list-unstyled small text-muted mt-1 mb-0 ps-4">
+                                                            @for($hgi = 0; $hgi < (int) $participant->pivot->amici; $hgi++)
+                                                                @php $homeGNome = $homeOspitiEntries[$hgi]['nome'] ?? ''; @endphp
+                                                                <li>
+                                                                    <i class="fas fa-user-friends"></i>
+                                                                    {{ $homeGNome !== '' ? $homeGNome : 'Ospite' }}
+                                                                </li>
+                                                            @endfor
+                                                        </ul>
+                                                    @endif
+                                                </li>
+                                            @endforeach
+                                        </ul>
+                                    @else
+                                        <p class="text-muted mb-0">Nessun iscritto al momento.</p>
+                                    @endif
+                                </div>
+                                <div class="modal-footer">
+                                    <a href="{{ route('events.show', $event) }}" class="btn btn-outline-primary btn-sm">
+                                        <i class="fas fa-external-link-alt"></i> Apri pagina evento
+                                    </a>
+                                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Chiudi</button>
                                 </div>
                             </div>
                         </div>
@@ -752,10 +810,29 @@
             }
         }
 
+        /* Griglia 2 colonne: data evento sopra "Iscriviti entro" (stessa larghezza,
+           allineati), partecipanti sopra "Lista iscritti" (stessa larghezza,
+           allineati) accanto ai primi due, sia su PC sia su smartphone. */
+        .event-meta-badges {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+        }
+        .event-meta-badges .badge,
+        .event-meta-badges .btn {
+            width: 100%;
+        }
         .event-meta-badges__badge {
-            font-size: 0.95rem;
-            padding: 0.5rem 0.75rem;
+            font-size: 0.85rem;
+            font-weight: 700;
+            padding: 0.25rem 0.6rem !important;
             border-radius: 0.6rem;
+            height: 1.8rem !important;
+            box-sizing: border-box;
+            display: inline-flex !important;
+            align-items: center;
+            justify-content: center;
+            line-height: 1.1;
         }
         .event-meta-badges__badge i {
             margin-right: 0.35rem;

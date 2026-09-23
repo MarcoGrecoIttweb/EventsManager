@@ -362,10 +362,34 @@
                                                 @endphp
                                                 <div class="d-flex justify-content-end">
                                                     <div class="d-flex flex-nowrap gap-2 align-items-stretch event-participation-btns event-participation-btns--toglimi">
-                                                        @if(!$event->is_past_event)
-                                                            <form action="{{ route('events.cancel', $event) }}" method="POST" class="mb-0 d-flex align-items-stretch">
+                                                        @if($event->allow_guests)
+                                                            @php
+                                                                $authCanAddMoreGuestsTop = auth()->user()->isApproved() && $event->canAddMoreGuests(auth()->user());
+                                                                $addGuestBlockReasonTop = '';
+                                                                if (!$authCanAddMoreGuestsTop) {
+                                                                    if (!$event->isRegistrationOpen()) {
+                                                                        $addGuestBlockReasonTop = 'Le iscrizioni a questo evento sono chiuse: non puoi aggiungere altri ospiti.';
+                                                                    } elseif ($event->isFull()) {
+                                                                        $addGuestBlockReasonTop = 'L\'evento è al completo: non puoi aggiungere altri ospiti.';
+                                                                    } else {
+                                                                        $addGuestBlockReasonTop = 'Hai raggiunto il limite di ospiti consentiti per questo evento.';
+                                                                    }
+                                                                }
+                                                            @endphp
+                                                            <form action="{{ route('events.add-guest', $event) }}" method="POST" class="mb-0 d-flex align-items-stretch event-participation-btns__item--compact">
                                                                 @csrf
-                                                                <button type="submit" class="btn btn-danger btn-sm w-100 event-btn-participate-map-height event-btn-meta-height event-btn-toglimi"
+                                                                <button type="submit" class="btn btn-success btn-sm event-btn-compact-height"
+                                                                        @if(!$authCanAddMoreGuestsTop) disabled aria-disabled="true" @endif
+                                                                        data-hint="Clicca se vuoi invitare un amico."
+                                                                        title="{{ $authCanAddMoreGuestsTop ? 'Aggiungi una riga ospite in elenco' : $addGuestBlockReasonTop }}">
+                                                                    <i class="fas fa-user-plus"></i> Porta un amico
+                                                                </button>
+                                                            </form>
+                                                        @endif
+                                                        @if(!$event->is_past_event)
+                                                            <form action="{{ route('events.cancel', $event) }}" method="POST" class="mb-0 d-flex align-items-stretch event-participation-btns__item--compact">
+                                                                @csrf
+                                                                <button type="submit" class="btn btn-danger btn-sm event-btn-compact-height event-btn-toglimi"
                                                                         data-hint="Mi cancello da questo evento.">
                                                                     Annulla Adesione <i class="fas fa-rotate-left event-btn-toglimi-icon"></i>
                                                                 </button>
@@ -1056,34 +1080,6 @@
                         @endif
                     </div>
 
-                    {{-- Porta un amico / ospite (mobile) --}}
-                    @auth
-                        @if($userParticipating && $event->allow_guests)
-                            <div class="mt-3 p-3 bg-light rounded event-invite-box">
-                                    @php
-                                        $authCanAddMoreGuests = auth()->user()->isApproved() && $event->canAddMoreGuests(auth()->user());
-                                        $addGuestBlockReasonInvite = '';
-                                        if (!$authCanAddMoreGuests) {
-                                            if (!$event->isRegistrationOpen()) {
-                                                $addGuestBlockReasonInvite = 'Le iscrizioni a questo evento sono chiuse: non puoi aggiungere altri ospiti.';
-                                            } elseif ($event->isFull()) {
-                                                $addGuestBlockReasonInvite = 'L\'evento è al completo: non puoi aggiungere altri ospiti.';
-                                            } else {
-                                                $addGuestBlockReasonInvite = 'Hai raggiunto il limite di ospiti consentiti per questo evento.';
-                                            }
-                                        }
-                                    @endphp
-                                    <form action="{{ route('events.add-guest', $event) }}" method="POST" class="mb-0">
-                                        @csrf
-                                        <button type="submit" class="btn btn-success btn-sm w-100"
-                                                @if(!$authCanAddMoreGuests) disabled aria-disabled="true" @endif
-                                                title="{{ $authCanAddMoreGuests ? 'Aggiungi una riga ospite in elenco' : $addGuestBlockReasonInvite }}">
-                                            <i class="fas fa-user-plus"></i> Porta un amico
-                                        </button>
-                                    </form>
-                            </div>
-                        @endif
-                    @endauth
                 </div>
 
             <!-- Forum evento: titolo (maiuscolo) + badge + pulsante Forum Commenti; sotto form collassabile e lista -->
@@ -1524,34 +1520,6 @@
                         @endif
                 </div>
 
-                        {{-- Porta un amico / ospite (desktop) --}}
-                        @auth
-                            @if($userParticipating && $event->allow_guests)
-                                @php
-                                    $authCanAddMoreGuests = auth()->user()->isApproved() && $event->canAddMoreGuests(auth()->user());
-                                    $addGuestBlockReasonInvite = '';
-                                    if (!$authCanAddMoreGuests) {
-                                        if (!$event->isRegistrationOpen()) {
-                                            $addGuestBlockReasonInvite = 'Le iscrizioni a questo evento sono chiuse: non puoi aggiungere altri ospiti.';
-                                        } elseif ($event->isFull()) {
-                                            $addGuestBlockReasonInvite = 'L\'evento è al completo: non puoi aggiungere altri ospiti.';
-                                        } else {
-                                            $addGuestBlockReasonInvite = 'Hai raggiunto il limite di ospiti consentiti per questo evento.';
-                                        }
-                                    }
-                                @endphp
-                                <div class="mt-3 p-3 bg-light rounded event-invite-box d-none d-md-block">
-                                    <form action="{{ route('events.add-guest', $event) }}" method="POST" class="mb-0">
-                                        @csrf
-                                        <button type="submit" class="btn btn-success btn-sm w-100"
-                                                @if(!$authCanAddMoreGuests) disabled aria-disabled="true" @endif
-                                                title="{{ $authCanAddMoreGuests ? 'Aggiungi una riga ospite in elenco' : $addGuestBlockReasonInvite }}">
-                                            <i class="fas fa-user-plus"></i> Porta un amico
-                                        </button>
-                                    </form>
-                                </div>
-                            @endif
-                        @endauth
 
                         {{-- Informazioni ospiti --}}
                         {{-- Informazioni ospiti (solo se si vuole riattivare un testo esplicativo) --}}
@@ -1725,10 +1693,12 @@
             });
 
             // Se c'è un campo nominativo vuoto (appena aggiunto con "Porta un amico"),
-            // posiziona il cursore e applica il bordo verde
+            // posiziona il cursore e applica il bordo verde. La lista partecipanti
+            // esiste in due copie nel DOM (mobile/desktop, una delle due nascosta via
+            // CSS): consideriamo solo quella davvero visibile (offsetParent non nullo).
             var emptyGuestInput = null;
             guestNameInputs.forEach(function (input) {
-                if (input.value.trim() === '') {
+                if (input.value.trim() === '' && input.offsetParent !== null) {
                     emptyGuestInput = input;
                 }
             });
@@ -2378,8 +2348,6 @@
         /* Toglimi: bordo blu per evidenziarlo un po' di più rispetto agli altri due (sfondo rosso invariato) */
         .btn.event-btn-toglimi {
             border: 2px solid #0d6efd !important;
-            font-weight: 600;
-            font-size: 1.1rem !important;
         }
         .event-btn-toglimi-icon {
             color: #0dcaf0;
@@ -2419,6 +2387,23 @@
             font-size: 0.875rem !important;
             line-height: 1.5 !important;
             min-height: 2.125rem;
+            box-sizing: border-box;
+            display: inline-flex !important;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* "Annulla Adesione" e "Porta un amico": stessa riga, più stretti (non
+           riempiono la riga), stessa altezza del pulsante "Vedi Mappa". */
+        .event-participation-btns__item--compact {
+            flex: 0 0 auto !important;
+        }
+        .event-btn-compact-height {
+            padding: 0.22rem 0.5rem !important;
+            font-size: 0.88rem !important;
+            line-height: 1.2 !important;
+            min-height: 0 !important;
+            min-width: 10rem;
             box-sizing: border-box;
             display: inline-flex !important;
             align-items: center;

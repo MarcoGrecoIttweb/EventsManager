@@ -194,14 +194,24 @@
         }
         /* Pulsante guest: verde chiaro */
         .btn-guest-details {
-            background: #b7f3c2;
-            border-color: #7adf92;
-            color: #0f5132;
+            background: #198754;
+            border-color: #146c43;
+            color: #fff;
+            height: 1.8rem;
+            font-size: 0.85rem;
+            font-weight: 700;
+            padding: 0.25rem 0.6rem !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-guest-details i {
+            margin-right: 0.4rem;
         }
         .btn-guest-details:hover {
-            background: #a6eeb4;
-            border-color: #63d87f;
-            color: #0f5132;
+            background: #157347;
+            border-color: #0f5c39;
+            color: #fff;
         }
         /* Desktop (md+): navbar orizzontale */
         @media (min-width: 768px) {
