@@ -508,6 +508,14 @@
                                 <div class="modal-header">
                                     <h5 class="modal-title" id="homeParticipantsModalLabel{{ $event->getKey() }}">
                                         <i class="fas fa-users"></i> Iscritti all'evento
+                                        @php
+                                            $homeRealCount = $event->real_participants_count;
+                                            $homeGuestsCount = $event->participants_count - $homeRealCount;
+                                        @endphp
+                                        <span class="badge bg-secondary ms-1">
+                                            {{ $event->participants_count }} totali
+                                            ({{ $homeRealCount }} iscritti @if($homeGuestsCount > 0)+ {{ $homeGuestsCount }} {{ $homeGuestsCount === 1 ? 'ospite' : 'ospiti' }}@endif)
+                                        </span>
                                     </h5>
                                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
                                 </div>

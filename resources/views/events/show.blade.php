@@ -1017,7 +1017,7 @@
                                                                                value="{{ $nomeFormError ? old('nome', '') : '' }}"
                                                                                maxlength="120"
                                                                                autocomplete="name">
-                                                                        <button type="submit" class="btn btn-sm btn-outline-primary">
+                                                                        <button type="submit" class="btn btn-sm btn-success">
                                                                             Salva
                                                                         </button>
                                                                     </form>
@@ -1030,14 +1030,11 @@
                                                                         @endif
                                                                     @enderror
                                                                 </div>
-                                                                <form action="{{ route('events.remove-guest', $event) }}" method="POST" class="d-inline flex-shrink-0 align-self-center"
-                                                                      onsubmit="return confirm('Rimuovere questo amico dall\'elenco?');">
+                                                                <form action="{{ route('events.remove-guest', $event) }}" method="POST" class="d-inline flex-shrink-0 align-self-center event-guest-cancel-form">
                                                                     @csrf
                                                                     <input type="hidden" name="guest_index" value="{{ $gi }}">
-                                                                    <button type="submit" class="btn btn-sm btn-outline-danger"
-                                                                            title="Con il meno togli amico"
-                                                                            aria-label="Con il meno togli amico">
-                                                                        <i class="fas fa-user-minus" aria-hidden="true"></i>
+                                                                    <button type="submit" class="btn btn-sm event-btn-guest-cancel">
+                                                                        Annulla
                                                                     </button>
                                                                 </form>
                                                             </div>
@@ -1457,7 +1454,7 @@
                                                                                value="{{ $nomeFormError ? old('nome', '') : '' }}"
                                                                                maxlength="120"
                                                                                autocomplete="name">
-                                                                        <button type="submit" class="btn btn-sm btn-outline-primary">
+                                                                        <button type="submit" class="btn btn-sm btn-success">
                                                                             Salva
                                                                         </button>
                                                                     </form>
@@ -1470,14 +1467,11 @@
                                                                         @endif
                                                                     @enderror
                                                                 </div>
-                                                                <form action="{{ route('events.remove-guest', $event) }}" method="POST" class="d-inline flex-shrink-0 align-self-center"
-                                                                      onsubmit="return confirm('Rimuovere questo amico dall\'elenco?');">
+                                                                <form action="{{ route('events.remove-guest', $event) }}" method="POST" class="d-inline flex-shrink-0 align-self-center event-guest-cancel-form">
                                                                     @csrf
                                                                     <input type="hidden" name="guest_index" value="{{ $gi }}">
-                                                                    <button type="submit" class="btn btn-sm btn-outline-danger"
-                                                                            title="Con il meno togli amico"
-                                                                            aria-label="Con il meno togli amico">
-                                                                        <i class="fas fa-user-minus" aria-hidden="true"></i>
+                                                                    <button type="submit" class="btn btn-sm event-btn-guest-cancel">
+                                                                        Annulla
                                                                     </button>
                                                                 </form>
                                                             </div>
@@ -1709,6 +1703,17 @@
                     emptyGuestInput.focus();
                     emptyGuestInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }, 600);
+
+                // Finché il nome dell'amico non è stato inserito (o annullato), blocca
+                // il resto della pagina: resta accessibile solo il riquadro nome/Salva/Annulla.
+                var guestBlockPanel = emptyGuestInput.closest('.d-flex.align-items-start.gap-2.flex-wrap');
+                if (guestBlockPanel) {
+                    var guestBlockBackdrop = document.createElement('div');
+                    guestBlockBackdrop.className = 'event-guest-name-backdrop';
+                    document.body.appendChild(guestBlockBackdrop);
+                    document.body.classList.add('event-guest-name-locked');
+                    guestBlockPanel.classList.add('event-guest-name-panel-active');
+                }
             }
         });
     </script>
@@ -2714,6 +2719,36 @@
             font-weight: 600;
             margin-top: 0.25rem;
             display: none;
+        }
+
+        /* Blocca il resto della pagina finché non si inserisce il nome dell'amico
+           o si annulla: resta usabile solo il riquadro nome/Salva/Annulla. */
+        .event-guest-name-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.55);
+            z-index: 1050;
+        }
+        body.event-guest-name-locked {
+            overflow: hidden;
+        }
+        .event-guest-name-panel-active {
+            position: relative;
+            z-index: 1060;
+            background: #fff;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 0 0 3px #198754, 0 0.5rem 1.5rem rgba(0, 0, 0, 0.35);
+        }
+        .event-btn-guest-cancel {
+            background: #fff;
+            border: 1px solid #fd7e14;
+            color: #fd7e14;
+        }
+        .event-btn-guest-cancel:hover {
+            background: #fff3e6;
+            border-color: #e8590c;
+            color: #e8590c;
         }
     </style>
 @endsection
