@@ -1713,6 +1713,29 @@
                     document.body.appendChild(guestBlockBackdrop);
                     document.body.classList.add('event-guest-name-locked');
                     guestBlockPanel.classList.add('event-guest-name-panel-active');
+
+                    // Il blocco visivo impedisce i click, ma non la barra indirizzi, il
+                    // tasto Indietro o la chiusura della scheda: avvisa con il dialogo
+                    // nativo del browser se si prova a lasciare la pagina in questi modi.
+                    var guestNameUnloadGuard = function (e) {
+                        e.preventDefault();
+                        e.returnValue = '';
+                        return '';
+                    };
+                    window.addEventListener('beforeunload', guestNameUnloadGuard);
+
+                    var guestSaveForm = emptyGuestInput.closest('form');
+                    if (guestSaveForm) {
+                        guestSaveForm.addEventListener('submit', function () {
+                            window.removeEventListener('beforeunload', guestNameUnloadGuard);
+                        });
+                    }
+                    var guestCancelForm = guestBlockPanel.querySelector('.event-guest-cancel-form');
+                    if (guestCancelForm) {
+                        guestCancelForm.addEventListener('submit', function () {
+                            window.removeEventListener('beforeunload', guestNameUnloadGuard);
+                        });
+                    }
                 }
             }
         });
@@ -2722,19 +2745,23 @@
         }
 
         /* Blocca il resto della pagina finché non si inserisce il nome dell'amico
-           o si annulla: resta usabile solo il riquadro nome/Salva/Annulla. */
+           o si annulla: resta usabile solo il riquadro nome/Salva/Annulla.
+           z-index sopra al chatbot fluttuante (#excursio-chatbot, 9999). */
         .event-guest-name-backdrop {
             position: fixed;
             inset: 0;
             background: rgba(0, 0, 0, 0.55);
-            z-index: 1050;
+            z-index: 10000;
         }
         body.event-guest-name-locked {
             overflow: hidden;
         }
+        body.event-guest-name-locked #excursio-chatbot {
+            display: none !important;
+        }
         .event-guest-name-panel-active {
             position: relative;
-            z-index: 1060;
+            z-index: 10010;
             background: #fff;
             padding: 1rem;
             border-radius: 0.5rem;
