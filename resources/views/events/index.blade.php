@@ -349,9 +349,15 @@
                                                     @endif
                                                 </span>
                                             @endif
-                                            <button type="button" class="btn btn-guest-details btn-sm event-meta-badges__badge" data-bs-toggle="modal" data-bs-target="#homeParticipantsModal{{ $event->getKey() }}">
-                                                <i class="fas fa-users"></i> Lista iscritti
-                                            </button>
+                                            @auth
+                                                <button type="button" class="btn btn-guest-details btn-sm event-meta-badges__badge" data-bs-toggle="modal" data-bs-target="#homeParticipantsModal{{ $event->getKey() }}">
+                                                    <i class="fas fa-users"></i> Lista iscritti
+                                                </button>
+                                            @else
+                                                <a href="{{ route('login') }}" class="btn btn-guest-details btn-sm event-meta-badges__badge" data-hint="Accedi per vedere la lista degli iscritti">
+                                                    <i class="fas fa-lock"></i>
+                                                </a>
+                                            @endauth
                                         </div>
 
                                         @include('partials.event-public-preview', ['event' => $event, 'charLimit' => 100])
@@ -486,22 +492,20 @@
                                         @endauth
                                     </div>
 
-                                    <div class="card-footer bg-transparent mt-auto">
-                                        @auth
+                                    @auth
+                                        <div class="card-footer bg-transparent mt-auto">
                                             @include('partials.event-details-button', ['event' => $event])
-                                        @else
-                                            <a href="{{ route('login') }}" class="btn btn-guest-details w-100">
-                                                <i class="fas fa-lock"></i> Accedi ai dettagli
-                                            </a>
-                                        @endauth
-                                    </div>
+                                        </div>
+                                    @endauth
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     {{-- Modale fuori dalla card: un genitore con "transform" (hover della card)
-                         romperebbe il posizionamento "fixed" del modale Bootstrap. --}}
+                         romperebbe il posizionamento "fixed" del modale Bootstrap.
+                         Visibile solo agli utenti registrati (vedi pulsante che lo apre). --}}
+                    @auth
                     <div class="modal fade" id="homeParticipantsModal{{ $event->getKey() }}" tabindex="-1" aria-labelledby="homeParticipantsModalLabel{{ $event->getKey() }}" aria-hidden="true">
                         <div class="modal-dialog modal-dialog-scrollable">
                             <div class="modal-content">
@@ -566,6 +570,7 @@
                             </div>
                         </div>
                     </div>
+                    @endauth
                 @endforeach
             </div>
 
