@@ -397,14 +397,20 @@
                                                         @endif
                                                         {{-- Sotto "Porta un amico": per tutti gli utenti (e l'admin) --}}
                                                         @if($currentUserGuestsCount > 0)
-                                                            <div class="event-porti-guest-box event-btn-meta-height event-participation-grid__cell--bottom-left event-porti-guest-box--clickable"
-                                                                 role="button"
-                                                                 tabindex="0"
-                                                                 data-scroll-to-participant="{{ auth()->id() }}"
-                                                                 data-hint="Guarda gli amici che hai invitato">
-                                                                <span class="fw-semibold">Porti</span>
-                                                                <span class="ms-1">{{ $currentUserGuestsCount }}</span>
-                                                                <span class="ms-1">{{ $currentUserGuestsCount === 1 ? 'Ospite' : 'Ospiti' }}</span>
+                                                            <div class="d-flex gap-2 align-items-stretch event-participation-grid__cell--bottom-left">
+                                                                <div class="event-porti-guest-box event-btn-meta-height event-porti-guest-box--clickable flex-grow-1"
+                                                                     role="button"
+                                                                     tabindex="0"
+                                                                     data-scroll-to-participant="{{ auth()->id() }}"
+                                                                     data-hint="Guarda gli amici che hai invitato">
+                                                                    <span class="fw-semibold">Porti</span>
+                                                                    <span class="ms-1">{{ $currentUserGuestsCount }}</span>
+                                                                    <span class="ms-1">{{ $currentUserGuestsCount === 1 ? 'Ospite' : 'Ospiti' }}</span>
+                                                                </div>
+                                                                <a href="#eventForumBox" class="btn btn-primary btn-sm event-btn-compact-height"
+                                                                   data-hint="Vai al forum dell'evento">
+                                                                    <i class="fas fa-comments"></i> Forum
+                                                                </a>
                                                             </div>
                                                         @endif
                                                         {{-- Sotto "Annulla Adesione": solo per l'admin --}}
@@ -1085,7 +1091,7 @@
                 </div>
 
             <!-- Forum evento: titolo (maiuscolo) + badge + pulsante Forum Commenti; sotto form collassabile e lista -->
-                <div class="card mt-4 event-forum-box">
+                <div class="card mt-4 event-forum-box" id="eventForumBox">
                     <div class="card-header py-2 d-flex flex-nowrap align-items-center justify-content-between gap-2 gap-md-3">
                         <h5 class="mb-0 text-truncate min-w-0 flex-grow-1">
                             <i class="fas fa-comments"></i> FORUM DELL'EVENTO
