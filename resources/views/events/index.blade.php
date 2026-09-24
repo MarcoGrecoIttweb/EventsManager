@@ -532,7 +532,7 @@
                                                     $homeOspitiEntries = \App\Support\OspitiGuestStore::decode($participant->pivot->ospiti_inseriti_il ?? null);
                                                 @endphp
                                                 <li class="list-group-item">
-                                                    <div class="d-flex align-items-center gap-2">
+                                                    <a href="{{ route('profile.show', $participant) }}" class="d-flex align-items-center gap-2 text-decoration-none">
                                                         @if($participant->photo_url)
                                                             <img src="{{ $participant->photo_url }}"
                                                                  alt="{{ $participant->nickname }}"
@@ -542,14 +542,14 @@
                                                             <i class="fas fa-user"></i>
                                                         @endif
                                                         <span class="fw-semibold">{{ $participant->nickname }}</span>
-                                                    </div>
+                                                    </a>
                                                     @if($homeHasGuests)
-                                                        <ul class="list-unstyled small text-muted mt-1 mb-0 ps-4">
+                                                        <ul class="list-unstyled small mt-1 mb-0 ps-4">
                                                             @for($hgi = 0; $hgi < (int) $participant->pivot->amici; $hgi++)
                                                                 @php $homeGNome = $homeOspitiEntries[$hgi]['nome'] ?? ''; @endphp
                                                                 <li>
-                                                                    <i class="fas fa-user-friends"></i>
-                                                                    {{ $homeGNome !== '' ? $homeGNome : 'Ospite' }}
+                                                                    <i class="fas fa-user-friends text-success"></i>
+                                                                    <span class="text-primary">{{ $homeGNome !== '' ? $homeGNome : 'Ospite' }}</span>
                                                                 </li>
                                                             @endfor
                                                         </ul>
@@ -562,7 +562,7 @@
                                     @endif
                                 </div>
                                 <div class="modal-footer">
-                                    <a href="{{ route('events.show', $event) }}" class="btn btn-outline-primary btn-sm">
+                                    <a href="{{ route('events.show', $event) }}" class="btn btn-success btn-sm">
                                         <i class="fas fa-external-link-alt"></i> Apri pagina evento
                                     </a>
                                     <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Chiudi</button>

@@ -245,11 +245,11 @@ class EventManageController extends Controller
         }
 
         if ($wasPastEvent && $newDate->gt(now())) {
+            // Solo se la scadenza non è un valore valido usiamo la data evento come
+            // fallback: se l'organizzatore ha scelto deliberatamente una scadenza
+            // passata, va rispettata e non sovrascritta.
             try {
-                $deadlineAt = \Carbon\Carbon::parse($updateData['datascadenza']);
-                if ($deadlineAt->lte(now())) {
-                    $updateData['datascadenza'] = $newDate->format('Y-m-d H:i:s');
-                }
+                \Carbon\Carbon::parse($updateData['datascadenza']);
             } catch (\Throwable $e) {
                 $updateData['datascadenza'] = $newDate->format('Y-m-d H:i:s');
             }

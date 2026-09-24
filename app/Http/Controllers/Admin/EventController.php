@@ -575,11 +575,11 @@ class EventController extends Controller
         $republishOnHome = $newDate->gt(now()) && ($isActive || $wasPastEvent || $datePostponed);
         if ($republishOnHome) {
             $updateData['pubblicato'] = 1;
+            // Solo se non è stata indicata una scadenza valida usiamo la data evento come
+            // fallback: se l'admin ha scelto deliberatamente una scadenza passata (es. per
+            // chiudere subito le iscrizioni), va rispettata e non sovrascritta.
             try {
-                $deadlineAt = \Carbon\Carbon::parse($updateData['datascadenza']);
-                if ($deadlineAt->lte(now())) {
-                    $updateData['datascadenza'] = $newDate->format('Y-m-d H:i:s');
-                }
+                \Carbon\Carbon::parse($updateData['datascadenza']);
             } catch (\Throwable $e) {
                 $updateData['datascadenza'] = $newDate->format('Y-m-d H:i:s');
             }
