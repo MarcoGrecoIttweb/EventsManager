@@ -361,7 +361,7 @@
                                                     }
                                                 @endphp
                                                 <div class="d-flex justify-content-end">
-                                                    <div class="d-flex flex-nowrap gap-2 align-items-stretch event-participation-btns event-participation-btns--toglimi">
+                                                    <div class="event-participation-grid event-participation-btns event-participation-btns--toglimi">
                                                         @if($event->allow_guests)
                                                             @php
                                                                 $authCanAddMoreGuestsTop = auth()->user()->isApproved() && $event->canAddMoreGuests(auth()->user());
@@ -376,9 +376,9 @@
                                                                     }
                                                                 }
                                                             @endphp
-                                                            <form action="{{ route('events.add-guest', $event) }}" method="POST" class="mb-0 d-flex align-items-stretch event-participation-btns__item--compact">
+                                                            <form action="{{ route('events.add-guest', $event) }}" method="POST" class="mb-0 d-flex align-items-stretch event-participation-grid__cell--top-left">
                                                                 @csrf
-                                                                <button type="submit" class="btn btn-success btn-sm event-btn-compact-height"
+                                                                <button type="submit" class="btn btn-success btn-sm event-btn-compact-height w-100"
                                                                         @if(!$authCanAddMoreGuestsTop) disabled aria-disabled="true" @endif
                                                                         data-hint="Clicca se vuoi invitare un amico."
                                                                         title="{{ $authCanAddMoreGuestsTop ? 'Aggiungi una riga ospite in elenco' : $addGuestBlockReasonTop }}">
@@ -387,29 +387,34 @@
                                                             </form>
                                                         @endif
                                                         @if(!$event->is_past_event)
-                                                            <form action="{{ route('events.cancel', $event) }}" method="POST" class="mb-0 d-flex align-items-stretch event-participation-btns__item--compact">
+                                                            <form action="{{ route('events.cancel', $event) }}" method="POST" class="mb-0 d-flex align-items-stretch event-participation-grid__cell--top-right">
                                                                 @csrf
-                                                                <button type="submit" class="btn btn-danger btn-sm event-btn-compact-height event-btn-toglimi"
+                                                                <button type="submit" class="btn btn-danger btn-sm event-btn-compact-height event-btn-toglimi w-100"
                                                                         data-hint="Mi cancello da questo evento.">
                                                                     Annulla Adesione <i class="fas fa-rotate-left event-btn-toglimi-icon"></i>
                                                                 </button>
                                                             </form>
                                                         @endif
-                                                        @if($canSendEventComms)
-                                                            <button type="button"
-                                                                    class="btn btn-success btn-sm event-btn-participate-map-height event-btn-meta-height btn-border-brown"
-                                                                    data-bs-toggle="modal"
-                                                                    data-bs-target="#{{ $eventCommsModalId }}">
-                                                                <i class="fas fa-bullhorn"></i> Comunicazioni
-                                                            </button>
-                                                        @endif
-                                                            {{-- Lista partecipanti sempre visibile --}}
+                                                        {{-- Sotto "Porta un amico": per tutti gli utenti (e l'admin) --}}
                                                         @if($currentUserGuestsCount > 0)
-                                                            <div class="event-porti-guest-box event-btn-meta-height" role="status">
+                                                            <div class="event-porti-guest-box event-btn-meta-height event-participation-grid__cell--bottom-left event-porti-guest-box--clickable"
+                                                                 role="button"
+                                                                 tabindex="0"
+                                                                 data-scroll-to-participant="{{ auth()->id() }}"
+                                                                 data-hint="Guarda gli amici che hai invitato">
                                                                 <span class="fw-semibold">Porti</span>
                                                                 <span class="ms-1">{{ $currentUserGuestsCount }}</span>
                                                                 <span class="ms-1">{{ $currentUserGuestsCount === 1 ? 'Ospite' : 'Ospiti' }}</span>
                                                             </div>
+                                                        @endif
+                                                        {{-- Sotto "Annulla Adesione": solo per l'admin --}}
+                                                        @if($canSendEventComms)
+                                                            <button type="button"
+                                                                    class="btn btn-success btn-sm event-btn-participate-map-height event-btn-meta-height btn-border-brown event-participation-grid__cell--bottom-right"
+                                                                    data-bs-toggle="modal"
+                                                                    data-bs-target="#{{ $eventCommsModalId }}">
+                                                                <i class="fas fa-bullhorn"></i> Comunicazioni
+                                                            </button>
                                                         @endif
                                                     </div>
                                                 </div>
@@ -1738,6 +1743,39 @@
                     }
                 }
             }
+
+            // "Porti X Ospiti": al click, scorre fino alla propria riga nell'elenco
+            // iscritti (dove sono elencati i nomi degli amici portati). La riga esiste
+            // in due copie nel DOM (mobile/desktop): si sceglie quella visibile.
+            document.querySelectorAll('[data-scroll-to-participant]').forEach(function (el) {
+                function goToMyGuests() {
+                    var userId = el.getAttribute('data-scroll-to-participant');
+                    var candidates = [
+                        document.getElementById('participant-mobile-' + userId),
+                        document.getElementById('participant-' + userId)
+                    ];
+                    var target = null;
+                    candidates.forEach(function (candidate) {
+                        if (candidate && candidate.offsetParent !== null) {
+                            target = candidate;
+                        }
+                    });
+                    if (target) {
+                        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        target.classList.add('event-guest-name-panel-active');
+                        setTimeout(function () {
+                            target.classList.remove('event-guest-name-panel-active');
+                        }, 1800);
+                    }
+                }
+                el.addEventListener('click', goToMyGuests);
+                el.addEventListener('keydown', function (e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        goToMyGuests();
+                    }
+                });
+            });
         });
     </script>
 
@@ -2393,6 +2431,12 @@
             border-radius: 0.375rem;
             white-space: nowrap;
         }
+        .event-porti-guest-box--clickable {
+            cursor: pointer;
+        }
+        .event-porti-guest-box--clickable:hover {
+            background-color: #c82333;
+        }
 
         /* Avviso: lista partecipanti nascosta */
         .event-participants-hidden-note {
@@ -2431,11 +2475,35 @@
             font-size: 0.88rem !important;
             line-height: 1.2 !important;
             min-height: 0 !important;
-            min-width: 10rem;
             box-sizing: border-box;
             display: inline-flex !important;
             align-items: center;
             justify-content: center;
+        }
+
+        /* Griglia 2x2: Porta un amico | Annulla Adesione in alto, Porti Ospiti
+           (tutti) | Comunicazioni (solo admin) sotto, ciascuno nella propria
+           colonna fissa cosi' la posizione non cambia se manca l'altro. */
+        .event-participation-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+        }
+        .event-participation-grid__cell--top-left {
+            grid-column: 1;
+            grid-row: 1;
+        }
+        .event-participation-grid__cell--top-right {
+            grid-column: 2;
+            grid-row: 1;
+        }
+        .event-participation-grid__cell--bottom-left {
+            grid-column: 1;
+            grid-row: 2;
+        }
+        .event-participation-grid__cell--bottom-right {
+            grid-column: 2;
+            grid-row: 2;
         }
 
         .highlight-comment {
