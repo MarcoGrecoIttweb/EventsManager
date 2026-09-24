@@ -39,7 +39,7 @@
     @php
         $eventProfileBackQuery = http_build_query(['return' => route('events.show', $event)]);
     @endphp
-    <div class="container">
+    <div class="container" id="eventTop">
         <div class="mb-3 d-flex flex-wrap align-items-stretch gap-2">
             <a href="{{ route('home') }}" class="btn btn-outline-primary btn-sm d-inline-flex align-items-center">
                 <i class="fas fa-arrow-left"></i> Torna alla home
@@ -395,28 +395,27 @@
                                                                 </button>
                                                             </form>
                                                         @endif
-                                                        {{-- Sotto "Porta un amico": per tutti gli utenti (e l'admin) --}}
+                                                        {{-- Sotto "Porta un amico": per tutti gli utenti (e l'admin), stessa larghezza --}}
                                                         @if($currentUserGuestsCount > 0)
-                                                            <div class="d-flex gap-2 align-items-stretch event-participation-grid__cell--bottom-left">
-                                                                <div class="event-porti-guest-box event-btn-meta-height event-porti-guest-box--clickable flex-grow-1"
-                                                                     role="button"
-                                                                     tabindex="0"
-                                                                     data-scroll-to-participant="{{ auth()->id() }}"
-                                                                     data-hint="Guarda gli amici che hai invitato">
-                                                                    <span class="fw-semibold">Porti</span>
-                                                                    <span class="ms-1">{{ $currentUserGuestsCount }}</span>
-                                                                    <span class="ms-1">{{ $currentUserGuestsCount === 1 ? 'Ospite' : 'Ospiti' }}</span>
-                                                                </div>
-                                                                <a href="#eventForumBox" class="btn btn-primary btn-sm event-btn-compact-height"
-                                                                   data-hint="Vai al forum dell'evento">
-                                                                    <i class="fas fa-comments"></i> Forum
-                                                                </a>
+                                                            <div class="event-porti-guest-box event-btn-meta-height event-porti-guest-box--clickable event-participation-grid__cell--row2-left"
+                                                                 role="button"
+                                                                 tabindex="0"
+                                                                 data-scroll-to-participant="{{ auth()->id() }}"
+                                                                 data-hint="Guarda gli amici che hai invitato">
+                                                                <span class="fw-semibold">Porti</span>
+                                                                <span class="ms-1">{{ $currentUserGuestsCount }}</span>
+                                                                <span class="ms-1">{{ $currentUserGuestsCount === 1 ? 'Ospite' : 'Ospiti' }}</span>
                                                             </div>
+                                                            {{-- Sotto "Annulla Adesione": stessa larghezza --}}
+                                                            <a href="#eventForumBox" class="btn btn-primary btn-sm event-btn-compact-height event-participation-grid__cell--row2-right"
+                                                               data-hint="Vai al forum dell'evento">
+                                                                <i class="fas fa-comments"></i> Forum
+                                                            </a>
                                                         @endif
-                                                        {{-- Sotto "Annulla Adesione": solo per l'admin --}}
+                                                        {{-- Solo per l'admin, una riga più sotto --}}
                                                         @if($canSendEventComms)
                                                             <button type="button"
-                                                                    class="btn btn-success btn-sm event-btn-participate-map-height event-btn-meta-height btn-border-brown event-participation-grid__cell--bottom-right"
+                                                                    class="btn btn-success btn-sm event-btn-participate-map-height event-btn-meta-height btn-border-brown event-participation-grid__cell--row3-right"
                                                                     data-bs-toggle="modal"
                                                                     data-bs-target="#{{ $eventCommsModalId }}">
                                                                 <i class="fas fa-bullhorn"></i> Comunicazioni
@@ -970,6 +969,9 @@
                                                 @if($currentUserIsParticipant)
                                                     <span class="badge bg-primary ms-1">Tu</span>
                                                 @endif
+                                                @if((int) $participant->getKey() === (int) $event->id_organizzatore)
+                                                    <span class="badge bg-warning text-dark ms-1"><i class="fas fa-crown"></i> Organizzatore</span>
+                                                @endif
                                             </div>
                                             @auth
                                                 @if($currentUserIsParticipant)
@@ -1097,16 +1099,6 @@
                             <i class="fas fa-comments"></i> FORUM DELL'EVENTO
                             <span class="badge bg-primary">{{ $comments->count() }}</span>
                         </h5>
-                        @auth
-                            @if(auth()->user()->isApproved())
-                                <button class="btn btn-success btn-sm flex-shrink-0 text-nowrap" type="button"
-                                        data-bs-toggle="collapse" data-bs-target="#eventCommentCollapse"
-                                        data-hint="Inserisci commento o messaggio relativo a questo evento"
-                                        aria-expanded="false" aria-controls="eventCommentCollapse">
-                                    <i class="fas fa-comment-dots me-1"></i> Inserisci Commento
-                                </button>
-                            @endif
-                        @endauth
                     </div>
                     @auth
                         @if(auth()->user()->isApproved())
@@ -1125,14 +1117,14 @@
                                             </small>
                                             <div class="d-flex gap-2">
                                                 <button type="button"
-                                                        class="btn btn-outline-secondary"
+                                                        class="btn btn-secondary btn-sm event-forum-footer-btn rounded-pill"
                                                         data-bs-toggle="collapse"
                                                         data-bs-target="#eventCommentCollapse"
                                                         aria-expanded="true"
                                                         aria-controls="eventCommentCollapse">
-                                                    Chiudi
+                                                    <i class="fas fa-times"></i> Chiudi
                                                 </button>
-                                                <button type="submit" class="btn btn-primary">
+                                                <button type="submit" class="btn btn-primary btn-sm rounded-pill">
                                                     <i class="fas fa-paper-plane"></i> Invia Commento
                                                 </button>
                                             </div>
@@ -1270,28 +1262,33 @@
                             <p class="text-muted">Nessun commento ancora. Sii il primo a commentare!</p>
                         @endif
                     </div>
+                    <div class="card-footer py-2 d-flex flex-wrap justify-content-end gap-2">
+                        <a href="#eventTop" class="btn btn-secondary btn-sm event-forum-footer-btn rounded-pill" data-hint="Torna all'inizio della pagina">
+                            <i class="fas fa-arrow-up"></i> Torna in alto
+                        </a>
+                        @auth
+                            @if(auth()->user()->isApproved())
+                                <button class="btn btn-success btn-sm event-forum-footer-btn rounded-pill" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#eventCommentCollapse"
+                                        data-hint="Inserisci commento o messaggio relativo a questo evento"
+                                        aria-expanded="false" aria-controls="eventCommentCollapse">
+                                    <i class="fas fa-comment-dots me-1"></i> Inserisci Commento
+                                </button>
+                            @endif
+                        @endauth
+                    </div>
                 </div>
             </div>
 
             <div class="col-md-4">
-                <!-- Organizzatore: in alto sulla destra, sopra Partecipanti -->
-                <div class="card mb-3 event-organizer-box">
-                    <div class="card-header py-2 event-organizer-box__title">
-                        <h5 class="mb-0"><i class="fas fa-user"></i> Organizzatore</h5>
-                    </div>
-                    <div class="card-body py-2">
-                        <p class="mb-0">
-                            <i class="fas fa-user"></i>
-                            @if($event->user)
-                                <a href="{{ route('profile.show', $event->user) }}?{{ $eventProfileBackQuery }}">
-                                    {{ $event->user->nickname }}
-                                </a>
-                            @else
-                                <span class="text-muted">Utente cancellato</span>
-                            @endif
-                        </p>
-                        @if(auth()->check() && auth()->user()->isAdmin())
-                            <p class="mb-0 mt-1 small text-muted">
+                @if(auth()->check() && auth()->user()->isAdmin())
+                    <!-- Visite pagina (solo admin): il nome dell'organizzatore è ora nell'elenco iscritti -->
+                    <div class="card mb-3 event-organizer-box">
+                        <div class="card-header py-2 event-organizer-box__title">
+                            <h5 class="mb-0"><i class="fas fa-eye"></i> Visite pagina</h5>
+                        </div>
+                        <div class="card-body py-2">
+                            <p class="mb-0 small text-muted">
                                 <i class="fas fa-eye"></i> Visite:
                                 <a href="#" class="text-decoration-underline" role="button"
                                    data-bs-toggle="collapse" data-bs-target="#eventVisitorsList"
@@ -1318,9 +1315,9 @@
                                     <p class="small text-muted mb-0">Nessuna visita registrata ancora.</p>
                                 @endif
                             </div>
-                        @endif
+                        </div>
                     </div>
-                </div>
+                @endif
 
                 @if(isset($waitlistEntries) && is_iterable($waitlistEntries) && count($waitlistEntries) > 0)
                     <div class="card mb-3 event-waitlist-side">
@@ -1406,6 +1403,9 @@
                                                 {{-- rimosso il badge verde "+1" ospiti su richiesta --}}
                                                 @if($currentUserIsParticipant)
                                                     <span class="badge bg-primary ms-1">Tu</span>
+                                                @endif
+                                                @if((int) $participant->getKey() === (int) $event->id_organizzatore)
+                                                    <span class="badge bg-warning text-dark ms-1"><i class="fas fa-crown"></i> Organizzatore</span>
                                                 @endif
                                             </div>
                                             @auth
@@ -2503,13 +2503,17 @@
             grid-column: 2;
             grid-row: 1;
         }
-        .event-participation-grid__cell--bottom-left {
+        .event-participation-grid__cell--row2-left {
             grid-column: 1;
             grid-row: 2;
         }
-        .event-participation-grid__cell--bottom-right {
+        .event-participation-grid__cell--row2-right {
             grid-column: 2;
             grid-row: 2;
+        }
+        .event-participation-grid__cell--row3-right {
+            grid-column: 2;
+            grid-row: 3;
         }
 
         .highlight-comment {
@@ -2612,6 +2616,26 @@
         }
         .event-forum-box {
             border: 2px solid #0d6efd !important;
+        }
+        /* "Torna in alto", "Inserisci Commento" e "Chiudi": stessa altezza e larghezza */
+        .event-forum-footer-btn {
+            min-width: 11rem;
+            height: 2.125rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .event-forum-footer-btn i {
+            margin-right: 0.4rem;
+        }
+        /* Grigio piu' chiaro per "Torna in alto" e "Chiudi" */
+        .btn-secondary.event-forum-footer-btn {
+            background-color: #6c757d;
+            border-color: #5c636a;
+        }
+        .btn-secondary.event-forum-footer-btn:hover {
+            background-color: #5c636a;
+            border-color: #495057;
         }
         /* Solo HTML prodotto dall’editor (CKEditor): interlinea e margini tra righe/paragrafi */
         .event-forum-box .comment-content {
