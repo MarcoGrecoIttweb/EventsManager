@@ -41,7 +41,10 @@
     @endphp
     <div class="container" id="eventTop">
         <div class="mb-3 d-flex flex-wrap align-items-stretch gap-2">
-            <a href="{{ route('home') }}" class="btn btn-outline-primary btn-sm d-inline-flex align-items-center">
+            <button type="button" class="btn btn-guest-details btn-sm" id="btnScrollToParticipants" style="border-radius: 0.6rem;" data-hint="Vai all'elenco degli iscritti">
+                <i class="fas fa-users"></i> Lista Iscritti
+            </button>
+            <a href="{{ route('home') }}" class="btn btn-guest-details btn-sm" style="border-radius: 0.6rem; background-color: #6c757d; border-color: #5c636a;">
                 <i class="fas fa-arrow-left"></i> Torna alla home
             </a>
 
@@ -395,7 +398,7 @@
                                                                 </button>
                                                             </form>
                                                         @endif
-                                                        {{-- Sotto "Porta un amico": per tutti gli utenti (e l'admin), stessa larghezza --}}
+                                                        {{-- Sotto "Porta un amico": solo se ci sono ospiti da mostrare --}}
                                                         @if($currentUserGuestsCount > 0)
                                                             <div class="event-porti-guest-box event-btn-meta-height event-porti-guest-box--clickable event-participation-grid__cell--row2-left"
                                                                  role="button"
@@ -406,12 +409,12 @@
                                                                 <span class="ms-1">{{ $currentUserGuestsCount }}</span>
                                                                 <span class="ms-1">{{ $currentUserGuestsCount === 1 ? 'Ospite' : 'Ospiti' }}</span>
                                                             </div>
-                                                            {{-- Sotto "Annulla Adesione": stessa larghezza --}}
-                                                            <a href="#eventForumBox" class="btn btn-primary btn-sm event-btn-compact-height event-participation-grid__cell--row2-right"
-                                                               data-hint="Vai al forum dell'evento">
-                                                                <i class="fas fa-comments"></i> Forum
-                                                            </a>
                                                         @endif
+                                                        {{-- Sotto "Annulla Adesione": per tutti gli iscritti, non solo chi porta ospiti --}}
+                                                        <a href="#eventForumBox" class="btn btn-primary btn-sm event-btn-compact-height event-participation-grid__cell--row2-right"
+                                                           data-hint="Vai al forum dell'evento">
+                                                            <i class="fas fa-comments"></i> Forum
+                                                        </a>
                                                         {{-- Solo per l'admin, una riga più sotto --}}
                                                         @if($canSendEventComms)
                                                             <button type="button"
@@ -922,7 +925,7 @@
                 {{-- Smartphone: sposta Partecipanti + Invita un amico sopra il forum --}}
                 <div class="d-block d-md-none mt-3">
                     <!-- Partecipanti (mobile) -->
-                    <div class="event-participants-box mb-3">
+                    <div class="event-participants-box mb-3" id="eventParticipantsBoxMobile">
                         <h5 class="mb-2">
                             <i class="fas fa-users"></i> Iscritti all'evento
                             <span class="badge rounded-pill text-white event-show-part-pill--hint {{ $event->isFull() ? 'bg-danger' : 'bg-secondary' }} {{ $eventMetaPostiGapBlink ? 'event-show-part-pill--gap' : '' }}"
@@ -1262,10 +1265,7 @@
                             <p class="text-muted">Nessun commento ancora. Sii il primo a commentare!</p>
                         @endif
                     </div>
-                    <div class="card-footer py-2 d-flex flex-wrap justify-content-end gap-2">
-                        <a href="#eventTop" class="btn btn-secondary btn-sm event-forum-footer-btn rounded-pill" data-hint="Torna all'inizio della pagina">
-                            <i class="fas fa-arrow-up"></i> Torna in alto
-                        </a>
+                    <div class="card-footer py-2 d-flex flex-nowrap justify-content-end gap-2">
                         @auth
                             @if(auth()->user()->isApproved())
                                 <button class="btn btn-success btn-sm event-forum-footer-btn rounded-pill" type="button"
@@ -1276,6 +1276,9 @@
                                 </button>
                             @endif
                         @endauth
+                        <button type="button" id="btnScrollToPageTop" class="btn btn-secondary btn-sm event-forum-footer-btn rounded-pill" data-hint="Torna all'inizio della pagina">
+                            <i class="fas fa-arrow-up"></i> Torna in alto
+                        </button>
                     </div>
                 </div>
             </div>
@@ -1355,7 +1358,7 @@
                 @endif
 
                 <!-- Partecipanti -->
-                <div class="event-participants-box mb-3 d-none d-md-block">
+                <div class="event-participants-box mb-3 d-none d-md-block" id="eventParticipantsBoxDesktop">
                 <h5 class="mb-2">
                     <i class="fas fa-users"></i> Iscritti all'evento
                     <span class="badge rounded-pill text-white event-show-part-pill--hint {{ $event->isFull() ? 'bg-danger' : 'bg-secondary' }} {{ $eventMetaPostiGapBlink ? 'event-show-part-pill--gap' : '' }}"
@@ -1782,6 +1785,36 @@
                     }
                 });
             });
+
+            // "Elenco Iscritti": scorre alla lista iscritti visibile (mobile o desktop).
+            var btnScrollToParticipants = document.getElementById('btnScrollToParticipants');
+            if (btnScrollToParticipants) {
+                btnScrollToParticipants.addEventListener('click', function () {
+                    var candidates = [
+                        document.getElementById('eventParticipantsBoxMobile'),
+                        document.getElementById('eventParticipantsBoxDesktop')
+                    ];
+                    var target = null;
+                    candidates.forEach(function (candidate) {
+                        if (candidate && candidate.offsetParent !== null) {
+                            target = candidate;
+                        }
+                    });
+                    if (target) {
+                        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                });
+            }
+
+            // "Torna in alto": scorre fino all'inizio assoluto della pagina (non solo
+            // all'inizio del contenuto), cosi' su smartphone tornano visibili anche
+            // "Utenti online" e "I miei Eventi Attivi" della sidebar, che la precedono.
+            var btnScrollToPageTop = document.getElementById('btnScrollToPageTop');
+            if (btnScrollToPageTop) {
+                btnScrollToPageTop.addEventListener('click', function () {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
+            }
         });
     </script>
 
@@ -2624,6 +2657,15 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
+        }
+        /* Nel footer del forum (Inserisci Commento + Torna in alto): sempre sulla
+           stessa riga, larghezza condivisa invece di un minimo fisso che le
+           farebbe andare a capo sugli schermi stretti. */
+        .card-footer .event-forum-footer-btn {
+            flex: 1 1 0;
+            min-width: 0;
+            height: auto;
+            min-height: 2.125rem;
         }
         .event-forum-footer-btn i {
             margin-right: 0.4rem;
