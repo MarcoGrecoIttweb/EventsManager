@@ -172,6 +172,11 @@
             .sidebar-guest-participate--sidebar {
                 display: none;
             }
+            /* "Ultimi accessi" in sidebar: solo su PC. Su smartphone i guest lo
+               vedono gia' accanto alla galleria in home. */
+            .sidebar-recent-access-desktop-only {
+                display: none;
+            }
         }
 
         /* Elenco eventi (card griglia): bordo cyan/azzurro + anello bianco — mobile e desktop */
@@ -622,6 +627,13 @@
                  perche' viene mostrato accanto alla galleria fotografica (vedi events/index). --}}
             <div class="sidebar-mobile-row__item sidebar-mobile-row__item--online @guest sidebar-online-box--guest @endguest">
                 @include('partials.online-users-box')
+            </div>
+
+            {{-- Ultimi accessi: solo su PC (su smartphone, per i guest compare gia'
+                 accanto alla galleria in home; per gli utenti loggati non c'e' ancora
+                 spazio dedicato nella riga a 3 box). --}}
+            <div class="sidebar-recent-access-desktop-only">
+                @include('partials.recent-access-box')
             </div>
 
             {{-- Contenuti opzionali sotto "Utenti online" (es. homepage stats) --}}

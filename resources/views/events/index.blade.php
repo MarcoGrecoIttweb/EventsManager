@@ -683,6 +683,11 @@
                i due box non la spostano. */
             .home-slideshow-row {
                 position: relative;
+                /* I box laterali sono "position: absolute" e non contano per l'altezza
+                   della riga: senza un minimo esplicito, se sono piu' alti della
+                   galleria (es. con piu' box impilati) finiscono per coprire il
+                   contenuto sottostante (titolo "Eventi in programma"). */
+                min-height: 210px;
             }
             .home-slideshow-row__online,
             .home-slideshow-row__participate {

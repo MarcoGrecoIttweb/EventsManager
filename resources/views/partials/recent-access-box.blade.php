@@ -15,7 +15,7 @@
                     ->groupBy('user_login_events.user_id', 'utente.username')
                     ->selectRaw('user_login_events.user_id as userID, utente.username as nickname, MAX(user_login_events.logged_in_at) as last_login')
                     ->orderByDesc('last_login')
-                    ->limit(30)
+                    ->limit(5)
                     ->get();
             } catch (\Illuminate\Database\QueryException $e) {
                 $recentAccessUsers = collect();
