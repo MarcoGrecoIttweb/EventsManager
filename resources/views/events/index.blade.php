@@ -194,9 +194,11 @@
                      della galleria, "Non sei registrato..." a destra --}}
                 <div class="home-slideshow-row__online d-md-none">
                     @include('partials.online-users-box')
+                    @include('partials.guest-participate-box', ['idSuffix' => 'Gallery'])
                 </div>
                 <div class="home-slideshow-row__participate d-md-none">
-                    @include('partials.guest-participate-box', ['idSuffix' => 'Gallery'])
+                    @include('partials.recent-access-box')
+                    @include('partials.gallery-placeholder-box')
                 </div>
             @endguest
             <div class="home-slideshow-wrap mb-4 mx-auto" style="max-width:1200px;">
@@ -699,14 +701,35 @@
             .home-slideshow-row__participate .card {
                 margin-bottom: 0.35rem !important;
                 font-size: 0.7rem;
+                border: 2px solid #198754 !important;
             }
             .home-slideshow-row__online .card:last-child,
             .home-slideshow-row__participate .card:last-child {
                 margin-bottom: 0 !important;
             }
-            .home-slideshow-row__online .card-body {
+            .home-slideshow-row__online .card-body,
+            .home-slideshow-row__participate .card-body {
                 height: 60px !important;
                 padding: 0.35rem !important;
+            }
+            /* Titoli e nickname troppo grandi per il riquadro stretto: dimensioni
+               ridotte, forzate con !important perche' altrove sono definite regole
+               globali con valori assoluti piu' grandi per il contesto sidebar. */
+            .home-slideshow-row__online .card-header small,
+            .home-slideshow-row__participate .card-header small {
+                font-size: 0.65rem !important;
+            }
+            .home-slideshow-row__online .online-user-row .small,
+            .home-slideshow-row__participate .online-user-row .small {
+                font-size: 0.62rem !important;
+            }
+            .home-slideshow-row__online .online-user-row .small a,
+            .home-slideshow-row__participate .online-user-row .small a {
+                display: block;
+                max-width: 100%;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
             }
         }
 

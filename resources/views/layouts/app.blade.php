@@ -1442,5 +1442,10 @@ document.addEventListener('DOMContentLoaded', function () {
     @include('partials.event-details-greeting')
 @endauth
 
+{{-- Modali "pushati" qui per evitare che restino intrappolati in contenitori
+     con position/transform particolari (es. box accanto alla galleria in home),
+     che romperebbero il posizionamento "fixed" di Bootstrap. --}}
+@stack('modals')
+
 </body>
 </html>
