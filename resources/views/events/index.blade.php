@@ -288,11 +288,11 @@
                                             @if($event->isFull())
                                                 <div class="position-absolute top-0 start-0 m-2 d-flex flex-column align-items-start gap-1">
                                                     <span class="badge bg-danger">
-                                                        <i class="fas fa-lock"></i> Completo
+                                                        <i class="fas fa-lock"></i> COMPLETO &mdash; {{ $event->participants_count }}/{{ $event->max_participants }} ADESIONI
                                                     </span>
                                                     @if(!$event->is_past_event)
                                                         <span class="badge bg-warning text-dark">
-                                                            <i class="fas fa-hourglass-half"></i> Lista d'attesa aperta
+                                                            <i class="fas fa-hourglass-half"></i> APERTA LISTA RISERVA
                                                         </span>
                                                     @endif
                                                 </div>
