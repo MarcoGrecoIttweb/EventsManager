@@ -270,7 +270,10 @@
                             @if($event->isFull())
                                 <div class="card-header event-full-banner text-white text-center py-2">
                                     <span class="event-full-banner__blink">
-                                        <i class="fas fa-ban"></i> COMPLETO &mdash; {{ $event->participants_count }}@if($event->max_participants)/{{ (int)$event->max_participants }}@endif Adesioni &mdash; <i class="fas fa-clipboard-list"></i> Aperta Lista Riserva
+                                        <i class="fas fa-ban"></i> Completo &mdash; {{ $event->participants_count }}@if($event->max_participants)/{{ (int)$event->max_participants }}@endif Adesioni
+                                    </span>
+                                    <span class="event-full-banner__blink event-full-banner__blink--line2">
+                                        <i class="fas fa-clipboard-list"></i> Aperta Lista Riserva
                                     </span>
                                 </div>
                             @endif
@@ -286,15 +289,10 @@
                                                  alt="{{ $event->title }}"
                                                  class="event-thumb-box__img">
                                             @if($event->isFull())
-                                                <div class="position-absolute top-0 start-0 m-2 d-flex flex-column align-items-start gap-1">
+                                                <div class="position-absolute top-0 start-0 m-2">
                                                     <span class="badge bg-danger">
-                                                        <i class="fas fa-lock"></i> COMPLETO &mdash; {{ $event->participants_count }}/{{ $event->max_participants }} ADESIONI
+                                                        <i class="fas fa-lock"></i> Completo
                                                     </span>
-                                                    @if(!$event->is_past_event)
-                                                        <span class="badge bg-warning text-dark">
-                                                            <i class="fas fa-hourglass-half"></i> APERTA LISTA RISERVA
-                                                        </span>
-                                                    @endif
                                                 </div>
                                             @endif
                                         </div>
@@ -1002,13 +1000,17 @@
             padding: 0.6rem 0.75rem !important;
         }
         .event-full-banner__blink {
-            display: inline-block;
+            display: block;
             font-size: 1.05rem;
             font-weight: 900;
             letter-spacing: 1px;
             text-transform: uppercase;
             animation: eventFullBlink 0.9s ease-in-out infinite;
             white-space: nowrap;
+        }
+        .event-full-banner__blink--line2 {
+            font-size: 0.9rem;
+            margin-top: 0.15rem;
         }
         @keyframes eventFullBlink {
             0%, 100% {
