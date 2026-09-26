@@ -286,10 +286,15 @@
                                                  alt="{{ $event->title }}"
                                                  class="event-thumb-box__img">
                                             @if($event->isFull())
-                                                <div class="position-absolute top-0 start-0 m-2">
+                                                <div class="position-absolute top-0 start-0 m-2 d-flex flex-column align-items-start gap-1">
                                                     <span class="badge bg-danger">
                                                         <i class="fas fa-lock"></i> Completo
                                                     </span>
+                                                    @if(!$event->is_past_event)
+                                                        <span class="badge bg-warning text-dark">
+                                                            <i class="fas fa-hourglass-half"></i> Lista d'attesa aperta
+                                                        </span>
+                                                    @endif
                                                 </div>
                                             @endif
                                         </div>
